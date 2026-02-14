@@ -1,0 +1,150 @@
+/****************************************************************************
+ Module
+   MainLogicFSM_Pseudocode.txt
+
+ Revision
+   0.2
+
+ Description
+   Pseudocode for MainLogicService based on the state diagram.
+   Handles command-driven motion modes and timer-based completion.
+
+ Notes
+   State Summary
+   - Stopped: idle, waits for commands
+   - SimpleMoving: executes open-loop moves (rotations/drives)
+   - SearchingForTape: drive forward until tape detected or timeout
+   - AligningWithBeacon: spin to align to beacon or timeout
+
+   Event
+   ES_COMMAND_RETRIEVED(commandByte)
+   ES_TAPE_DETECTED
+   ES_BEACON_DETECTED
+   ES_TIMEOUT(SIMPLE_MOVE_TIMER)
+   ES_TIMEOUT(TAPE_SEARCH_TIMER)
+   ES_TIMEOUT(BEACON_ALIGN_TIMER)
+
+   Action
+   MotorCommandWrapper(speedLeft, speedRight, dirLeft, dirRight)
+   Initialize SIMPLE_MOVE_TIMER
+   Initialize TAPE_SEARCH_TIMER
+   Initialize BEACON_ALIGN_TIMER
+
+   State Chart
+   Init -> Stopped
+   Stopped --ES_COMMAND_RETRIEVED(simple moves)--> SimpleMoving
+   Stopped --ES_COMMAND_RETRIEVED(tape search)--> SearchingForTape
+   Stopped --ES_COMMAND_RETRIEVED(beacon align)--> AligningWithBeacon
+
+   SimpleMoving --ES_TIMEOUT(SIMPLE_MOVE_TIMER)--> Stopped
+   SearchingForTape --ES_TAPE_DETECTED--> Stopped
+   SearchingForTape --ES_TIMEOUT(TAPE_SEARCH_TIMER)--> Stopped
+   AligningWithBeacon --ES_BEACON_DETECTED--> Stopped
+   AligningWithBeacon --ES_TIMEOUT(BEACON_ALIGN_TIMER)--> Stopped
+
+   MainLogicService
+   InitMainLogicService
+       Initialize ports via Ports.c/Ports.h
+           InitBeaconInputPin()
+           InitTapeSensorPin()
+           InitCommandSPIPins()
+       Set CurrentState = Stopped
+       MotorCommandWrapper(0,0,FORWARD,FORWARD)
+
+   RunMainLogicService
+       SWITCH(CurrentState)
+
+       State: Stopped
+           On ES_COMMAND_RETRIEVED(commandByte)
+               CASE commandByte
+                   0x00: MotorCommandWrapper(0, 0, FORWARD, FORWARD)
+                   0x02: RotateCW90(); CurrentState = SimpleMoving
+                   0x03: RotateCW45(); CurrentState = SimpleMoving
+                   0x04: RotateCCW90(); CurrentState = SimpleMoving
+                   0x05: RotateCCW45(); CurrentState = SimpleMoving
+                   0x08: DriveForwardHalf(); CurrentState = SimpleMoving
+                   0x09: DriveForwardFull(); CurrentState = SimpleMoving
+                   0x10: DriveReverseHalf(); CurrentState = SimpleMoving
+                   0x11: DriveReverseFull(); CurrentState = SimpleMoving
+                   0x20: AlignWithBeacon(); CurrentState = AligningWithBeacon
+                   0x40: SearchForTape(); CurrentState = SearchingForTape
+               END CASE
+
+       State: SimpleMoving
+           On ES_TIMEOUT(SIMPLE_MOVE_TIMER)
+               MotorCommandWrapper(0,0,FORWARD,FORWARD)
+               CurrentState = Stopped
+           On ES_COMMAND_RETRIEVED(0x00)
+               MotorCommandWrapper(0,0,FORWARD,FORWARD)
+               CurrentState = Stopped
+
+       State: SearchingForTape
+           On ES_TAPE_DETECTED
+               MotorCommandWrapper(0,0,FORWARD,FORWARD)
+               CurrentState = Stopped
+           On ES_TIMEOUT(TAPE_SEARCH_TIMER)
+               MotorCommandWrapper(0,0,FORWARD,FORWARD)
+               Print("Tape Search Failed")
+               CurrentState = Stopped
+           On ES_COMMAND_RETRIEVED(0x00)
+               MotorCommandWrapper(0,0,FORWARD,FORWARD)
+               CurrentState = Stopped
+
+       State: AligningWithBeacon
+           On ES_BEACON_DETECTED
+               MotorCommandWrapper(0,0,FORWARD,FORWARD)
+               CurrentState = Stopped
+           On ES_TIMEOUT(BEACON_ALIGN_TIMER)
+               MotorCommandWrapper(0,0,FORWARD,FORWARD)
+               Print("Alignment Failed")
+               CurrentState = Stopped
+           On ES_COMMAND_RETRIEVED(0x00)
+               MotorCommandWrapper(0,0,FORWARD,FORWARD)
+               CurrentState = Stopped
+
+   SimpleMoves helpers (open-loop)
+   RotateCW90()
+       MotorCommandWrapper(FULL_SPEED, FULL_SPEED, FORWARD, REVERSE)
+       Initialize SIMPLE_MOVE_TIMER to 6000 ms
+
+   RotateCW45()
+       MotorCommandWrapper(FULL_SPEED, FULL_SPEED, FORWARD, REVERSE)
+       Initialize SIMPLE_MOVE_TIMER to 3000 ms
+
+   RotateCCW90()
+       MotorCommandWrapper(FULL_SPEED, FULL_SPEED, REVERSE, FORWARD)
+       Initialize SIMPLE_MOVE_TIMER to 6000 ms
+
+   RotateCCW45()
+       MotorCommandWrapper(FULL_SPEED, FULL_SPEED, REVERSE, FORWARD)
+       Initialize SIMPLE_MOVE_TIMER to 3000 ms
+
+   DriveForwardHalf()
+       MotorCommandWrapper(HALF_SPEED, HALF_SPEED, FORWARD, FORWARD)
+       Initialize SIMPLE_MOVE_TIMER to 1000 ms (optional: remove for continuous)
+
+   DriveForwardFull()
+       MotorCommandWrapper(FULL_SPEED, FULL_SPEED, FORWARD, FORWARD)
+       Initialize SIMPLE_MOVE_TIMER to 1000 ms (optional: remove for continuous)
+
+   DriveReverseHalf()
+       MotorCommandWrapper(HALF_SPEED, HALF_SPEED, REVERSE, REVERSE)
+       Initialize SIMPLE_MOVE_TIMER to 1000 ms (optional: remove for continuous)
+
+   DriveReverseFull()
+       MotorCommandWrapper(FULL_SPEED, FULL_SPEED, REVERSE, REVERSE)
+       Initialize SIMPLE_MOVE_TIMER to 1000 ms (optional: remove for continuous)
+
+   SearchForTape()
+       MotorCommandWrapper(FULL_SPEED, FULL_SPEED, FORWARD, FORWARD)
+       Initialize TAPE_SEARCH_TIMER
+
+   AlignWithBeacon()
+       MotorCommandWrapper(FULL_SPEED, FULL_SPEED, FORWARD, REVERSE)
+       Initialize BEACON_ALIGN_TIMER
+
+ History
+ When           Who     What/Why
+ -------------- ---     --------
+ 02/03/26       Tianyu  Main logic pseudocode aligned with state diagram
+****************************************************************************/

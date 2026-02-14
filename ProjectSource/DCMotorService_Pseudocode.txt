@@ -1,0 +1,67 @@
+/****************************************************************************
+ Module
+   DCMotorService_Pseudocode.txt
+
+ Revision
+   0.2
+
+ Description
+   Pseudocode for controlling two DC motors (left/right) in one service.
+   Uses array-based motor state for clean, symmetric updates.
+
+ Notes
+   Guiding recommendation:
+   - Use ONE DCMotorService that owns both motors.
+   - Represent motors as an array of structs (index 0 = left, index 1 = right)
+     so the same code path configures/updates either motor.
+   - Provide a single wrapper API (MotorCommandWrapper) that sets both motors
+     and posts ES_MOTOR_ACTION_CHANGE to DCMotorService.
+
+   Data structures (module-level in DCMotorService):
+   MotorState {
+       speedTicks
+       direction
+       pwmOcModule
+       forwardPin
+       reversePin
+   }
+   MotorState Motors[2]  // Motors[LEFT], Motors[RIGHT]
+
+   Event
+   ES_MOTOR_ACTION_CHANGE(desiredSpeed)
+
+   DCMotorService (How to manage two motors?)
+   InitDCMotorService
+       Configure PWM time base (shared timer)
+       FOR each motor in Motors[]
+           Configure motor I/O pins
+           Map OC output to motor PWM pin
+           Set initial direction pin
+           Set initial duty ticks to 0 (stop)
+       END FOR
+
+   MotorCommandWrapper(speedLeft, speedRight, dirLeft, dirRight)
+       Write into module variables Motors[LEFT].speedTicks, Motors[RIGHT].speedTicks
+       Write into module variables Motors[LEFT].direction, Motors[RIGHT].direction
+       Post(ES_MOTOR_ACTION_CHANGE) to DCMotorService
+
+   On ES_MOTOR_ACTION_CHANGE
+       FOR each motor in Motors[]
+           Map desired speed to duty ticks
+           Clamp duty ticks to safe range
+           Also write direction to motor
+           IF motor.direction == FORWARD
+               Set motor.forwardPin HIGH, motor.reversePin LOW
+               Write duty ticks to OCxRS
+           ELSE (REVERSE)
+               Set motor.forwardPin LOW, motor.reversePin HIGH
+               Write duty ticks to OCxRS (or inverted if hardware requires)
+           END IF
+       END FOR
+
+
+ History
+ When           Who     What/Why
+ -------------- ---     --------
+ 02/03/26       Tianyu  Pseudocode notes for array-based two-motor service
+****************************************************************************/

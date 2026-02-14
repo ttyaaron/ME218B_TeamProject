@@ -1,0 +1,51 @@
+/****************************************************************************
+ Module
+   CommonDefinitions_Pseudocode.txt
+
+ Revision
+   0.2
+
+ Description
+   Pseudocode notes for constants shared across services.
+   (Relates to CommonDefinitions.c / CommonDefinitions.h if/when created.)
+
+ Notes
+   Use this to centralize command bytes, speed levels, directions, and timers.
+
+   LookUpTable for Commands
+   Command Byte Description of action
+   0x00 Stop, hold Position, do not move or rotate
+   0x02 Rotate Clockwise by 90 degrees (allows 6 sec. to complete)
+   0x03 Rotate Clockwise by 45 degrees (allows 3 sec. to complete)
+   0x04 Rotate Counter-clockwise by 90 degrees (allows 6 sec. to complete)
+   0x05 Rotate Counter-clockwise by 45 degrees (allows 3 sec. to complete)
+   0x08 Drive forward half speed
+   0x09 Drive forward full speed
+   0x10 Drive in reverse half speed
+   0x11 Drive in reverse full speed
+   0x20 Align with beacon (allows 5 sec. to complete)
+   0x40 Drive forward until tape detected.
+
+   Directions
+   FORWARD = 0
+   REVERSE = 1
+
+   Motor Indexes
+   LEFT_MOTOR = 0
+   RIGHT_MOTOR = 1
+
+   Speed Levels (duty ticks or normalized units)
+   HALF_SPEED
+   FULL_SPEED
+
+   Timer Durations (ms)
+   SIMPLE_MOVE_90_MS = 6000
+   SIMPLE_MOVE_45_MS = 3000
+   BEACON_ALIGN_MS = 5000
+   TAPE_SEARCH_MS = 5000
+
+ History
+ When           Who     What/Why
+ -------------- ---     --------
+ 02/03/26       Tianyu  Pseudocode notes for shared definitions
+****************************************************************************/

@@ -1,0 +1,39 @@
+/****************************************************************************
+ Module
+   EventCheckers_Pseudocode.txt
+
+ Revision
+   0.2
+
+ Description
+   Pseudocode for event checkers related to beacon, tape, and command input.
+
+ Notes
+   EventCheckers should detect transitions and post ES_* events to services.
+   Use static "last" variables to avoid repeated events while input stays low.
+
+   Event
+   ES_BEACON_DETECTED
+   ES_TAPE_DETECTED
+   ES_COMMAND_RETRIEVED
+
+   Beacon EventChecker
+   Check for IR input I/O line (digital input) (initialized in Ports.c/Ports.h)
+   IF input transitions from HIGH to LOW
+       Post ES_BEACON_DETECTED to main logic
+
+   Tape EventChecker
+   Check for tape sensor input (digital or analog threshold) (initialized in Ports.c/Ports.h)
+   IF input transitions from HIGH to LOW (or crosses threshold)
+       Post ES_TAPE_DETECTED to main logic
+
+   Command EventChecker (SPI)
+   Read SPI byte (non-blocking)
+   IF byte is valid command
+       Post ES_COMMAND_RETRIEVED(commandByte) to main logic
+
+ History
+ When           Who     What/Why
+ -------------- ---     --------
+ 02/03/26       Tianyu  Event checker pseudocode for Lab 8 signals
+****************************************************************************/
