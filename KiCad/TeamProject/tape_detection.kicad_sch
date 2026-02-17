@@ -380,6 +380,50 @@
 			(embedded_fonts no)
 		)
 	)
+	(global_label "TAPE4"
+		(shape input)
+		(at 63.5 116.84 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "2720c461-e1a7-4f78-aeab-513db7844292")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 54.8301 116.84 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "TAPE5"
+		(shape input)
+		(at 63.5 137.16 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "4bafbf03-e66b-44ff-b4a0-79453042942e")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 54.8301 137.16 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "TAPE3"
 		(shape input)
 		(at 63.5 97.79 180)
@@ -456,7 +500,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "04da32a3-8f90-47f2-89bb-75359f3913ea")
-		(property "Reference" "#PWR?"
+		(property "Reference" "#PWR028"
 			(at 63.5 80.01 0)
 			(effects
 				(font
@@ -527,7 +571,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "126baecd-7d30-4c86-852c-48ab2299b792")
-		(property "Reference" "#PWR?"
+		(property "Reference" "#PWR018"
 			(at 63.5 67.31 0)
 			(effects
 				(font
@@ -598,7 +642,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "35682928-a144-4917-b883-41c9c7c62902")
-		(property "Reference" "U"
+		(property "Reference" "U9"
 			(at 83.82 96.5199 0)
 			(effects
 				(font
@@ -654,13 +698,84 @@
 		(instances
 			(project "tape_detection"
 				(path "/1e85db6f-42c9-4ddb-a51d-41e3eb8f0ffd"
-					(reference "U")
+					(reference "U3")
 					(unit 1)
 				)
 			)
 			(project "TeamProject"
 				(path "/e69a436c-b634-4c28-b262-47742fc47b6f/3269a7a8-85a4-4eca-beb5-18e7091e78a3"
 					(reference "U9")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 63.5 139.7 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "61d7232e-c19d-4f6d-ae30-80cb64cc629f")
+		(property "Reference" "#PWR?"
+			(at 63.5 146.05 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 63.5 144.78 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 63.5 139.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 63.5 139.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 63.5 139.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "4a3c3df3-656b-499b-b811-ea32c3cc6259")
+		)
+		(instances
+			(project "tape_detection"
+				(path "/1e85db6f-42c9-4ddb-a51d-41e3eb8f0ffd"
+					(reference "#PWR04")
+					(unit 1)
+				)
+			)
+			(project "TeamProject"
+				(path "/e69a436c-b634-4c28-b262-47742fc47b6f/3269a7a8-85a4-4eca-beb5-18e7091e78a3"
+					(reference "#PWR?")
 					(unit 1)
 				)
 			)
@@ -676,7 +791,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "6dc98d53-8ec5-4ff7-9790-2787d537819e")
-		(property "Reference" "U"
+		(property "Reference" "U3"
 			(at 83.82 57.1499 0)
 			(effects
 				(font
@@ -732,13 +847,84 @@
 		(instances
 			(project "tape_detection"
 				(path "/1e85db6f-42c9-4ddb-a51d-41e3eb8f0ffd"
-					(reference "U")
+					(reference "U1")
 					(unit 1)
 				)
 			)
 			(project "TeamProject"
 				(path "/e69a436c-b634-4c28-b262-47742fc47b6f/3269a7a8-85a4-4eca-beb5-18e7091e78a3"
 					(reference "U3")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3.3V")
+		(at 63.5 134.62 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "74f9f129-6434-438f-bcb4-bb973db28ce6")
+		(property "Reference" "#PWR?"
+			(at 63.5 138.43 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+3.3V"
+			(at 63.5 129.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 63.5 134.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 63.5 134.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 63.5 134.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "583c40c2-e6c9-40cd-92f7-fc723cb80a62")
+		)
+		(instances
+			(project "tape_detection"
+				(path "/1e85db6f-42c9-4ddb-a51d-41e3eb8f0ffd"
+					(reference "#PWR03")
+					(unit 1)
+				)
+			)
+			(project "TeamProject"
+				(path "/e69a436c-b634-4c28-b262-47742fc47b6f/3269a7a8-85a4-4eca-beb5-18e7091e78a3"
+					(reference "#PWR?")
 					(unit 1)
 				)
 			)
@@ -754,7 +940,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "7a15cbaa-4d96-4fa7-a3fd-0d10c5ec10c4")
-		(property "Reference" "#PWR?"
+		(property "Reference" "#PWR035"
 			(at 63.5 106.68 0)
 			(effects
 				(font
@@ -816,6 +1002,155 @@
 		)
 	)
 	(symbol
+		(lib_id "ME218_BaseLib:SW_CapTouch")
+		(at 73.66 116.84 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "8336f7a5-ed14-4410-98b3-df6e2f727d44")
+		(property "Reference" "U?"
+			(at 83.82 115.5699 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "Tape Sensor"
+			(at 83.82 118.1099 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 73.66 116.84 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 73.66 116.84 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 73.66 116.84 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "cf2c3a95-23b4-4c96-8230-c5ece918532b")
+		)
+		(pin "2"
+			(uuid "b95cf437-5b26-453d-8972-23bd7d3a2028")
+		)
+		(pin "3"
+			(uuid "11ed7e9e-9af7-4535-90aa-97f07166e0ae")
+		)
+		(instances
+			(project "tape_detection"
+				(path "/1e85db6f-42c9-4ddb-a51d-41e3eb8f0ffd"
+					(reference "U4")
+					(unit 1)
+				)
+			)
+			(project "TeamProject"
+				(path "/e69a436c-b634-4c28-b262-47742fc47b6f/3269a7a8-85a4-4eca-beb5-18e7091e78a3"
+					(reference "U?")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 63.5 119.38 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "96e65e53-3481-4943-ab57-bc568396beef")
+		(property "Reference" "#PWR?"
+			(at 63.5 125.73 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 63.5 124.46 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 63.5 119.38 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 63.5 119.38 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 63.5 119.38 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "065f2d3c-df9d-4a3d-b6b0-6b09a1fedda3")
+		)
+		(instances
+			(project "tape_detection"
+				(path "/1e85db6f-42c9-4ddb-a51d-41e3eb8f0ffd"
+					(reference "#PWR02")
+					(unit 1)
+				)
+			)
+			(project "TeamProject"
+				(path "/e69a436c-b634-4c28-b262-47742fc47b6f/3269a7a8-85a4-4eca-beb5-18e7091e78a3"
+					(reference "#PWR?")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:+3.3V")
 		(at 63.5 95.25 0)
 		(unit 1)
@@ -825,7 +1160,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "a5d6ea2f-03c1-4709-aa95-ff02e22bef57")
-		(property "Reference" "#PWR?"
+		(property "Reference" "#PWR034"
 			(at 63.5 99.06 0)
 			(effects
 				(font
@@ -887,6 +1222,155 @@
 		)
 	)
 	(symbol
+		(lib_id "ME218_BaseLib:SW_CapTouch")
+		(at 73.66 137.16 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "a71d55a4-625e-44f3-b620-cfcb1a55deac")
+		(property "Reference" "U?"
+			(at 83.82 135.8899 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "Tape Sensor"
+			(at 83.82 138.4299 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 73.66 137.16 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 73.66 137.16 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 73.66 137.16 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "fadea5f1-63e6-4aaa-8d68-c09bf19d3e09")
+		)
+		(pin "2"
+			(uuid "39ec1e1c-00cf-46af-b78a-be1d4b405876")
+		)
+		(pin "3"
+			(uuid "dc781386-43ac-401d-a8fa-64e0001d17d5")
+		)
+		(instances
+			(project "tape_detection"
+				(path "/1e85db6f-42c9-4ddb-a51d-41e3eb8f0ffd"
+					(reference "U5")
+					(unit 1)
+				)
+			)
+			(project "TeamProject"
+				(path "/e69a436c-b634-4c28-b262-47742fc47b6f/3269a7a8-85a4-4eca-beb5-18e7091e78a3"
+					(reference "U?")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3.3V")
+		(at 63.5 114.3 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "a8fd1e8f-d14b-4d95-a2ea-0b8ac1a8bcf1")
+		(property "Reference" "#PWR?"
+			(at 63.5 118.11 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+3.3V"
+			(at 63.5 109.22 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 63.5 114.3 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 63.5 114.3 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 63.5 114.3 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "161cf64f-0fb6-42f5-8715-099aeac6244e")
+		)
+		(instances
+			(project "tape_detection"
+				(path "/1e85db6f-42c9-4ddb-a51d-41e3eb8f0ffd"
+					(reference "#PWR01")
+					(unit 1)
+				)
+			)
+			(project "TeamProject"
+				(path "/e69a436c-b634-4c28-b262-47742fc47b6f/3269a7a8-85a4-4eca-beb5-18e7091e78a3"
+					(reference "#PWR?")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:+3.3V")
 		(at 63.5 55.88 0)
 		(unit 1)
@@ -896,7 +1380,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "b253c356-bd1b-44e8-9bb2-b1d5ae48d1cc")
-		(property "Reference" "#PWR?"
+		(property "Reference" "#PWR019"
 			(at 63.5 59.69 0)
 			(effects
 				(font
@@ -967,7 +1451,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "d1df6b53-255b-41a9-9992-ef84009da2eb")
-		(property "Reference" "U"
+		(property "Reference" "U8"
 			(at 83.82 77.4699 0)
 			(effects
 				(font
@@ -1023,7 +1507,7 @@
 		(instances
 			(project "tape_detection"
 				(path "/1e85db6f-42c9-4ddb-a51d-41e3eb8f0ffd"
-					(reference "U")
+					(reference "U2")
 					(unit 1)
 				)
 			)
@@ -1045,7 +1529,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "ef2837e8-8849-4f83-8024-1ee352e8d55b")
-		(property "Reference" "#PWR?"
+		(property "Reference" "#PWR033"
 			(at 63.5 87.63 0)
 			(effects
 				(font
