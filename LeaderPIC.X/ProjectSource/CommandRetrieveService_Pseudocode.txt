@@ -1,0 +1,58 @@
+/****************************************************************************
+ Module
+   CommandRetrieveService_Pseudocode.txt
+
+ Revision
+   0.2
+
+ Description
+   Pseudocode for SPI command retrieval and posting command events.
+
+ Notes
+   CommandGenerator is an SPI follower and SPI32 is the leader.
+   Query behavior:
+   - When a new command is ready, the next query returns 0xFF.
+   - The query following that 0xFF returns the new command byte.
+   - Subsequent queries return the same command byte until a new command arrives.
+   SPI service should post ES_COMMAND_RETRIEVED(commandByte) to MainLogicService
+   when a valid command byte is received after a 0xFF flag.
+
+   Event
+   ES_COMMAND_RETRIEVED(commandByte)
+
+   InitCommandRetrieveService
+       Initialize flag to track when new command is ready
+       Configure SPI hardware as leader with appropriate timing settings
+       Set up chip select, data input, and data output pins
+       Enable SPI communication
+       Start timer to poll for commands every 2 seconds
+       Post initialization event
+
+   RunCommandRetrieveService
+       When timer expires:
+           Query the command generator for a new byte
+           If received 0xFF (new command ready flag):
+               Remember that next byte will be the new command
+           Otherwise if we previously saw the ready flag:
+               If the byte is a valid command:
+                   If it differs from the last command posted:
+                       Post the new command to the main logic state machine
+                       Remember this command
+               Otherwise:
+                   Log that an invalid command was received
+               Clear the new command ready flag
+           Restart the polling timer
+
+   QueryCommandGenerator
+       Send a dummy byte to clock out a response from the follower
+       Read and return the response byte
+
+   IsValidCommandByte
+       Check if the byte matches any entry in the valid commands lookup table
+       Return true if valid, false otherwise
+
+ History
+ When           Who     What/Why
+ -------------- ---     --------
+ 02/03/26       Tianyu  SPI command retrieval pseudocode
+****************************************************************************/

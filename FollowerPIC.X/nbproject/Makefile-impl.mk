@@ -24,7 +24,7 @@ CLEAN_SUBPROJECTS=${CLEAN_SUBPROJECTS_${SUBPROJECTS}}
 
 
 # Project Name
-PROJECTNAME=Lab8
+PROJECTNAME=Follower
 
 # Active Configuration
 DEFAULTCONF=default
