@@ -24,7 +24,7 @@ CLEAN_SUBPROJECTS=${CLEAN_SUBPROJECTS_${SUBPROJECTS}}
 
 
 # Project Name
-PROJECTNAME=Follower
+PROJECTNAME=FollowerPIC.X
 
 # Active Configuration
 DEFAULTCONF=default

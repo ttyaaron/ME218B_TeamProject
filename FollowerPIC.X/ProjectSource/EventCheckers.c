@@ -66,41 +66,6 @@ bool Check4Keystroke(void)
 
 /****************************************************************************
  Function
-   Check4TapeDetected
-
- Parameters
-   None
-
- Returns
-   bool: true if a new tape event was detected & posted
-
- Description
-   Checks for a low-going transition on the tape sensor input.
-
- Author
-   Tianyu, 02/03/26
-****************************************************************************/
-bool Check4TapeDetected(void)
-{
-  static bool LastTapeState = true;
-  bool CurrentTapeState = ReadTapeSensorPin();
-
-  if ((CurrentTapeState == false) && (LastTapeState == true))
-  {
-    ES_Event_t ThisEvent;
-    ThisEvent.EventType = ES_TAPE_DETECTED;
-    ThisEvent.EventParam = 0;
-    PostMainLogicFSM(ThisEvent);
-    LastTapeState = CurrentTapeState;
-    return true;
-  }
-
-  LastTapeState = CurrentTapeState;
-  return false;
-}
-
-/****************************************************************************
- Function
    Check4CommandAvailable
 
  Parameters
@@ -121,42 +86,3 @@ bool Check4CommandAvailable(void)
   // TODO: If moving command retrieval into an event checker, implement here.
   return false;
 }
-
-/****************************************************************************
- Function
-   Check4BeaconDetected
-
- Parameters
-   None
-
- Returns
-   bool: true if IR input is HIGH
-
- Description
-   Beaon event checker. The IR beacon sensor is active HIGH.
-
- Author
-   Tianyu, 02/04/26
-****************************************************************************/
-bool Check4BeaconDetected(void)
-{
-  static bool LastBeaconState = false;
-  bool CurrentBeaconState = ReadBeaconInputPin();
-
-  if ((CurrentBeaconState == true) && (LastBeaconState == false))
-  {
-    DEBUG_OUTPUT_PIN_LAT = 1;
-    ES_Event_t ThisEvent;
-    ThisEvent.EventType = ES_BEACON_DETECTED;
-    ThisEvent.EventParam = 0;
-    PostMainLogicFSM(ThisEvent);
-    LastBeaconState = CurrentBeaconState;
-//    printf("Posting ES_BEACON_DETECTED event.\r\n");
-    DEBUG_OUTPUT_PIN_LAT = 0;
-    return true;
-  }
-
-  LastBeaconState = CurrentBeaconState;
-  return false;
-}
-
