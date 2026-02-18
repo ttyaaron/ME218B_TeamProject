@@ -6,6 +6,7 @@
             <file>file:/U:/ttyaaron/ME218B_TeamProject/FollowerPIC.X/FrameworkHeaders/ES_Configure.h</file>
             <file>file:/U:/ttyaaron/ME218B_TeamProject/FollowerPIC.X/ProjectSource/SPIFollowerFSM.c</file>
             <file>file:/U:/ttyaaron/ME218B_TeamProject/FollowerPIC.X/ProjectSource/EventCheckers.c</file>
+            <file>file:/U:/ttyaaron/ME218B_TeamProject/FollowerPIC.X/ProjectSource/PIC32_SPI_HAL.c</file>
         </group>
     </open-files>
 </project-private>
