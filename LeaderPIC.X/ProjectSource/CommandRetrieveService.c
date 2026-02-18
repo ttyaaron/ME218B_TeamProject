@@ -39,7 +39,7 @@
 
 
 /*----------------------------- Module Defines ----------------------------*/
-#define SPI_POLL_INTERVAL_MS 2000
+#define SPI_POLL_INTERVAL_MS 500
 SPI_Module_t Module = SPI_SPI1;
 
 /*---------------------------- Module Functions ---------------------------*/
