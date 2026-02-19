@@ -2366,7 +2366,6 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "20f69499-7fc5-4bcf-af10-f037d1d7190a")
 		(property "Reference" "#PWR02"
 			(at 166.37 90.17 0)
@@ -2378,7 +2377,7 @@
 			)
 		)
 		(property "Value" "GNDREF"
-			(at 166.37 88.9 0)
+			(at 168.91 88.9 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2755,7 +2754,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "1k"
+		(property "Value" "560"
 			(at 158.75 88.8999 0)
 			(effects
 				(font
