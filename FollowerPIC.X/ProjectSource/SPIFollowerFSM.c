@@ -76,9 +76,6 @@ bool InitSPIFollowerFSM(uint8_t Priority)
 
   // Configure SPI1 as Follower (based on SPIService.c)
   
-  // Set RPA0 as output for debugging/status if needed
-  TRISAbits.TRISA0 = 0;
-  
   // Basic SPI configuration
   SPISetup_BasicConfig(SPI_SPI1);
   
@@ -89,22 +86,21 @@ bool InitSPIFollowerFSM(uint8_t Priority)
   ANSELBbits.ANSB14 = 0; // Disable analog
   TRISBbits.TRISB14 = 1;  // Set as input
   
-  // Configure SS (Slave Select) input on RB3
-  TRISBbits.TRISB3 = 1;   // Set as input
-  ANSELBbits.ANSB3 = 0;   // Disable analog
-  SS1R = 0b0001;          // Map SS1 to RPB3
+  // Configure SS (Slave Select) input on RA0
+  TRISAbits.TRISA0 = 1;   // Set as input
+  ANSELAbits.ANSA0 = 0;   // Disable analog
+  SS1R = 0b0000;          // Map SS1 to RPA0
   
-  // Configure SDI (Serial Data Input) on RB5
-  TRISBbits.TRISB5 = 1;   // Set as input
-  SDI1R = 0b0001;         // Map SDI1 to RPB5
+  // Configure SDI (Serial Data Input) on RB8
+  TRISBbits.TRISB8 = 1;   // Set as input
+  SDI1R = 0b0100;         // Map SDI1 to RPB8
   
-  // Configure SDO (Serial Data Output) on RB8
-  TRISBbits.TRISB8 = 0;   // Set as output
-  ANSELBbits.ANSB8 = 0;   // Disable analog
-  RPB8R = 0b0011;         // Map RPB8 to SDO1
+  // Configure SDO (Serial Data Output) on RA1
+  TRISAbits.TRISA1 = 0;   // Set as output
+  ANSELAbits.ANSA1 = 0;   // Disable analog
+  RPA1R = 0b0011;         // Map RPA1 to SDO1
   
-  // Clear interrupt flag
-  IFS1CLR = _IFS1_SPI1RXIF_MASK;
+  INTCONbits.MVEC = 1; // multi-vector support
   
   // Enable SS pin control
   SPI1CONbits.SSEN = 1;
@@ -118,7 +114,20 @@ bool InitSPIFollowerFSM(uint8_t Priority)
   SPISetup_SetXferWidth(SPI_SPI1, SPI_8BIT);
   
   // Configure interrupts
-  SPISetup_Interrupts(SPI_SPI1);
+  
+  // Clear SPI Fault, SPI Receive Done, SPI Transfer Done
+  IFS1CLR = _IFS1_SPI1EIF_MASK | _IFS1_SPI1RXIF_MASK | _IFS1_SPI1TXIF_MASK;
+
+  // Set Interrupt Priority
+  IPC7bits.SPI1IP = 7; // SPI1 Interrupt priority set to 7
+  IPC7bits.SPI1IS = 1; // SPI1 Interrupt sub priority set to 1
+
+  // Enable SPI1 Interrupts
+  IEC1SET = _IEC1_SPI1RXIE_MASK; // Receive Interrupt
+  //IEC1SET = _IEC1_SPI1TXIE_MASK; // Transmit Interrupt
+  // IEC1SET = _IEC1_SPI1EIE_MASK; // Error Interrupt
+
+  SPI1CONbits.SRXISEL = 0b01; // interrupt mode: interrupt when the buffer is not empty
   
   // Disable enhanced buffer
   SPISetEnhancedBuffer(SPI_SPI1, false);
@@ -287,7 +296,7 @@ ES_Event_t RunSPIFollowerFSM(ES_Event_t ThisEvent)
           CurrentCommand = newCommand;
           NewCommandFlag = true;
           CurrentState = SendingNewFlag;
-          DB_printf("New command ready: 0x%02X\n", CurrentCommand);
+          DB_printf("New command ready: 0x%u2X\n", CurrentCommand);
         }
       }
     }
@@ -354,6 +363,8 @@ void __ISR(_SPI_1_VECTOR, IPL7SOFT) SPI_ISR(void)
 {
   uint8_t receivedData;
   uint8_t dataToSend;
+  
+//  DB_printf("ISR entered.\r\n");
   
   // Read received data (query from leader)
   receivedData = (uint8_t)SPI1BUF;

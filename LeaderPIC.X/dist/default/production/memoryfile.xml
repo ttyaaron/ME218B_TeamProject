@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?> 
 <project>                                  
-  <executable name="dist/default/production/Lab8.production.elf">                 
+  <executable name="dist/default/production/LeaderPIC.X.production.elf">                 
     <memory name="program">                 
       <units>bytes</units>                 
       <length>263312</length>                 
-      <used>47820</used>                     
-      <free>215492</free>                     
+      <used>47768</used>                     
+      <free>215544</free>                     
     </memory>                              
     <memory name="data">              
       <units>bytes</units>                 
