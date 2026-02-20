@@ -16,7 +16,8 @@ build/default/debug/FrameworkSource/ES_PostList.o: \
  ProjectHeaders/TestHarnessService0.h FrameworkHeaders/ES_Events.h \
  FrameworkHeaders/ES_Port.h ProjectHeaders/CommandRetrieveService.h \
  FrameworkHeaders/ES_Configure.h FrameworkHeaders/ES_Types.h \
- ProjectHeaders/MainLogicFSM.h ProjectHeaders/DCMotorService.h
+ ProjectHeaders/MainLogicFSM.h ProjectHeaders/DCMotorService.h \
+ ProjectHeaders/BeaconDetectFSM.h
 
 FrameworkSource/../FrameworkHeaders/ES_Port.h:
 
@@ -59,3 +60,5 @@ FrameworkHeaders/ES_Types.h:
 ProjectHeaders/MainLogicFSM.h:
 
 ProjectHeaders/DCMotorService.h:
+
+ProjectHeaders/BeaconDetectFSM.h:

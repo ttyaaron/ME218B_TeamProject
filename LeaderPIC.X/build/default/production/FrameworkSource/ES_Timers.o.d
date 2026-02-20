@@ -17,6 +17,7 @@ build/default/production/FrameworkSource/ES_Timers.o: \
  FrameworkHeaders/ES_Port.h ProjectHeaders/CommandRetrieveService.h \
  FrameworkHeaders/ES_Configure.h FrameworkHeaders/ES_Types.h \
  ProjectHeaders/MainLogicFSM.h ProjectHeaders/DCMotorService.h \
+ ProjectHeaders/BeaconDetectFSM.h \
  FrameworkSource/../FrameworkHeaders/ES_General.h \
  FrameworkSource/../FrameworkHeaders/ES_Events.h \
  FrameworkSource/../FrameworkHeaders/ES_PostList.h \
@@ -65,6 +66,8 @@ FrameworkHeaders/ES_Types.h:
 ProjectHeaders/MainLogicFSM.h:
 
 ProjectHeaders/DCMotorService.h:
+
+ProjectHeaders/BeaconDetectFSM.h:
 
 FrameworkSource/../FrameworkHeaders/ES_General.h:
 

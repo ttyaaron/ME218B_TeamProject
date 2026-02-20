@@ -63,7 +63,7 @@
 #include "BeaconDetectService.h"
 #include "MainLogicFSM.h"
 #include "dbprintf.h"
-#include "TimerConfig.h"
+#include "CommonDefinitions.h"
 #include <xc.h>
 #include <sys/attribs.h>
 
@@ -148,9 +148,6 @@ bool InitBeaconDetectService(uint8_t Priority)
   
   // Configure the Input Capture module
   ConfigureInputCapture();
-  
-  // Configure timing pin for performance measurement
-  ConfigureTimingPin();
   
   // Initialize timing variables
   LastCapturedTime = INVALID_TIME;
@@ -280,12 +277,12 @@ ES_Event_t RunBeaconDetectService(ES_Event_t ThisEvent)
       if (ThisEvent.EventParam == PRINT_FREQUENCY_TIMER)
       {
         // Calculate and print frequency
-        TIMING_PIN_LAT = 1; // Raise timing pin
         uint32_t frequency = CalculateFrequency(SmoothedTimeLapse);
-        TIMING_PIN_LAT = 0; // Lower timing pin
-          
+
         // Print frequency to screen
         DB_printf("Frequency: %d Hz\r\n", frequency);
+        
+        DB_printf("Time lapse: %d \r\n", SmoothedTimeLapse);
         
         // Restart the frequency print timer
         ES_Timer_InitTimer(PRINT_FREQUENCY_TIMER, PRINT_FREQUENCY_INTERVAL);
@@ -516,7 +513,7 @@ static uint32_t CalculateFrequency(uint32_t timeLapse)
   
   // Calculate frequency in Hz
   // frequency = timerClock / (timeLapse * IC_PRESCALE)
-  uint32_t frequency = timerClock / (timeLapse * IC_PRESCALE);
+  uint32_t frequency = (timerClock * IC_PRESCALE) / timeLapse;
   
   return frequency;
 }

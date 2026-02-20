@@ -22,7 +22,8 @@ build/default/debug/FrameworkSource/ES_Framework.o: \
  FrameworkHeaders/ES_Port.h ProjectHeaders/CommandRetrieveService.h \
  FrameworkHeaders/ES_Configure.h FrameworkHeaders/ES_Types.h \
  ProjectHeaders/MainLogicFSM.h ProjectHeaders/DCMotorService.h \
- ProjectHeaders/EventCheckWrapper.h ProjectHeaders/EventCheckers.h
+ ProjectHeaders/BeaconDetectFSM.h ProjectHeaders/EventCheckWrapper.h \
+ ProjectHeaders/EventCheckers.h
 
 FrameworkSource/../FrameworkHeaders/ES_Configure.h:
 
@@ -77,6 +78,8 @@ FrameworkHeaders/ES_Types.h:
 ProjectHeaders/MainLogicFSM.h:
 
 ProjectHeaders/DCMotorService.h:
+
+ProjectHeaders/BeaconDetectFSM.h:
 
 ProjectHeaders/EventCheckWrapper.h:
 

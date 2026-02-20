@@ -10,8 +10,9 @@ build/default/production/ProjectSource/EventCheckers.o: \
  ProjectHeaders/TestHarnessService0.h FrameworkHeaders/ES_Port.h \
  ProjectHeaders/CommandRetrieveService.h FrameworkHeaders/ES_Types.h \
  ProjectHeaders/MainLogicFSM.h ProjectHeaders/DCMotorService.h \
- ProjectHeaders/EventCheckers.h ProjectHeaders/CommonDefinitions.h \
- FrameworkHeaders/dbprintf.h ProjectHeaders/Ports.h
+ ProjectHeaders/BeaconDetectFSM.h ProjectHeaders/EventCheckers.h \
+ ProjectHeaders/CommonDefinitions.h FrameworkHeaders/dbprintf.h \
+ ProjectHeaders/Ports.h
 
 FrameworkHeaders/ES_Configure.h:
 
@@ -54,6 +55,8 @@ FrameworkHeaders/ES_Types.h:
 ProjectHeaders/MainLogicFSM.h:
 
 ProjectHeaders/DCMotorService.h:
+
+ProjectHeaders/BeaconDetectFSM.h:
 
 ProjectHeaders/EventCheckers.h:
 

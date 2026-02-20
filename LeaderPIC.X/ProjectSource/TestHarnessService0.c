@@ -205,6 +205,12 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
           (char)ThisEvent.EventParam);
     }
     break;
+    case ES_BEACON_DETECTED:
+    {
+      DB_printf("ES_BEACON_DETECTED received with -> %c <- in Service 0\r\n",
+          (char)ThisEvent.EventParam);
+    }
+    break;
     default:
     {}
      break;
