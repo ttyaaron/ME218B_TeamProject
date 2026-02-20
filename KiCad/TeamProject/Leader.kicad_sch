@@ -1822,6 +1822,16 @@
 	)
 	(wire
 		(pts
+			(xy 91.44 67.31) (xy 78.74 67.31)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "81ad0130-5457-49b8-bb88-cc8a0f6c19a5")
+	)
+	(wire
+		(pts
 			(xy 170.18 58.42) (xy 184.15 58.42)
 		)
 		(stroke
@@ -2183,7 +2193,7 @@
 		)
 	)
 	(global_label "PIC32-Follower-Output"
-		(shape input)
+		(shape output)
 		(at 208.28 73.66 0)
 		(fields_autoplaced yes)
 		(effects
@@ -2200,6 +2210,28 @@
 					(size 1.27 1.27)
 				)
 				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "Side Indicator Servo PWM OC4"
+		(shape output)
+		(at 78.74 67.31 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "1ca1795f-d4e6-46f8-bcf6-358de02d2af4")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 46.2427 67.31 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
 				(hide yes)
 			)
 		)
@@ -4052,7 +4084,7 @@
 			)
 		)
 		(instances
-			(project "TeamProject"
+			(project "Leader"
 				(path "/e69a436c-b634-4c28-b262-47742fc47b6f"
 					(page "3")
 				)
@@ -4094,7 +4126,7 @@
 			)
 		)
 		(instances
-			(project "TeamProject"
+			(project "Leader"
 				(path "/e69a436c-b634-4c28-b262-47742fc47b6f"
 					(page "2")
 				)

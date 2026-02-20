@@ -1602,26 +1602,6 @@
 	)
 	(wire
 		(pts
-			(xy 182.88 96.52) (xy 130.81 96.52)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "2eeeea3f-c83f-476b-9cc9-12f35818b5f6")
-	)
-	(wire
-		(pts
-			(xy 130.81 99.06) (xy 180.34 99.06)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "2fc89690-d3c7-4a18-8246-c29288219fb0")
-	)
-	(wire
-		(pts
 			(xy 130.81 81.28) (xy 182.88 81.28)
 		)
 		(stroke
@@ -1659,16 +1639,6 @@
 			(type default)
 		)
 		(uuid "3ffd5c16-9664-4beb-8ce0-63d2b4418096")
-	)
-	(wire
-		(pts
-			(xy 135.89 109.22) (xy 135.89 110.49)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "40d9c32f-1d8d-475c-aeac-8597ff7490fd")
 	)
 	(wire
 		(pts
@@ -1742,26 +1712,6 @@
 	)
 	(wire
 		(pts
-			(xy 180.34 101.6) (xy 182.88 101.6)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "679a299f-ff16-4696-9abf-443ecdcbe471")
-	)
-	(wire
-		(pts
-			(xy 177.8 104.14) (xy 177.8 113.03)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "6aa31870-4973-42cc-b735-cf525a1283c1")
-	)
-	(wire
-		(pts
 			(xy 76.2 90.17) (xy 81.28 90.17)
 		)
 		(stroke
@@ -1772,6 +1722,26 @@
 	)
 	(wire
 		(pts
+			(xy 80.01 102.87) (xy 64.77 102.87)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6da90aee-1a04-4def-b03b-a6f6f0a554b2")
+	)
+	(wire
+		(pts
+			(xy 80.01 102.87) (xy 80.01 96.52)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6ff037a6-2dc9-48ca-ace8-a887449bfe2d")
+	)
+	(wire
+		(pts
 			(xy 168.91 62.23) (xy 168.91 78.74)
 		)
 		(stroke
@@ -1779,16 +1749,6 @@
 			(type default)
 		)
 		(uuid "7b5eef8f-9d18-4ccd-8993-4834ae441833")
-	)
-	(wire
-		(pts
-			(xy 179.07 101.6) (xy 179.07 105.41)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "7d8bf55e-006d-4725-a428-5f45f6279966")
 	)
 	(wire
 		(pts
@@ -1822,16 +1782,6 @@
 	)
 	(wire
 		(pts
-			(xy 177.8 113.03) (xy 181.61 113.03)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "8c864c0c-bb2c-4144-82c5-989e0b3ac36a")
-	)
-	(wire
-		(pts
 			(xy 83.82 93.98) (xy 83.82 90.17)
 		)
 		(stroke
@@ -1852,7 +1802,7 @@
 	)
 	(wire
 		(pts
-			(xy 130.81 104.14) (xy 177.8 104.14)
+			(xy 130.81 104.14) (xy 180.34 104.14)
 		)
 		(stroke
 			(width 0)
@@ -1882,16 +1832,6 @@
 	)
 	(wire
 		(pts
-			(xy 182.88 97.79) (xy 184.15 97.79)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "a183892e-6b13-4675-b5cd-19013b1694ff")
-	)
-	(wire
-		(pts
 			(xy 130.81 106.68) (xy 138.43 106.68)
 		)
 		(stroke
@@ -1912,16 +1852,6 @@
 	)
 	(wire
 		(pts
-			(xy 179.07 105.41) (xy 182.88 105.41)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "a848a3e8-3a22-44e5-9f5f-0e192d23b88b")
-	)
-	(wire
-		(pts
 			(xy 139.7 57.15) (xy 139.7 62.23)
 		)
 		(stroke
@@ -1929,26 +1859,6 @@
 			(type default)
 		)
 		(uuid "ab459e6c-678c-43ed-abe5-1e4d12eaeecb")
-	)
-	(wire
-		(pts
-			(xy 130.81 101.6) (xy 179.07 101.6)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "ae2ac61e-6d8e-4ac4-9b1c-33d10416622f")
-	)
-	(wire
-		(pts
-			(xy 180.34 99.06) (xy 180.34 101.6)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "afab76fe-68f7-4c8b-872d-e9d407d84293")
 	)
 	(wire
 		(pts
@@ -1982,26 +1892,6 @@
 	)
 	(wire
 		(pts
-			(xy 135.89 110.49) (xy 139.7 110.49)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "bc6ff407-6663-4942-bda9-02f5280da8c6")
-	)
-	(wire
-		(pts
-			(xy 130.81 109.22) (xy 135.89 109.22)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "be3d5c65-1489-4ea5-b91e-eacc97bcb445")
-	)
-	(wire
-		(pts
 			(xy 83.82 90.17) (xy 91.44 90.17)
 		)
 		(stroke
@@ -2009,6 +1899,16 @@
 			(type default)
 		)
 		(uuid "ce50afdd-9358-41e5-964f-6b48e3de0e0e")
+	)
+	(wire
+		(pts
+			(xy 68.58 96.52) (xy 80.01 96.52)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d0028056-6521-47aa-9caa-f7f53c1d4f6e")
 	)
 	(wire
 		(pts
@@ -2039,16 +1939,6 @@
 			(type default)
 		)
 		(uuid "e69e0ff8-eede-45e5-b68e-a47e0e4b72c4")
-	)
-	(wire
-		(pts
-			(xy 182.88 97.79) (xy 182.88 96.52)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "eb35f926-497d-4e87-a691-703c5ad435ed")
 	)
 	(wire
 		(pts
@@ -2131,7 +2021,7 @@
 		(uuid "d6d252d9-47f4-4b8a-bfd4-fd47c9f59162")
 	)
 	(global_label "Sweep Servo PWM OC1"
-		(shape input)
+		(shape output)
 		(at 182.88 81.28 0)
 		(fields_autoplaced yes)
 		(effects
@@ -2153,8 +2043,8 @@
 		)
 	)
 	(global_label "UltraSound Trigger 2 OC5"
-		(shape input)
-		(at 181.61 113.03 0)
+		(shape output)
+		(at 180.34 104.14 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -2164,7 +2054,7 @@
 		)
 		(uuid "25d0d62e-bace-41cd-8e60-fd2497126dfe")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 209.511 113.03 0)
+			(at 208.241 104.14 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2175,7 +2065,7 @@
 		)
 	)
 	(global_label "Ball Shooting PWM OC3"
-		(shape input)
+		(shape output)
 		(at 181.61 93.98 0)
 		(fields_autoplaced yes)
 		(effects
@@ -2197,7 +2087,7 @@
 		)
 	)
 	(global_label "Scoop Servo PWM OC2"
-		(shape input)
+		(shape output)
 		(at 182.88 83.82 0)
 		(fields_autoplaced yes)
 		(effects
@@ -2218,30 +2108,30 @@
 			)
 		)
 	)
-	(global_label "Step Motor 4"
-		(shape input)
-		(at 139.7 110.49 0)
+	(global_label "Ball Lifting PWM OC4"
+		(shape output)
+		(at 64.77 102.87 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify left)
+			(justify right)
 		)
-		(uuid "599004bc-13f3-4859-8b02-a6f0024684d8")
+		(uuid "47689395-befd-48d1-8ec4-a4063a7c5a01")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 155.264 110.49 0)
+			(at 41.1627 102.87 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
+				(justify right)
 				(hide yes)
 			)
 		)
 	)
 	(global_label "UltraSound Trigger 1 OC4"
-		(shape input)
+		(shape output)
 		(at 76.2 93.98 180)
 		(fields_autoplaced yes)
 		(effects
@@ -2328,50 +2218,6 @@
 			)
 		)
 	)
-	(global_label "Step Motor 2"
-		(shape input)
-		(at 182.88 101.6 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "976a26e8-93e7-4d9b-91b4-46af57f26583")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 198.444 101.6 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "Step Motor 3"
-		(shape input)
-		(at 182.88 105.41 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "9c4074b1-02f1-447b-86ed-28edcd6a8d2f")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 198.444 105.41 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-	)
 	(global_label "to TeraTerm RXD"
 		(shape output)
 		(at 140.97 88.9 0)
@@ -2385,28 +2231,6 @@
 		(uuid "a6356257-8596-4725-bed8-6e0f33705e2c")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 160.0417 88.9 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "Step Motor1"
-		(shape input)
-		(at 184.15 97.79 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "a9f48913-90a1-421f-a0f2-b984fc5c623e")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 198.7464 97.79 0)
 			(effects
 				(font
 					(size 1.27 1.27)
