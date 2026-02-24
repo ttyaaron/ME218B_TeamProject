@@ -7,8 +7,9 @@ build/default/debug/ProjectSource/MainLogicFSM.o: \
  FrameworkHeaders/ES_PostList.h FrameworkHeaders/ES_General.h \
  FrameworkHeaders/ES_Timers.h FrameworkHeaders/ES_Timers.h \
  ProjectHeaders/MainLogicFSM.h FrameworkHeaders/ES_Types.h \
- ProjectHeaders/DCMotorService.h ProjectHeaders/CommonDefinitions.h \
- FrameworkHeaders/dbprintf.h ProjectHeaders/Ports.h
+ ProjectHeaders/BeaconDetectFSM.h ProjectHeaders/DCMotorService.h \
+ ProjectHeaders/CommonDefinitions.h FrameworkHeaders/dbprintf.h \
+ ProjectHeaders/Ports.h
 
 FrameworkHeaders/ES_Configure.h:
 
@@ -39,6 +40,8 @@ FrameworkHeaders/ES_Timers.h:
 ProjectHeaders/MainLogicFSM.h:
 
 FrameworkHeaders/ES_Types.h:
+
+ProjectHeaders/BeaconDetectFSM.h:
 
 ProjectHeaders/DCMotorService.h:
 

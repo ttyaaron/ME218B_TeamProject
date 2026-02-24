@@ -7,9 +7,8 @@ build/default/production/ProjectSource/BeaconDetectFSM.o: \
  FrameworkHeaders/ES_PostList.h FrameworkHeaders/ES_General.h \
  FrameworkHeaders/ES_Timers.h FrameworkHeaders/ES_Timers.h \
  ProjectHeaders/BeaconDetectFSM.h FrameworkHeaders/ES_Types.h \
- ProjectHeaders/MainLogicFSM.h ProjectHeaders/TestHarnessService0.h \
- FrameworkHeaders/ES_Events.h FrameworkHeaders/ES_Port.h \
- FrameworkHeaders/dbprintf.h ProjectHeaders/CommonDefinitions.h
+ ProjectHeaders/MainLogicFSM.h FrameworkHeaders/dbprintf.h \
+ ProjectHeaders/CommonDefinitions.h
 
 FrameworkHeaders/ES_Configure.h:
 
@@ -42,12 +41,6 @@ ProjectHeaders/BeaconDetectFSM.h:
 FrameworkHeaders/ES_Types.h:
 
 ProjectHeaders/MainLogicFSM.h:
-
-ProjectHeaders/TestHarnessService0.h:
-
-FrameworkHeaders/ES_Events.h:
-
-FrameworkHeaders/ES_Port.h:
 
 FrameworkHeaders/dbprintf.h:
 
