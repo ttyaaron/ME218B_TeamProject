@@ -57,7 +57,6 @@
 #include "ES_Timers.h"
 #include "BeaconDetectFSM.h"
 #include "MainLogicFSM.h"
-#include "TestHarnessService0.h"
 #include "dbprintf.h"
 #include "CommonDefinitions.h"
 #include <xc.h>
@@ -274,6 +273,9 @@ ES_Event_t RunBeaconDetectFSM(ES_Event_t ThisEvent)
           // First edge after a quiet period — begin tracking
           // Reset all history so the first inter-edge measurement is clean
           ResetSignalHistory();
+          
+          // Clear any stale beacon ID from previous detections
+          LockedBeaconId = 0;
 
           // Latch the timestamp recorded by the ISR
           LastCapturedTime = CapturedTime;
@@ -332,7 +334,7 @@ ES_Event_t RunBeaconDetectFSM(ES_Event_t ThisEvent)
               ES_Event_t BeaconEvent;
               BeaconEvent.EventType  = ES_BEACON_DETECTED;
               BeaconEvent.EventParam = LockedBeaconId;
-              PostTestHarnessService0(BeaconEvent);
+              PostMainLogicFSM(BeaconEvent);
               CurrentState = BeaconLocked;
               DB_printf("SignalDetected -> BeaconLocked ('%c')\r\n", LockedBeaconId);
             }
@@ -380,7 +382,7 @@ ES_Event_t RunBeaconDetectFSM(ES_Event_t ThisEvent)
                 ES_Event_t BeaconEvent;
                 BeaconEvent.EventType  = ES_BEACON_DETECTED;
                 BeaconEvent.EventParam = LockedBeaconId;
-                PostTestHarnessService0(BeaconEvent);
+                PostMainLogicFSM(BeaconEvent);
                 DB_printf("BeaconLocked: re-locked to '%c'\r\n", LockedBeaconId);
               }
               // else: same beacon — watchdog already kicked, nothing else to do
@@ -427,6 +429,29 @@ ES_Event_t RunBeaconDetectFSM(ES_Event_t ThisEvent)
 BeaconState_t QueryBeaconDetectFSM(void)
 {
   return CurrentState;
+}
+
+/****************************************************************************
+ Function
+     QueryLockedBeaconId
+
+ Parameters
+     None
+
+ Returns
+     char - the locked beacon ID ('g', 'b', 'r', 'l'), or 0 if no beacon
+            is currently locked
+
+ Description
+     Returns the currently locked beacon identifier character. Returns 0
+     if the FSM is not in BeaconLocked state or no beacon has been detected.
+
+ Author
+     Tianyu, 02/24/26
+****************************************************************************/
+char QueryLockedBeaconId(void)
+{
+  return LockedBeaconId;
 }
 
 /***************************************************************************

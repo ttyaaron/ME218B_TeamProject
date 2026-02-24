@@ -42,5 +42,6 @@ bool InitBeaconDetectFSM(uint8_t Priority);
 bool PostBeaconDetectFSM(ES_Event_t ThisEvent);
 ES_Event_t RunBeaconDetectFSM(ES_Event_t ThisEvent);
 BeaconState_t QueryBeaconDetectFSM(void);
+char QueryLockedBeaconId(void);
 
 #endif /* BeaconDetectFSM_H */

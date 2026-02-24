@@ -97,6 +97,7 @@ extern const uint8_t PrescaleLookup[];
 #define SIMPLE_MOVE_45_MS 750
 #define BEACON_ALIGN_MS 5000
 #define TAPE_SEARCH_MS 10000
+#define DRIVE_TO_BEACON_MS 3000
 
 // Debug Pin
 #define DEBUG_OUTPUT_PIN_LAT LATBbits.LATB15

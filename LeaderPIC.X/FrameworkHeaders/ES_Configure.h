@@ -344,6 +344,7 @@ typedef enum
 #define BEACON_ALIGN_TIMER 4
 #define AD_TIMER 5
 #define SIGNAL_WATCHDOG_TIMER 6
+#define DRIVE_TO_BEACON_TIMER 7
 
 
 #endif /* ES_CONFIGURE_H */

@@ -196,6 +196,8 @@ ES_Event_t RunDCMotorService(ES_Event_t ThisEvent)
       //     Write duty ticks to OCxRS (or inverted if hardware requires)
       // END FOR
 
+      // This is driving the motor in drive-brake mode
+
       uint16_t dutyCycle = MapSpeedToDutyCycle(DesiredSpeed[LEFT_MOTOR]);
 
       if (DesiredDirection[0] == 0)

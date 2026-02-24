@@ -27,7 +27,8 @@ typedef enum
   Stopped,
   SimpleMoving,
   SearchingForTape,
-  AligningWithBeacon
+  AligningWithBeacon,
+  DrivingToBeacon
 } MainLogicState_t;
 
 bool InitMainLogicFSM(uint8_t Priority);

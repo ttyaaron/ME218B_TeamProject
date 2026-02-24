@@ -26,6 +26,7 @@
 #include "ES_Framework.h"
 #include "ES_Timers.h"
 #include "MainLogicFSM.h"
+#include "BeaconDetectFSM.h"
 #include "DCMotorService.h"
 #include "CommonDefinitions.h"
 #include "dbprintf.h"
@@ -142,6 +143,16 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
   switch (CurrentState)
   {
     case Stopped:
+      if (ThisEvent.EventType == ES_INIT)
+      {
+        // On startup, automatically start searching for beacon
+        DB_printf("Startup: Auto-initiating beacon search\r\n");
+        ES_Event_t BeaconCommand;
+        BeaconCommand.EventType = ES_COMMAND_RETRIEVED;
+        BeaconCommand.EventParam = CMD_ALIGN_BEACON;
+        PostMainLogicFSM(BeaconCommand);
+        break;
+      }
       if (ThisEvent.EventType == ES_COMMAND_RETRIEVED)
       {
         switch (ThisEvent.EventParam)
@@ -193,15 +204,17 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
             break;
           case CMD_ALIGN_BEACON:
               DB_printf("State: aligning with beacon\r\n");
-            // If already HIGH, the ES_BEACON_DETECTED event will be posted immediately
-            if( ReadBeaconInputPin() == true ) {
+            // Check if a specific beacon is already locked
+            BeaconState_t beaconState = QueryBeaconDetectFSM();
+            if (beaconState == BeaconLocked) {
+              // Beacon already locked - post event immediately with beacon ID
               ES_Event_t BeaconEvent;
               BeaconEvent.EventType = ES_BEACON_DETECTED;
-              BeaconEvent.EventParam = 0;
+              BeaconEvent.EventParam = QueryLockedBeaconId();
               PostMainLogicFSM(BeaconEvent);
             }
-            else{
-              // If not detected, act to look for beacon signal
+            else {
+              // No beacon locked yet (NoSignal or SignalDetected) - start rotating to search
               AlignWithBeacon();
             }
             CurrentState = AligningWithBeacon;
@@ -268,9 +281,10 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
     case AligningWithBeacon:
       if (ThisEvent.EventType == ES_BEACON_DETECTED) // found direction of beacon
       {
-        DB_printf("Found beacon\r\n");
-        MotorCommandWrapper(0, 0, FORWARD, FORWARD); // change speed
-        CurrentState = Stopped;
+        DB_printf("Found beacon — driving towards it\r\n");
+        MotorCommandWrapper(FULL_SPEED, FULL_SPEED, FORWARD, FORWARD);
+        ES_Timer_InitTimer(DRIVE_TO_BEACON_TIMER, DRIVE_TO_BEACON_MS);
+        CurrentState = DrivingToBeacon;
       }
       else if (ThisEvent.EventType == ES_TIMEOUT &&
                ThisEvent.EventParam == BEACON_ALIGN_TIMER) // set time passed, stop aligning towards beacon
@@ -282,6 +296,24 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
       else if (ThisEvent.EventType == ES_COMMAND_RETRIEVED) // new command received while aligning for beacon
       {
         DB_printf("New command received while aligning with beacon\r\n");
+        CurrentState = Stopped;
+        PostMainLogicFSM(ThisEvent);
+      }
+      break;
+    
+    case DrivingToBeacon:
+      if (ThisEvent.EventType == ES_TIMEOUT &&
+          ThisEvent.EventParam == DRIVE_TO_BEACON_TIMER)
+      {
+        DB_printf("Arrived at beacon — stopping\r\n"); // TODO: maybe research for beacon here
+        MotorCommandWrapper(0, 0, FORWARD, FORWARD);
+        CurrentState = Stopped;
+      }
+      else if (ThisEvent.EventType == ES_COMMAND_RETRIEVED)
+      {
+        DB_printf("New command received while driving to beacon\r\n");
+        MotorCommandWrapper(0, 0, FORWARD, FORWARD);
+        ES_Timer_StopTimer(DRIVE_TO_BEACON_TIMER);
         CurrentState = Stopped;
         PostMainLogicFSM(ThisEvent);
       }

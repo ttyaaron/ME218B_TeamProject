@@ -43,6 +43,9 @@
 #include "terminal.h"
 #include "dbprintf.h"
 
+// Project modules
+#include "MainLogicFSM.h"
+
 /*----------------------------- Module Defines ----------------------------*/
 // these times assume a 10.000mS/tick timing
 #define ONE_SEC 1000
@@ -203,6 +206,27 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
     {
       DB_printf("ES_NEW_KEY received with -> %c <- in Service 0\r\n",
           (char)ThisEvent.EventParam);
+
+      // If the key is 'b''g''r''l', post an ES_BEACON_DETECTED event with the key as a parameter
+      switch (ThisEvent.EventParam)
+      {
+          case 'b':
+          case 'g':
+          case 'r':
+          case 'l':
+          {
+              ES_Event_t BeaconEvent;
+              DB_printf("Posting ES_BEACON_DETECTED with param -> %c <- to MainLogicFSM\r\n",
+                  (char)ThisEvent.EventParam);
+              BeaconEvent.EventType = ES_BEACON_DETECTED;
+              BeaconEvent.EventParam = ThisEvent.EventParam;
+              PostMainLogicFSM(BeaconEvent);
+          }
+          break;
+          default:
+            break;
+      }
+        
     }
     break;
     case ES_BEACON_DETECTED:
