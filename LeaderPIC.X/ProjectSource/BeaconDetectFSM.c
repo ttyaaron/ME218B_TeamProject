@@ -105,6 +105,10 @@ static const BeaconDef_t BeaconTable[] = {
 #define NUM_BEACONS (sizeof(BeaconTable) / sizeof(BeaconTable[0]))
 #define BEACON_FREQ_TOLERANCE 50     // ±50 Hz
 
+// Debouncing: require this many consecutive detections of the same beacon
+// before locking onto it (prevents false positives from noise/bouncing)
+#define BEACON_DEBOUNCE_THRESHOLD 3
+
 /*---------------------------- Module Functions ---------------------------*/
 static void     ConfigureICTimer(void);
 static void     ConfigureInputCapture(void);
@@ -130,6 +134,10 @@ static bool     FirstSample       = true;
 
 // Tracks which beacon is currently locked (set on BeaconLocked entry)
 static char LockedBeaconId = 0;
+
+// Debouncing variables
+static char     CandidateBeaconId = 0;      // Beacon ID currently being validated
+static uint8_t  BeaconMatchCount  = 0;      // Consecutive detections of CandidateBeaconId
 
 /*------------------------------ Module Code ------------------------------*/
 
@@ -329,14 +337,43 @@ ES_Event_t RunBeaconDetectFSM(ES_Event_t ThisEvent)
             int8_t beaconIdx = FindMatchingBeacon(frequency);
             if (beaconIdx >= 0)
             {
-              // Lock onto this beacon and notify exactly once
-              LockedBeaconId = BeaconTable[beaconIdx].id;
-              ES_Event_t BeaconEvent;
-              BeaconEvent.EventType  = ES_BEACON_DETECTED;
-              BeaconEvent.EventParam = LockedBeaconId;
-              PostMainLogicFSM(BeaconEvent);
-              CurrentState = BeaconLocked;
-              DB_printf("SignalDetected -> BeaconLocked ('%c')\r\n", LockedBeaconId);
+              char detectedId = BeaconTable[beaconIdx].id;
+              
+              // Debouncing: check if it's the same beacon as before
+              if (detectedId == CandidateBeaconId)
+              {
+                // Same beacon — increment match count
+                BeaconMatchCount++;
+                DB_printf("Beacon '%c' match count: %d/%d\r\n", 
+                    detectedId, BeaconMatchCount, BEACON_DEBOUNCE_THRESHOLD);
+                
+                // Check if we've reached the debounce threshold
+                if (BeaconMatchCount >= BEACON_DEBOUNCE_THRESHOLD)
+                {
+                  // Lock onto this beacon and notify exactly once
+                  LockedBeaconId = detectedId;
+                  ES_Event_t BeaconEvent;
+                  BeaconEvent.EventType  = ES_BEACON_DETECTED;
+                  BeaconEvent.EventParam = LockedBeaconId;
+                  PostMainLogicFSM(BeaconEvent);
+                  CurrentState = BeaconLocked;
+                  DB_printf("SignalDetected -> BeaconLocked ('%c') after %d confirmations\r\n", 
+                      LockedBeaconId, BeaconMatchCount);
+                }
+              }
+              else
+              {
+                // Different beacon detected — restart debounce process
+                CandidateBeaconId = detectedId;
+                BeaconMatchCount  = 1;
+                DB_printf("New candidate beacon '%c', starting debounce count\r\n", detectedId);
+              }
+            }
+            else
+            {
+              // No beacon matched — reset debounce state
+              CandidateBeaconId = 0;
+              BeaconMatchCount  = 0;
             }
           }
         }
@@ -678,6 +715,10 @@ static void ResetSignalHistory(void)
   LastCapturedTime  = INVALID_TIME;
   SmoothedTimeLapse = 0;
   FirstSample       = true;
+  
+  // Reset debouncing state
+  CandidateBeaconId = 0;
+  BeaconMatchCount  = 0;
 }
 
 /****************************************************************************
@@ -791,8 +832,10 @@ static void HandleCommonTimeout(ES_Event_t ThisEvent)
   if (ThisEvent.EventParam == SIGNAL_WATCHDOG_TIMER)
   {
     ResetSignalHistory();
-    LockedBeaconId = 0;
-    CurrentState   = NoSignal;
+    LockedBeaconId    = 0;
+    CandidateBeaconId = 0;
+    BeaconMatchCount  = 0;
+    CurrentState      = NoSignal;
     DB_printf("-> NoSignal (watchdog expired)\r\n");
   }
   else if (ThisEvent.EventParam == PRINT_FREQUENCY_TIMER)
