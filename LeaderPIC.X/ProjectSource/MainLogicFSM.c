@@ -282,7 +282,7 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
       if (ThisEvent.EventType == ES_BEACON_DETECTED) // found direction of beacon
       {
         DB_printf("Found beacon: driving towards it\r\n");
-        MotorCommandWrapper(HALF_SPEED, HALF_SPEED, FORWARD, FORWARD);
+        MotorCommandWrapper(QUARTER_SPEED, QUARTER_SPEED, FORWARD, FORWARD);
         ES_Timer_InitTimer(DRIVE_TO_BEACON_TIMER, DRIVE_TO_BEACON_MS);
         CurrentState = DrivingToBeacon;
       }
@@ -593,6 +593,6 @@ static void AlignWithBeacon(void)
   // Pseudocode:
   // MotorCommandWrapper(FULL_SPEED, FULL_SPEED, FORWARD, REVERSE)
   // Initialize BEACON_ALIGN_TIMER
-  MotorCommandWrapper(HALF_SPEED, HALF_SPEED, FORWARD, REVERSE);
+  MotorCommandWrapper(QUARTER_SPEED, QUARTER_SPEED, FORWARD, REVERSE);
   ES_Timer_InitTimer(BEACON_ALIGN_TIMER, BEACON_ALIGN_MS);
 }
