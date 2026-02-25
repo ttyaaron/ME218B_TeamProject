@@ -107,7 +107,7 @@ static const BeaconDef_t BeaconTable[] = {
 
 // Debouncing: require this many consecutive detections of the same beacon
 // before locking onto it (prevents false positives from noise/bouncing)
-#define BEACON_DEBOUNCE_THRESHOLD 3
+#define BEACON_DEBOUNCE_THRESHOLD 1
 
 /*---------------------------- Module Functions ---------------------------*/
 static void     ConfigureICTimer(void);
@@ -363,7 +363,7 @@ ES_Event_t RunBeaconDetectFSM(ES_Event_t ThisEvent)
               }
               else
               {
-                // Different beacon detected — restart debounce process
+                // Different beacon detected: restart debounce process
                 CandidateBeaconId = detectedId;
                 BeaconMatchCount  = 1;
                 DB_printf("New candidate beacon '%c', starting debounce count\r\n", detectedId);
@@ -371,7 +371,8 @@ ES_Event_t RunBeaconDetectFSM(ES_Event_t ThisEvent)
             }
             else
             {
-              // No beacon matched — reset debounce state
+              // No beacon matched, reset debounce state
+              DB_printf("Resetting debounce state");
               CandidateBeaconId = 0;
               BeaconMatchCount  = 0;
             }

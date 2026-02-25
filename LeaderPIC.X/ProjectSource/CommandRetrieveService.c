@@ -218,7 +218,7 @@ ES_Event_t RunCommandRetrieveService(ES_Event_t ThisEvent)
 
         
         uint8_t commandByte = (uint8_t) QueryCommandGenerator();
-        DB_printf("Received Command byte: 0x%x\r\n", commandByte);
+//        DB_printf("Received Command byte: 0x%x\r\n", commandByte);
         if (commandByte == 0xFF)
         {
           SawNewCommandFlag = true;

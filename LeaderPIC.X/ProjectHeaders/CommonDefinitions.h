@@ -75,7 +75,7 @@ extern const uint8_t PrescaleLookup[];
 
 // PWM configuration (shared between DCMotorService and SpeedControlService)
 #define DUTY_MAX_TICKS 2000        // Maximum duty cycle ticks (100%)
-#define PWM_PERIOD_TICKS 1999        // PWM period in timer ticks (for 5kHz at 20MHz PBCLK with 1:2 prescale)
+#define PWM_PERIOD_TICKS 1999        // PWM period in timer ticks (for 20kHz at 20MHz PBCLK with 1:1 prescale)
 #define DUTY_MIN_TICKS 0            // Minimum duty cycle ticks (0%)
 
 #define TIMING_PIN_LAT LATBbits.LATB15
