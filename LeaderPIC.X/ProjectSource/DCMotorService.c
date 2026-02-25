@@ -58,13 +58,13 @@
 /*----------------------------- Module Defines ----------------------------*/
 
 // Port definitions
-#define MOTOR_FORWARD_PIN_L   LATBbits.LATB4
-#define MOTOR_REVERSE_PIN_L   LATBbits.LATB5
+#define MOTOR_FORWARD_PIN_L   LATBbits.LATB4 // PWM pin
+#define MOTOR_REVERSE_PIN_L   LATBbits.LATB15
 //#define DIRECTION_PIN       PORTBbits.RB8  // Direction input pin
 
 //Right Wheel Port definitions
-#define MOTOR_FORWARD_PIN_R   LATBbits.LATB11
-#define MOTOR_REVERSE_PIN_R   LATBbits.LATB13
+#define MOTOR_FORWARD_PIN_R   LATBbits.LATB5 // PWM pin
+#define MOTOR_REVERSE_PIN_R   LATAbits.LATA4
 
 // PWM configuration (period defined in CommonDefinitions.h)
 #define INITIAL_DUTY_TICKS 0  // Initial duty cycle in ticks
@@ -375,9 +375,9 @@ static void ConfigureDCMotorPins(void)
 {
   // Configure pins as digital outputs (all pins here don't have analog functions)
   TRISBbits.TRISB4 = 0;  // MOTOR_FORWARD as output
-  TRISBbits.TRISB5 = 0;  // MOTOR_REVERSE as output
-  TRISBbits.TRISB11 = 0;  // MOTOR_FORWARD_R as output
-  TRISBbits.TRISB13 = 0;  // MOTOR_REVERSE_R as output
+  TRISBbits.TRISB15 = 0;  // MOTOR_REVERSE as output
+  TRISBbits.TRISB5 = 0;  // MOTOR_FORWARD_R as output
+  TRISAbits.TRISA4 = 0;  // MOTOR_REVERSE_R as output
 
   // Initialize all pins to low
   MOTOR_FORWARD_PIN_L = 0;
@@ -387,8 +387,8 @@ static void ConfigureDCMotorPins(void)
 
   // Map OC1 output to RB4
   RPB4R = 0b0101;
-  // Map OC2 output to RB11
-  RPB11R = 0b0101;
+  // Map OC2 output to RB5
+  RPB5R = 0b0101;
 }
 
 /****************************************************************************
