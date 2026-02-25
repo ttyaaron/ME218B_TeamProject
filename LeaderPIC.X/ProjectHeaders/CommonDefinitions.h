@@ -89,9 +89,13 @@ extern const uint8_t PrescaleLookup[];
 #define REVERSE 1
 
 // Speed Levels (duty cycle ticks)
-#define QUARTER_SPEED 1000 //25% duty cycle?
-#define HALF_SPEED 1500   // 50% duty cycle
-#define FULL_SPEED 2000   // 100% duty cycle
+//#define QUARTER_SPEED 750 // 25% duty cycle
+//#define HALF_SPEED 1500   // 50% duty cycle
+//#define FULL_SPEED 2000   // 100% duty cycle
+ 
+#define QUARTER_SPEED 500 // 25% duty cycle
+#define HALF_SPEED 1000   // 50% duty cycle
+#define FULL_SPEED 1500   // 100% duty cycle
 
 // Timer Durations (ms)
 #define SIMPLE_MOVE_90_MS 1500

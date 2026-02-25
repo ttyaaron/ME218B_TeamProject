@@ -3,101 +3,101 @@ Archive member included to satisfy reference by file (symbol)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1\libgcc.a(floatunsisf.o)
                               build/default/debug/ProjectSource/CommonDefinitions.o (__floatunsisf)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(default-bootstrap-exception-handler.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o (_bootstrap_exception_handler)
+                              C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o (_bootstrap_exception_handler)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(default-on-reset.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o (_on_reset)
+                              C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o (_on_reset)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(default-on-bootstrap.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o (_on_bootstrap)
+                              C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o (_on_bootstrap)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(default-nmi-handler.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o (_nmi_handler)
+                              C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o (_nmi_handler)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(xc32_uart.o)
                               build/default/debug/FrameworkSource/terminal.o (__XC_UART)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(pic32_data_init_core.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o (__pic32_data_init)
+                              C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o (__pic32_data_init)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(general-exception.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o (_general_exception_context)
+                              C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o (_general_exception_context)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector1.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_1)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_1)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector2.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_2)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_2)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector3.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_3)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_3)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector4.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_4)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_4)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector6.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_6)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_6)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector7.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_7)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_7)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector8.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_8)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_8)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector9.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_9)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_9)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector10.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_10)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_10)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector11.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_11)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_11)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector13.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_13)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_13)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector14.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_14)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_14)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector15.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_15)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_15)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector16.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_16)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_16)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector17.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_17)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_17)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector18.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_18)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_18)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector19.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_19)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_19)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector20.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_20)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_20)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector21.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_21)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_21)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector22.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_22)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_22)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector23.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_23)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_23)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector24.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_24)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_24)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector25.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_25)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_25)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector26.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_26)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_26)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector27.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_27)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_27)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector28.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_28)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_28)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector29.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_29)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_29)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector30.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_30)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_30)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector31.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_31)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_31)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector32.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_32)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_32)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector33.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_33)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_33)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector34.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_34)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_34)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector35.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_35)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_35)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector36.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_36)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_36)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector37.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_37)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_37)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector38.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_38)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_38)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector39.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_39)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_39)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector40.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_40)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_40)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector41.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_41)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_41)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector42.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_42)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_42)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(vector43.o)
-                              C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o (__vector_dispatch_43)
+                              C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o (__vector_dispatch_43)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(default-general-exception-handler.o)
                               c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(general-exception.o) (_general_exception_handler)
 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(defaultinterrupt.o)
@@ -521,7 +521,7 @@ Microchip PIC32 Memory-Usage Report By Module
          524           0           0         524         20c    main.o                                build/default/debug/ProjectSource/main.o
          524           0           0         524         20c    data_init                             data_init
          512           0           0         512         200    __fmt_x.o                             libc-musl.a
-         492           0           0         492         1ec    ccIqMcl4.o                            C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o
+         492           0           0         492         1ec    ccsOLwcb.o                            C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o
          444           0           0         444         1bc    fp32mul.o                             libm.a
          416           0           0         416         1a0    Ports.o                               build/default/debug/ProjectSource/Ports.o
          392           0           0         392         188    __pop_int.o                           libc-musl.a
@@ -715,16 +715,16 @@ Discarded input sections
  .reginfo       0x0000000000000000       0x18 build/default/debug/ProjectSource/BeaconDetectFSM.o
  .MIPS.abiflags
                 0x0000000000000000       0x18 build/default/debug/ProjectSource/BeaconDetectFSM.o
- .reginfo       0x0000000000000000       0x18 C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o
+ .reginfo       0x0000000000000000       0x18 C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o
  .MIPS.abiflags
-                0x0000000000000000       0x18 C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o
- .reginfo       0x0000000000000000       0x18 C:\Users\ttyaaron\AppData\Local\Temp\ccR0fqML.o
+                0x0000000000000000       0x18 C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o
+ .reginfo       0x0000000000000000       0x18 C:\Users\ttyaaron\AppData\Local\Temp\ccgKbo9h.o
  .MIPS.abiflags
-                0x0000000000000000       0x18 C:\Users\ttyaaron\AppData\Local\Temp\ccR0fqML.o
- .reginfo       0x0000000000000000       0x18 C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o
+                0x0000000000000000       0x18 C:\Users\ttyaaron\AppData\Local\Temp\ccgKbo9h.o
+ .reginfo       0x0000000000000000       0x18 C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o
  .MIPS.abiflags
-                0x0000000000000000       0x18 C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o
- .discard       0x0000000000000000       0xb0 C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o
+                0x0000000000000000       0x18 C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o
+ .discard       0x0000000000000000       0xb0 C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o
  .reginfo       0x0000000000000000       0x18 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\pic32_software_reset.o
  .MIPS.abiflags
                 0x0000000000000000       0x18 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\pic32_software_reset.o
@@ -1669,9 +1669,9 @@ LOAD build/default/debug/ProjectSource/BeaconDetectFSM.o
                 0x0000000000000001                __MPLAB_BUILD = 0x1
                 0x0000000000000001                __MPLAB_DEBUG = 0x1
                 0x0000000000000001                __DEBUG = 0x1
-LOAD C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o
-LOAD C:\Users\ttyaaron\AppData\Local\Temp\ccR0fqML.o
-LOAD C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o
+LOAD C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o
+LOAD C:\Users\ttyaaron\AppData\Local\Temp\ccgKbo9h.o
+LOAD C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o
 LOAD c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\pic32_software_reset.o
 LOAD c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1\libgcc.a
 START GROUP
@@ -1731,16 +1731,16 @@ END GROUP
 
 .reset          0x00000000bfc00000      0x178
  *(.reset)
- .reset         0x00000000bfc00000        0x8 C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o
+ .reset         0x00000000bfc00000        0x8 C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o
                 0x00000000bfc00000                _reset
  *(.reset.startup)
  .reset.startup
-                0x00000000bfc00008      0x170 C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o
+                0x00000000bfc00008      0x170 C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o
                 0x00000000bfc00008                _startup
 
 .bev_excpt      0x00000000bfc00380       0x10
  *(.bev_handler)
- .bev_handler   0x00000000bfc00380       0x10 C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o
+ .bev_handler   0x00000000bfc00380       0x10 C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o
 
 .dbg_excpt      0x00000000bfc00480        0x0
                 0x00000000bfc00480                . = (. + DEFINED (_DEBUGGER)?0x8:0x0)
@@ -1750,7 +1750,7 @@ END GROUP
 
 .app_excpt      0x000000009d03f180       0x10
  *(.gen_handler)
- .gen_handler   0x000000009d03f180       0x10 C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o
+ .gen_handler   0x000000009d03f180       0x10 C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o
 
 .vector_0       0x000000009d03f200        0x8
  *(.vector_0)
@@ -2572,7 +2572,7 @@ END GROUP
  .debug_aranges
                 0x00000000000002d8       0x20 build/default/debug/ProjectSource/BeaconDetectFSM.o
  .debug_aranges
-                0x00000000000002f8       0x40 C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o
+                0x00000000000002f8       0x40 C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o
  .debug_aranges
                 0x0000000000000338       0x20 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1\libgcc.a(floatunsisf.o)
  .debug_aranges
@@ -2719,7 +2719,7 @@ END GROUP
  .debug_info    0x0000000000006c18      0x6c5 build/default/debug/ProjectSource/Ports.o
  .debug_info    0x00000000000072dd      0x16c build/default/debug/ProjectSource/CommonDefinitions.o
  .debug_info    0x0000000000007449     0x1399 build/default/debug/ProjectSource/BeaconDetectFSM.o
- .debug_info    0x00000000000087e2       0x22 C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o
+ .debug_info    0x00000000000087e2       0x22 C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o
  .debug_info    0x0000000000008804       0x9d c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1\libgcc.a(floatunsisf.o)
  .debug_info    0x00000000000088a1       0x41 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(default-bootstrap-exception-handler.o)
  .debug_info    0x00000000000088e2       0x3f c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(default-on-reset.o)
@@ -2805,7 +2805,7 @@ END GROUP
  .debug_abbrev  0x00000000000019bf       0xdf build/default/debug/ProjectSource/Ports.o
  .debug_abbrev  0x0000000000001a9e       0xf5 build/default/debug/ProjectSource/CommonDefinitions.o
  .debug_abbrev  0x0000000000001b93      0x2e6 build/default/debug/ProjectSource/BeaconDetectFSM.o
- .debug_abbrev  0x0000000000001e79       0x12 C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o
+ .debug_abbrev  0x0000000000001e79       0x12 C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o
  .debug_abbrev  0x0000000000001e8b       0x7d c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1\libgcc.a(floatunsisf.o)
  .debug_abbrev  0x0000000000001f08       0x31 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(default-bootstrap-exception-handler.o)
  .debug_abbrev  0x0000000000001f39       0x2e c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(default-on-reset.o)
@@ -2891,7 +2891,7 @@ END GROUP
  .debug_line    0x0000000000002cb0      0x17b build/default/debug/ProjectSource/Ports.o
  .debug_line    0x0000000000002e2b      0x154 build/default/debug/ProjectSource/CommonDefinitions.o
  .debug_line    0x0000000000002f7f      0x47f build/default/debug/ProjectSource/BeaconDetectFSM.o
- .debug_line    0x00000000000033fe      0x147 C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o
+ .debug_line    0x00000000000033fe      0x147 C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o
  .debug_line    0x0000000000003545       0xb7 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1\libgcc.a(floatunsisf.o)
  .debug_line    0x00000000000035fc       0xca c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(default-bootstrap-exception-handler.o)
  .debug_line    0x00000000000036c6       0xa6 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(default-on-reset.o)
@@ -3063,7 +3063,7 @@ END GROUP
  .debug_str     0x0000000000006d8d      0x4d5 build/default/debug/ProjectSource/Ports.o
  .debug_str     0x0000000000007262      0x311 build/default/debug/ProjectSource/CommonDefinitions.o
  .debug_str     0x0000000000007573      0xac0 build/default/debug/ProjectSource/BeaconDetectFSM.o
- .debug_str     0x0000000000008033       0x99 C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o
+ .debug_str     0x0000000000008033       0x99 C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o
  .debug_str     0x00000000000080cc      0x2b3 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1\libgcc.a(floatunsisf.o)
  .debug_str     0x000000000000837f      0x373 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(default-bootstrap-exception-handler.o)
  .debug_str     0x00000000000086f2      0x34d c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(default-on-reset.o)
@@ -3220,7 +3220,7 @@ END GROUP
  .debug_ranges  0x0000000000000000       0x10 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\software-debug-break.o
  .debug_ranges  0x0000000000000010       0x18 build/default/debug/ProjectSource/CommandRetrieveService.o
  .debug_ranges  0x0000000000000028       0x18 build/default/debug/ProjectSource/MainLogicFSM.o
- .debug_ranges  0x0000000000000040       0x38 C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o
+ .debug_ranges  0x0000000000000040       0x38 C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o
  .debug_ranges  0x0000000000000078       0x10 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(default-bootstrap-exception-handler.o)
  .debug_ranges  0x0000000000000088       0x10 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(default-on-reset.o)
  .debug_ranges  0x0000000000000098       0x10 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(default-on-bootstrap.o)
@@ -3326,11 +3326,11 @@ END GROUP
  .gnu.attributes
                 0x0000000000000170       0x10 build/default/debug/ProjectSource/BeaconDetectFSM.o
  .gnu.attributes
-                0x0000000000000180       0x10 C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o
+                0x0000000000000180       0x10 C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o
  .gnu.attributes
-                0x0000000000000190       0x10 C:\Users\ttyaaron\AppData\Local\Temp\ccR0fqML.o
+                0x0000000000000190       0x10 C:\Users\ttyaaron\AppData\Local\Temp\ccgKbo9h.o
  .gnu.attributes
-                0x00000000000001a0       0x10 C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o
+                0x00000000000001a0       0x10 C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o
  .gnu.attributes
                 0x00000000000001b0       0x10 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\pic32_software_reset.o
  .gnu.attributes
@@ -3975,13 +3975,13 @@ __xc_reference_data
  .data          0x0000000000000000        0x0 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\pic32_software_reset.o
 
 .data%z119      0x0000000000000000        0x0
- .data          0x0000000000000000        0x0 C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o
+ .data          0x0000000000000000        0x0 C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o
 
 .data%z120      0x0000000000000000        0x0
- .data          0x0000000000000000        0x0 C:\Users\ttyaaron\AppData\Local\Temp\ccR0fqML.o
+ .data          0x0000000000000000        0x0 C:\Users\ttyaaron\AppData\Local\Temp\ccgKbo9h.o
 
 .data%z121      0x0000000000000000        0x0
- .data          0x0000000000000000        0x0 C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o
+ .data          0x0000000000000000        0x0 C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o
 
 .data%z122      0x0000000000000000        0x0
  .data          0x0000000000000000        0x0 build/default/debug/ProjectSource/BeaconDetectFSM.o
@@ -4429,13 +4429,13 @@ __xc_reference_data
  .bss           0x0000000000000000        0x0 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\pic32_software_reset.o
 
 .bss%z265       0x0000000000000000        0x0
- .bss           0x0000000000000000        0x0 C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o
+ .bss           0x0000000000000000        0x0 C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o
 
 .bss%z266       0x0000000000000000        0x0
- .bss           0x0000000000000000        0x0 C:\Users\ttyaaron\AppData\Local\Temp\ccR0fqML.o
+ .bss           0x0000000000000000        0x0 C:\Users\ttyaaron\AppData\Local\Temp\ccgKbo9h.o
 
 .bss%z267       0x0000000000000000        0x0
- .bss           0x0000000000000000        0x0 C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o
+ .bss           0x0000000000000000        0x0 C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o
 
 .bss%z268       0x0000000000000000        0x0
  .bss           0x0000000000000000        0x0 build/default/debug/ProjectSource/BeaconDetectFSM.o
@@ -4927,7 +4927,7 @@ __xc_reference_data
 .text.main_entry
                 0x000000009d00be44       0x54
  .text.main_entry
-                0x000000009d00be44       0x54 C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o
+                0x000000009d00be44       0x54 C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o
                 0x000000009d00be78                __crt0_exit
 
 .rodata         0x000000009d00be98       0x50
@@ -5554,13 +5554,13 @@ __xc_reference_data
  .text          0x0000000000000000        0x0 c:/program files/microchip/xc32/v4.30/bin/bin/../../lib/gcc/pic32mx/8.3.1/../../../../pic32mx/lib\libpic32.a(default-bootstrap-exception-handler.o)
 
 .text%z395      0x0000000000000000        0x0
- .text          0x0000000000000000        0x0 C:\Users\ttyaaron\AppData\Local\Temp\cckFOzpB.o
+ .text          0x0000000000000000        0x0 C:\Users\ttyaaron\AppData\Local\Temp\cc8p6drx.o
 
 .text%z396      0x0000000000000000        0x0
- .text          0x0000000000000000        0x0 C:\Users\ttyaaron\AppData\Local\Temp\ccR0fqML.o
+ .text          0x0000000000000000        0x0 C:\Users\ttyaaron\AppData\Local\Temp\ccgKbo9h.o
 
 .text%z397      0x0000000000000000        0x0
- .text          0x0000000000000000        0x0 C:\Users\ttyaaron\AppData\Local\Temp\ccIqMcl4.o
+ .text          0x0000000000000000        0x0 C:\Users\ttyaaron\AppData\Local\Temp\ccsOLwcb.o
 
 .text%z398      0x0000000000000000        0x0
  .text          0x0000000000000000        0x0 build/default/debug/FrameworkSource/ES_PostList.o

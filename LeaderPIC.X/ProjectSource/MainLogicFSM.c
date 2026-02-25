@@ -286,13 +286,14 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
         ES_Timer_InitTimer(DRIVE_TO_BEACON_TIMER, DRIVE_TO_BEACON_MS);
         CurrentState = DrivingToBeacon;
       }
+      /*
       else if (ThisEvent.EventType == ES_TIMEOUT &&
                ThisEvent.EventParam == BEACON_ALIGN_TIMER) // set time passed, stop aligning towards beacon
       {
         MotorCommandWrapper(0, 0, FORWARD, FORWARD);
         DB_printf("Beacon Search Failed: Timeout");
         CurrentState = Stopped;
-      }
+      } */
       else if (ThisEvent.EventType == ES_COMMAND_RETRIEVED) // new command received while aligning for beacon
       {
         DB_printf("New command received while aligning with beacon\r\n");

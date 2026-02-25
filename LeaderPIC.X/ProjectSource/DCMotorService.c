@@ -374,10 +374,10 @@ static void ConfigurePWM(void)
 static void ConfigureDCMotorPins(void)
 {
   // Configure pins as digital outputs (all pins here don't have analog functions)
-  TRISBbits.TRISB4 = 0;  // MOTOR_FORWARD as output
-  TRISBbits.TRISB15 = 0;  // MOTOR_REVERSE as output
-  TRISBbits.TRISB5 = 0;  // MOTOR_FORWARD_R as output
-  TRISAbits.TRISA4 = 0;  // MOTOR_REVERSE_R as output
+  TRISBbits.TRISB4 = 0;  // MOTOR_FORWARD as output - grey-IN1
+  TRISBbits.TRISB15 = 0;  // MOTOR_REVERSE as output - white-IN2 
+  TRISBbits.TRISB5 = 0;  // MOTOR_FORWARD_R as output. white-IN1
+  TRISAbits.TRISA4 = 0;  // MOTOR_REVERSE_R as output - purple-IN2
 
   // Initialize all pins to low
   MOTOR_FORWARD_PIN_L = 0;

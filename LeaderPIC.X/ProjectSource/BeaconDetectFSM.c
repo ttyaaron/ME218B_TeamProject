@@ -103,7 +103,7 @@ static const BeaconDef_t BeaconTable[] = {
     { BEACON_L_FREQ, 'l' },
 };
 #define NUM_BEACONS (sizeof(BeaconTable) / sizeof(BeaconTable[0]))
-#define BEACON_FREQ_TOLERANCE 50     // Â±50 Hz
+#define BEACON_FREQ_TOLERANCE 100     // ±50 Hz
 
 /*---------------------------- Module Functions ---------------------------*/
 static void     ConfigureICTimer(void);
@@ -795,13 +795,13 @@ static void HandleCommonTimeout(ES_Event_t ThisEvent)
     CurrentState   = NoSignal;
     DB_printf("-> NoSignal (watchdog expired)\r\n");
   }
-  else if (ThisEvent.EventParam == PRINT_FREQUENCY_TIMER)
-  {
-    uint32_t frequency = CalculateFrequency(SmoothedTimeLapse);
-    DB_printf("Frequency: %d Hz\r\n", frequency);
-    DB_printf("Time lapse: %d ticks\r\n", SmoothedTimeLapse);
-    ES_Timer_InitTimer(PRINT_FREQUENCY_TIMER, PRINT_FREQUENCY_INTERVAL);
-  }
+//  else if (ThisEvent.EventParam == PRINT_FREQUENCY_TIMER)
+//  {
+//    uint32_t frequency = CalculateFrequency(SmoothedTimeLapse);
+//    DB_printf("Frequency: %d Hz\r\n", frequency);
+//    DB_printf("Time lapse: %d ticks\r\n", SmoothedTimeLapse);
+//    ES_Timer_InitTimer(PRINT_FREQUENCY_TIMER, PRINT_FREQUENCY_INTERVAL);
+//  }
 }
 
 /*------------------------------- Footnotes -------------------------------*/
