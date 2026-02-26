@@ -5,10 +5,15 @@
         <group>
             <file>file:/U:/ttyaaron/ME218B_TeamProject/LeaderPIC.X/ProjectHeaders/CommonDefinitions.h</file>
             <file>file:/U:/ttyaaron/ME218B_TeamProject/LeaderPIC.X/ProjectSource/DCMotorService.c</file>
+            <file>file:/U:/ttyaaron/ME218B_TeamProject/LeaderPIC.X/ProjectHeaders/Ports.h</file>
             <file>file:/U:/ttyaaron/ME218B_TeamProject/LeaderPIC.X/ProjectSource/CommandRetrieveService.c</file>
             <file>file:/U:/ttyaaron/ME218B_TeamProject/LeaderPIC.X/ProjectSource/BeaconDetectFSM.c</file>
             <file>file:/U:/ttyaaron/ME218B_TeamProject/LeaderPIC.X/ProjectSource/MainLogicFSM.c</file>
+            <file>file:/U:/ttyaaron/ME218B_TeamProject/LeaderPIC.X/ProjectSource/TestHarnessService0.c</file>
             <file>file:/U:/ttyaaron/ME218B_TeamProject/LeaderPIC.X/FrameworkHeaders/ES_Configure.h</file>
+            <file>file:/U:/ttyaaron/ME218B_TeamProject/LeaderPIC.X/ProjectHeaders/DCMotorService.h</file>
+            <file>file:/U:/ttyaaron/ME218B_TeamProject/LeaderPIC.X/ProjectSource/Ports.c</file>
+            <file>file:/U:/ttyaaron/ME218B_TeamProject/LeaderPIC.X/nbproject/Makefile-default.mk</file>
         </group>
     </open-files>
 </project-private>

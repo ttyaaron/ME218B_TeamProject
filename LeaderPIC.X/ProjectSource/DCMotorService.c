@@ -51,13 +51,11 @@
 #define INITIAL_DUTY_TICKS 0  // Initial duty cycle in ticks
 
 // Encoder Input Capture pin configuration
-// IC1 (Left encoder) on RB13/pin24
-#define IC_PIN_L_TRIS TRISBbits.TRISB13
-#define IC_PIN_L_ANSEL ANSELBbits.ANSB13
+// IC3 (Left encoder) on RB11/pin22
+#define IC_PIN_L_TRIS TRISBbits.TRISB11
 
 // IC2 (Right encoder) on RA3/pin 10
 #define IC_PIN_R_TRIS TRISAbits.TRISA3
-#define IC_PIN_R_ANSEL ANSELAbits.ANSA3
 
 // Timing pin for performance measurement
 #define TIMING_PIN_TRIS TRISBbits.TRISB15
@@ -82,8 +80,8 @@
 // RPM calculation constants
 #define INVALID_TIME 0xFFFFFFFF      // Marker for invalid/uninitialized time
 
-// Tape Sensor Configuration (5 sensors: 2 analog + 3 digital)
-#define TAPE_ANALOG_PINS (BIT12HI | BIT5HI)  // AN12 (RB12, pin23), AN5 (RB3, pin7)
+// Tape Sensor Configuration (5 sensors: 3 analog + 2 digital)
+#define TAPE_ANALOG_PINS (BIT12HI | BIT11HI | BIT5HI)  // AN12 (RB12, pin23), AN11 (RB13, pin24), AN5 (RE3, pin7)
 #define THRESH_DIV 2                          // Threshold divisor for tape detection
 
 // Line Following PID Parameters
@@ -103,7 +101,6 @@ static uint16_t MapSpeedToDutyCycle(uint16_t desiredSpeed);
 // Encoder functions
 static void ConfigureEncoderTimer(void);
 static void ConfigureInputCapture(void);
-static void ConfigureTimingPin(void);
 
 // Speed control functions
 static void ConfigureControlTimer(void);
@@ -139,10 +136,10 @@ static volatile float CurrentMeasuredSpeed[2] = {0.0f, 0.0f};
 static volatile int16_t CurrentDutyCycleTicks[2] = {0, 0};
 
 // Tape Sensor Variables
-static uint32_t ADValues[2] = {0, 0};           // Buffer for analog tape sensors
+static uint32_t ADValues[3] = {0, 0, 0};           // Buffer for analog tape sensors
 static uint32_t leftVal = 0;                    // Left analog sensor (AN12/RB12)
 static uint32_t rightVal = 0;                   // Right analog sensor (AN5/RB3)
-static bool centerState = false;                // Center digital sensor
+static uint32_t centerVal = 0;                  // Center analog sensor (AN5/RB3)
 static bool leftTState = false;                 // Left digital sensor
 static bool rightTState = false;                // Right digital sensor
 
@@ -151,6 +148,8 @@ static uint32_t MinLeftC = 1023;
 static uint32_t MaxLeftC = 0;
 static uint32_t MinRightC = 1023;
 static uint32_t MaxRightC = 0;
+static uint32_t MinCenterC = 1023;
+static uint32_t MaxCenterC = 0;
 
 // Line following control variables
 static int32_t error = 0;
@@ -226,16 +225,11 @@ bool InitDCMotorService(uint8_t Priority)
   
   // Configure encoder Input Capture pins as digital inputs
   IC_PIN_L_TRIS = 1;   // Set as input
-  IC_PIN_L_ANSEL = 0;  // Digital mode
-  IC1R = 0b0011;       // Map IC1 to RB15 (left encoder)
+  IC1R = 0b0011;       // Map IC3 to RB11 (left encoder)
   
   IC_PIN_R_TRIS = 1;   // Set as input
-  IC_PIN_R_ANSEL = 0;  // Digital mode
   IC2R = 0b0000;       // Map IC2 to RA3 (right encoder)
-  
-  // Configure timing pin for performance measurement
-  ConfigureTimingPin();
-  
+    
   // Configure the encoders (Timer3 and Input Capture modules)
   ConfigureEncoderTimer();
   ConfigureInputCapture();
@@ -331,13 +325,13 @@ ES_Event_t RunDCMotorService(ES_Event_t ThisEvent)
       {
         MOTOR_REVERSE_PIN_L = 0;
         OC1RS = dutyCycle;
-        DB_printf("dutyCycle left 0:%u\r\n", dutyCycle);
+//        DB_printf("dutyCycle left 0:%u\r\n", dutyCycle);
       }
       else
       {
         MOTOR_REVERSE_PIN_L = 1;
         OC1RS = PWM_PERIOD_TICKS - dutyCycle + 1;
-        DB_printf("dutyCycle left 1:%u\r\n", OC1RS);
+//        DB_printf("dutyCycle left 1:%u\r\n", OC1RS);
       }
 
       // Hardware motor already inversed for right motor, when forward means same current go through left and right motor
@@ -345,13 +339,13 @@ ES_Event_t RunDCMotorService(ES_Event_t ThisEvent)
       {
         MOTOR_REVERSE_PIN_R = 0;
         OC2RS = dutyCycle;
-        DB_printf("dutyCycle right 0:%u\r\n", dutyCycle);
+//        DB_printf("dutyCycle right 0:%u\r\n", dutyCycle);
       }
       else
       {
         MOTOR_REVERSE_PIN_R = 1;
         OC2RS = PWM_PERIOD_TICKS - dutyCycle + 1;
-        DB_printf("dutyCycle right 1:%u\r\n", OC2RS);
+//        DB_printf("dutyCycle right 1:%u\r\n", OC2RS);
       }
 
       break;
@@ -532,6 +526,27 @@ uint32_t TapeSensor_GetRightAnalog(void)
 
 /****************************************************************************
  Function
+     TapeSensor_GetCenterAnalog
+
+ Parameters
+     None
+
+ Returns
+ uint32_t - center analog sensor value
+
+ Description
+     Returns the current center analog tape sensor reading
+
+ Author
+     Tianyu, 02/25/26
+****************************************************************************/
+uint32_t TapeSensor_GetCenterAnalog(void)
+{
+  return centerVal;
+}
+
+/****************************************************************************
+ Function
      TapeSensor_GetLeftDigital
 
  Parameters
@@ -549,27 +564,6 @@ uint32_t TapeSensor_GetRightAnalog(void)
 bool TapeSensor_GetLeftDigital(void)
 {
   return leftTState;
-}
-
-/****************************************************************************
- Function
-     TapeSensor_GetCenterDigital
-
- Parameters
-     None
-
- Returns
-     bool - center digital sensor state
-
- Description
-     Returns the current center digital tape sensor reading
-
- Author
-     Tianyu, 02/25/26
-****************************************************************************/
-bool TapeSensor_GetCenterDigital(void)
-{
-  return centerState;
 }
 
 /****************************************************************************
@@ -614,7 +608,7 @@ bool TapeSensor_GetRightDigital(void)
  Author
      Tianyu, 02/25/26
 ****************************************************************************/
-void __ISR(_INPUT_CAPTURE_1_VECTOR, IPL7SOFT) InputCaptureISR_IC1(void)
+void __ISR(_INPUT_CAPTURE_3_VECTOR, IPL7SOFT) InputCaptureISR_IC1(void)
 {
   // Read the captured timer value from IC1 buffer
   uint16_t capturedTimer16 = IC1BUF;
@@ -1141,30 +1135,6 @@ static void ConfigureInputCapture(void)
 
 /****************************************************************************
  Function
-     ConfigureTimingPin
-
- Parameters
-     None
-
- Returns
-     None
-
- Description
-     Configures a GPIO pin for timing/performance measurement
-
- Author
-     Tianyu, 02/25/26
-****************************************************************************/
-static void ConfigureTimingPin(void)
-{
-  // Configure timing pin as digital output
-  TIMING_PIN_TRIS = 0;    // Output
-  TIMING_PIN_LAT = 0;     // Initialize low
-  TIMING_PIN_ANSEL = 0;   // Disable analog function
-}
-
-/****************************************************************************
- Function
      ConfigureControlTimer
 
  Parameters
@@ -1262,13 +1232,15 @@ static void ConfigureTapeSensors(void)
 {
   // Initialize digital tape sensor pins
   InitLeftTapeInputPin();
-  InitCenterTapeInputPin();
   InitRightTapeInputPin();
   
-  // Configure ADC to scan AN12 (RB12, pin23) and AN5 (RB3, pin7)
+  // Configure ADC to scan AN12 (RB12, pin23), AN11 (RB13, pin24) and AN5 (RB3, pin7)
   // Note: RB3 needs to be configured as analog for AN5
   TRISBbits.TRISB12 = 1;   // Set as input
   ANSELBbits.ANSB12 = 1;   // Enable analog function
+  
+  TRISBbits.TRISB13 = 1;   // Set as input
+  ANSELBbits.ANSB13 = 1;   // Enable analog function
   
   TRISBbits.TRISB3 = 1;    // Set as input  
   ANSELBbits.ANSB3 = 1;    // Enable analog function
@@ -1278,11 +1250,11 @@ static void ConfigureTapeSensors(void)
   // Read initial ADC values
   ADC_MultiRead(ADValues);
   
-  leftVal = ADValues[0];   // AN5 (RB3) - listed first because lower bit number
-  rightVal = ADValues[1];  // AN12 (RB12)
+  centerVal = ADValues[0];   // AN5 (RB3) - listed first because lower bit number
+  rightVal = ADValues[1];    // AN11 (RB13)
+  leftVal = ADValues[2];     // AN12 (RB12)
   
   // Read initial digital sensor states
-  centerState = ReadCenterTapeInputPin();
   leftTState = ReadLeftTapeInputPin();
   rightTState = ReadRightTapeInputPin();
   
@@ -1291,6 +1263,8 @@ static void ConfigureTapeSensors(void)
   MaxLeftC = leftVal;
   MinRightC = rightVal;
   MaxRightC = rightVal;
+  MinCenterC = centerVal;
+  MaxCenterC = centerVal;
   
   DB_printf("Tape Sensors Initialized\r\n");
 }
@@ -1315,8 +1289,19 @@ static void ReadTapeSensors(void)
 {
   // Read analog sensors
   ADC_MultiRead(ADValues);
-  leftVal = ADValues[0];   // AN5 (RB3)
-  rightVal = ADValues[1];  // AN12 (RB12)
+  centerVal = ADValues[0];   // AN5 (RB3)
+  rightVal = ADValues[1];  // AN11 (RB13)
+  leftVal = ADValues[2];   // AN12 (RB12)
+  
+  // Update min/max for right analog sensor
+  if (centerVal < MinCenterC)
+  {
+    MinCenterC = centerVal;
+  }
+  if (centerVal > MaxCenterC)
+  {
+    MaxCenterC = centerVal;
+  }
   
   // Update min/max for left analog sensor
   if (leftVal < MinLeftC)
@@ -1340,7 +1325,6 @@ static void ReadTapeSensors(void)
   
   // Read digital sensors
   leftTState = ReadLeftTapeInputPin();
-  centerState = ReadCenterTapeInputPin();
   rightTState = ReadRightTapeInputPin();
 }
 

@@ -50,8 +50,8 @@ void TapeSensor_CheckIntersect(void);   // Check for intersections
 // Tape sensor value getters
 uint32_t TapeSensor_GetLeftAnalog(void);
 uint32_t TapeSensor_GetRightAnalog(void);
+uint32_t TapeSensor_GetCenterAnalog(void);
 bool TapeSensor_GetLeftDigital(void);
-bool TapeSensor_GetCenterDigital(void);
 bool TapeSensor_GetRightDigital(void);
 
 #endif /* DCMotorService_H */

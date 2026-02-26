@@ -565,25 +565,26 @@ void __ISR(_INPUT_CAPTURE_1_VECTOR, IPL7SOFT) InputCaptureISR(void)
  Author
      Tianyu, 02/03/26
 ****************************************************************************/
-void __ISR(_TIMER_3_VECTOR, IPL6SOFT) Timer3ISR(void)
-{
-
-    // Disable interrupts globally to prevent race condition with IC ISR
-    __builtin_disable_interrupts();
-    
-    // If T3IF is pending (timer has rolled over)
-    if (IFS0bits.T3IF)
-    {
-        // Increment the roll-over counter to track timer wraparounds
-        RolloverCounter++;
-
-        // Clear the roll-over interrupt flag
-        IFS0CLR = _IFS0_T3IF_MASK;
-    }
-
-    // Re-enable interrupts globally
-    __builtin_enable_interrupts();
-}
+//void __ISR(_TIMER_3_VECTOR, IPL6SOFT) Timer3ISR(void)
+//{
+//
+//    // Disable interrupts globally to prevent race condition with IC ISR
+//    __builtin_disable_interrupts();
+//    
+//    // If T3IF is pending (timer has rolled over)
+//    if (IFS0bits.T3IF)
+//    {
+//        // Increment the roll-over counter to track timer wraparounds
+//        RolloverCounter++;
+//
+//        // Clear the roll-over interrupt flag
+//        IFS0CLR = _IFS0_T3IF_MASK;
+//    }
+//
+//    // Re-enable interrupts globally
+//    __builtin_enable_interrupts();
+//}
+// Already handled in DCMotorService
 
 /***************************************************************************
  Private Functions

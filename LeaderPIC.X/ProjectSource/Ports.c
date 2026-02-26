@@ -180,8 +180,7 @@ void InitDebugOutputPin(void)
 ****************************************************************************/
 void InitLeftTapeInputPin(void)
 {
-  TRISBbits.TRISB8 = 1;   // Set as input
-  ANSELBbits.ANSB8 = 0;   // Set as digital
+  TRISBbits.TRISB9 = 1;   // Set as input
 }
 
 /****************************************************************************
@@ -201,49 +200,6 @@ void InitLeftTapeInputPin(void)
      Tianyu, 02/25/26
 ****************************************************************************/
 bool ReadLeftTapeInputPin(void)
-{
-  return (PORTBbits.RB8 == 1);
-}
-
-/****************************************************************************
- Function
-     InitCenterTapeInputPin
-
- Parameters
-     None
-
- Returns
-     None
-
- Description
-     Initializes the center digital tape sensor input pin (RB9, pin 18).
-
- Author
-     Tianyu, 02/25/26
-****************************************************************************/
-void InitCenterTapeInputPin(void)
-{
-  TRISBbits.TRISB9 = 1;   // Set as input
-  ANSELBbits.ANSB9 = 0;   // Set as digital
-}
-
-/****************************************************************************
- Function
-     ReadCenterTapeInputPin
-
- Parameters
-     None
-
- Returns
-     bool: current center tape sensor input state
-
- Description
-     Reads the center digital tape sensor input pin.
-
- Author
-     Tianyu, 02/25/26
-****************************************************************************/
-bool ReadCenterTapeInputPin(void)
 {
   return (PORTBbits.RB9 == 1);
 }
@@ -267,7 +223,6 @@ bool ReadCenterTapeInputPin(void)
 void InitRightTapeInputPin(void)
 {
   TRISBbits.TRISB10 = 1;   // Set as input
-  ANSELBbits.ANSB10 = 0;   // Set as digital
 }
 
 /****************************************************************************

@@ -7,7 +7,9 @@ build/default/debug/ProjectSource/DCMotorService.o: \
  FrameworkHeaders/ES_PostList.h FrameworkHeaders/ES_General.h \
  FrameworkHeaders/ES_Timers.h FrameworkHeaders/ES_Timers.h \
  ProjectHeaders/DCMotorService.h FrameworkHeaders/ES_Types.h \
- ProjectHeaders/CommonDefinitions.h FrameworkHeaders/dbprintf.h
+ ProjectHeaders/ADService.h ProjectHeaders/CommonDefinitions.h \
+ ProjectHeaders/Ports.h ProjectHeaders/PIC32_AD_Lib.h \
+ FrameworkHeaders/dbprintf.h
 
 FrameworkHeaders/ES_Configure.h:
 
@@ -39,6 +41,12 @@ ProjectHeaders/DCMotorService.h:
 
 FrameworkHeaders/ES_Types.h:
 
+ProjectHeaders/ADService.h:
+
 ProjectHeaders/CommonDefinitions.h:
+
+ProjectHeaders/Ports.h:
+
+ProjectHeaders/PIC32_AD_Lib.h:
 
 FrameworkHeaders/dbprintf.h:
