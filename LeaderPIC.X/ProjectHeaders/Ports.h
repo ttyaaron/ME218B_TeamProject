@@ -29,6 +29,16 @@ bool ReadBeaconInputPin(void);
 void InitTapeSensorPin(void);
 bool ReadTapeSensorPin(void);
 
+// New tape sensor functions (3 digital sensors)
+void InitLeftTapeInputPin(void);
+bool ReadLeftTapeInputPin(void);
+
+void InitCenterTapeInputPin(void);
+bool ReadCenterTapeInputPin(void);
+
+void InitRightTapeInputPin(void);
+bool ReadRightTapeInputPin(void);
+
 void InitCommandSPIPins(void);
 
 void InitDebugOutputPin(void);

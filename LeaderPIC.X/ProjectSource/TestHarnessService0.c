@@ -45,6 +45,7 @@
 
 // Project modules
 #include "MainLogicFSM.h"
+#include "DCMotorService.h"
 
 /*----------------------------- Module Defines ----------------------------*/
 // these times assume a 10.000mS/tick timing
@@ -189,12 +190,33 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
       ES_Timer_InitTimer(SERVICE0_TIMER, HALF_SEC);
       puts("Service 00:");
       DB_printf("\rES_INIT received in Service %d\r\n", MyPriority);
+      DB_printf("Starting tape sensor monitoring (0.5 sec interval)\r\n");
     }
     break;
     case ES_TIMEOUT:   // re-start timer & announce
     {
-      ES_Timer_InitTimer(SERVICE0_TIMER, FIVE_SEC);
+      // Read all tape sensors
+      TapeSensor_Read();
       
+      // Get analog sensor values
+      uint32_t leftAnalog = TapeSensor_GetLeftAnalog();
+      uint32_t rightAnalog = TapeSensor_GetRightAnalog();
+      
+      // Get digital sensor states
+      bool leftDigital = TapeSensor_GetLeftDigital();
+      bool centerDigital = TapeSensor_GetCenterDigital();
+      bool rightDigital = TapeSensor_GetRightDigital();
+      
+      // Print tape sensor status
+      DB_printf("\r\n=== Tape Sensors ===\r\n");
+      DB_printf("Analog: L=%4lu  R=%4lu\r\n", leftAnalog, rightAnalog);
+      DB_printf("Digital: L=%d  C=%d  R=%d\r\n", 
+                leftDigital ? 1 : 0, 
+                centerDigital ? 1 : 0, 
+                rightDigital ? 1 : 0);
+      
+      // Restart timer for next reading
+      ES_Timer_InitTimer(SERVICE0_TIMER, HALF_SEC);
     }
     break;
     case ES_SHORT_TIMEOUT:   // lower the line & announce

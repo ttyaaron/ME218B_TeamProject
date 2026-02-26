@@ -78,8 +78,6 @@ extern const uint8_t PrescaleLookup[];
 #define PWM_PERIOD_TICKS 1999        // PWM period in timer ticks (for 20kHz at 20MHz PBCLK with 1:1 prescale)
 #define DUTY_MIN_TICKS 0            // Minimum duty cycle ticks (0%)
 
-#define TIMING_PIN_LAT LATBbits.LATB15
-
 // Motor Indexes
 #define LEFT_MOTOR 0
 #define RIGHT_MOTOR 1

@@ -26,4 +26,7 @@ ES_Event_t RunADService(ES_Event_t ThisEvent);
 // Access function to query the scaled step interval
 uint16_t GetStepInterval(void);
 
+// Access function to query the current desired speed from ADC
+uint16_t GetDesiredSpeed(void);
+
 #endif /* ADService_H */
