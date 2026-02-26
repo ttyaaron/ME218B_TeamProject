@@ -16,6 +16,7 @@
    LookUpTable for Commands
    Command Byte Description of action
    0x00 Stop, hold Position, do not move or rotate
+   0x01 Initialize all servos to default positions
    0x02 Rotate Clockwise by 90 degrees (allows 6 sec. to complete)
    0x03 Rotate Clockwise by 45 degrees (allows 3 sec. to complete)
    0x04 Rotate Counter-clockwise by 90 degrees (allows 6 sec. to complete)
@@ -25,7 +26,13 @@
    0x10 Drive in reverse half speed
    0x11 Drive in reverse full speed
    0x20 Align with beacon (allows 5 sec. to complete)
-   0x40 Drive forward until tape detected.
+   0x40 Drive forward until tape detected
+   0x50 Sweep servo action
+   0x51 Scoop servo action
+   0x52 Release servo action (releases ball from storage to shooting module)
+   0x53 Shoot servo action
+   0x54 Retract sweep servo
+   0x55 Retract release servo
 
    Directions
    FORWARD = 0
@@ -68,8 +75,9 @@ const uint8_t PrescaleLookup[] = {
 };
 
 // Lookup table for Commands
-const uint8_t validCommandBytes[11] = {
+const uint8_t validCommandBytes[18] = {
   0x00, // Stop
+  0x01, // Initialize servos
   0x02, // Rotate Clockwise 90 degrees
   0x03, // Rotate Clockwise 45 degrees
   0x04, // Rotate Counter-clockwise 90 degrees
@@ -79,7 +87,13 @@ const uint8_t validCommandBytes[11] = {
   0x10, // Drive in reverse half speed
   0x11, // Drive in reverse full speed
   0x20, // Align with beacon
-  0x40  // Drive forward until tape detected
+  0x40, // Drive forward until tape detected
+  0x50, // Sweep servo action
+  0x51, // Scoop servo action
+  0x52, // Release servo action
+  0x53, // Shoot servo action
+  0x54, // Retract sweep servo
+  0x55  // Retract release servo
 };
 
 /*------------------------------ Module Code ------------------------------*/

@@ -33,7 +33,7 @@
 /****************************************************************************/
 // This macro determines that nuber of services that are *actually* used in
 // a particular application. It will vary in value from 1 to MAX_NUM_SERVICES
-#define NUM_SERVICES 2
+#define NUM_SERVICES 3
 
 /****************************************************************************/
 // These are the definitions for Service 0, the lowest priority service.
@@ -70,13 +70,13 @@
 // These are the definitions for Service 2
 #if NUM_SERVICES > 2
 // the header file with the public function prototypes
-#define SERV_2_HEADER "MainLogicFSM.h"
+#define SERV_2_HEADER "ServoFSM.h"
 // the name of the Init function
-#define SERV_2_INIT InitMainLogicFSM
+#define SERV_2_INIT InitServoFSM
 // the name of the run function
-#define SERV_2_RUN RunMainLogicFSM
+#define SERV_2_RUN RunServoFSM
 // How big should this services Queue be?
-#define SERV_2_QUEUE_SIZE 3
+#define SERV_2_QUEUE_SIZE 5
 #endif
 
 /****************************************************************************/
@@ -266,7 +266,14 @@ typedef enum
   ES_COMMAND_RETRIEVED,     /* signals a new command byte from SPI */
   ES_BEACON_DETECTED,       /* signals a beacon detection */
   ES_TAPE_DETECTED,          /* signals a tape detection */
-  ES_NEW_COMMAND            /* New command received from command generator */
+  ES_NEW_COMMAND,            /* New command received from command generator */
+  ES_SERVO_ACTION_COMPLETE, /* Servo action completed */
+  EV_SWEEP_ACTION,          /* Trigger sweep servo action */
+  EV_SCOOP_ACTION,          /* Trigger scoop servo action */
+  EV_RELEASE_ACTION,        /* Trigger release servo action */
+  EV_SHOOT_ACTION,          /* Trigger shoot servo action */
+  EV_SWEEP_RETRACT,         /* Retract sweep servo */
+  EV_RELEASE_RETRACT        /* Retract release servo */
 }ES_EventType_t;
 
 /****************************************************************************/
@@ -320,10 +327,10 @@ typedef enum
 #define TIMER3_RESP_FUNC TIMER_UNUSED
 #define TIMER4_RESP_FUNC TIMER_UNUSED
 #define TIMER5_RESP_FUNC TIMER_UNUSED
-#define TIMER6_RESP_FUNC TIMER_UNUSED
-#define TIMER7_RESP_FUNC TIMER_UNUSED
-#define TIMER8_RESP_FUNC TIMER_UNUSED
-#define TIMER9_RESP_FUNC TIMER_UNUSED
+#define TIMER6_RESP_FUNC PostServoFSM
+#define TIMER7_RESP_FUNC PostServoFSM
+#define TIMER8_RESP_FUNC PostServoFSM
+#define TIMER9_RESP_FUNC PostServoFSM
 #define TIMER10_RESP_FUNC TIMER_UNUSED
 #define TIMER11_RESP_FUNC TIMER_UNUSED
 #define TIMER12_RESP_FUNC TIMER_UNUSED
@@ -345,6 +352,10 @@ typedef enum
 #define TAPE_SEARCH_TIMER 3
 #define BEACON_ALIGN_TIMER 4
 #define AD_TIMER 5
+#define SWEEP_TIMER 6
+#define SCOOP_TIMER 7
+#define RELEASE_TIMER 8
+#define SHOOT_TIMER 9
 
 
 #endif /* ES_CONFIGURE_H */

@@ -57,11 +57,11 @@
 // These are the definitions for Service 1
 #if NUM_SERVICES > 1
 // the header file with the public function prototypes
-#define SERV_1_HEADER "CommandRetrieveService.h"
+#define SERV_1_HEADER "SPILeaderFSM.h"
 // the name of the Init function
-#define SERV_1_INIT InitCommandRetrieveService
+#define SERV_1_INIT InitSPILeaderFSM
 // the name of the run function
-#define SERV_1_RUN RunCommandRetrieveService
+#define SERV_1_RUN RunSPILeaderFSM
 // How big should this services Queue be?
 #define SERV_1_QUEUE_SIZE 3
 #endif
@@ -311,7 +311,7 @@ typedef enum
 // Unlike services, any combination of timers may be used and there is no
 // priority in servicing them
 #define TIMER_UNUSED ((pPostFunc)0)
-#define TIMER0_RESP_FUNC PostCommandRetrieveService
+#define TIMER0_RESP_FUNC PostSPILeaderFSM
 // #define TIMER1_RESP_FUNC PostBeaconDetectService
 #define TIMER1_RESP_FUNC PostBeaconDetectFSM
 #define TIMER2_RESP_FUNC PostMainLogicFSM

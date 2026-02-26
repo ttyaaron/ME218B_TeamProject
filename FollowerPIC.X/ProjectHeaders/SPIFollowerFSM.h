@@ -27,7 +27,7 @@
 typedef enum
 {
   InitSPIFollowerState,
-  WaitingForCommand,
+  WaitingForStatus,
   SendingNewFlag,
   SendingCommand
 } SPIFollowerState_t;
@@ -37,5 +37,14 @@ bool InitSPIFollowerFSM(uint8_t Priority);
 bool PostSPIFollowerFSM(ES_Event_t ThisEvent);
 ES_Event_t RunSPIFollowerFSM(ES_Event_t ThisEvent);
 SPIFollowerState_t QuerySPIFollowerFSM(void);
+
+// SPI Servo Command Codes (received from Leader)
+// CMD_INIT_SERVOS      0x01
+// CMD_SWEEP            0x50
+// CMD_SCOOP            0x51
+// CMD_RELEASE          0x52
+// CMD_SHOOT            0x53
+// CMD_RETRACT_SWEEP    0x54
+// CMD_RETRACT_RELEASE  0x55
 
 #endif /* SPIFollowerFSM_H */

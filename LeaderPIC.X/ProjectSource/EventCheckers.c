@@ -110,8 +110,8 @@ bool Check4TapeDetected(void)
    bool: true if a new command event was detected & posted
 
  Description
-   Placeholder event checker. Command retrieval is handled by the
-   CommandRetrieveService (SPI polling/interrupts).
+   Placeholder event checker. Command sending/status retrieval is handled by 
+   the SPILeaderFSM (SPI polling/interrupts).
 
  Author
    Tianyu, 02/03/26

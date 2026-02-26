@@ -43,6 +43,9 @@
 #include "terminal.h"
 #include "dbprintf.h"
 
+// Other services
+#include "ServoFSM.h"
+
 /*----------------------------- Module Defines ----------------------------*/
 // these times assume a 10.000mS/tick timing
 #define ONE_SEC 1000
@@ -106,6 +109,15 @@ bool InitTestHarnessService0(uint8_t Priority)
   DB_printf( "compiled at %s on %s\n", __TIME__, __DATE__);
   DB_printf( "\n\r\n");
   DB_printf( "Press any key to post key-stroke events to Service 0\n\r");
+  DB_printf( "\r\n=== Servo Control Keys ===\r\n");
+  DB_printf( "w - Sweep servo action\r\n");
+  DB_printf( "W - Sweep servo retract\r\n");
+  DB_printf( "s - Scoop servo action\r\n");
+  DB_printf( "r - Release servo action\r\n");
+  DB_printf( "R - Release servo retract\r\n");
+  DB_printf( "f - Shoot servo action (fire)\r\n");
+  DB_printf( "h - Display help\r\n");
+  DB_printf( "========================\r\n\n");
 
   /********************************************
    in here you write your initialization code
@@ -199,10 +211,75 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
       puts("\rES_SHORT_TIMEOUT received\r\n");
     }
     break;
-    case ES_NEW_KEY:   // announce
+    case ES_NEW_KEY:   // announce and handle servo control keys
     {
       DB_printf("ES_NEW_KEY received with -> %c <- in Service 0\r\n",
           (char)ThisEvent.EventParam);
+      
+      // Handle key mappings for servo control
+      ES_Event_t ServoEvent;
+      char key = (char)ThisEvent.EventParam;
+      
+      switch(key)
+      {
+        case 'w':  // Sweep action
+          ServoEvent.EventType = EV_SWEEP_ACTION;
+          ServoEvent.EventParam = 0;
+          PostServoFSM(ServoEvent);
+          DB_printf("Posted SWEEP_ACTION to ServoFSM\r\n");
+          break;
+          
+        case 'W':  // Sweep retract
+          ServoEvent.EventType = EV_SWEEP_RETRACT;
+          ServoEvent.EventParam = 0;
+          PostServoFSM(ServoEvent);
+          DB_printf("Posted SWEEP_RETRACT to ServoFSM\r\n");
+          break;
+          
+        case 's':  // Scoop action
+          ServoEvent.EventType = EV_SCOOP_ACTION;
+          ServoEvent.EventParam = 0;
+          PostServoFSM(ServoEvent);
+          DB_printf("Posted SCOOP_ACTION to ServoFSM\r\n");
+          break;
+          
+        case 'r':  // Release action
+          ServoEvent.EventType = EV_RELEASE_ACTION;
+          ServoEvent.EventParam = 0;
+          PostServoFSM(ServoEvent);
+          DB_printf("Posted RELEASE_ACTION to ServoFSM\r\n");
+          break;
+          
+        case 'R':  // Release retract
+          ServoEvent.EventType = EV_RELEASE_RETRACT;
+          ServoEvent.EventParam = 0;
+          PostServoFSM(ServoEvent);
+          DB_printf("Posted RELEASE_RETRACT to ServoFSM\r\n");
+          break;
+          
+        case 'f':  // Shoot action (f for fire)
+          ServoEvent.EventType = EV_SHOOT_ACTION;
+          ServoEvent.EventParam = 0;
+          PostServoFSM(ServoEvent);
+          DB_printf("Posted SHOOT_ACTION to ServoFSM\r\n");
+          break;
+          
+        case 'h':  // Help - display key mappings
+          DB_printf("\r\n=== Servo Control Keys ===\r\n");
+          DB_printf("w - Sweep servo action\r\n");
+          DB_printf("W - Sweep servo retract\r\n");
+          DB_printf("s - Scoop servo action\r\n");
+          DB_printf("r - Release servo action\r\n");
+          DB_printf("R - Release servo retract\r\n");
+          DB_printf("f - Shoot servo action (fire)\r\n");
+          DB_printf("h - Display this help\r\n");
+          DB_printf("========================\r\n\n");
+          break;
+          
+        default:
+          // No action for unmapped keys
+          break;
+      }
     }
     break;
     default:

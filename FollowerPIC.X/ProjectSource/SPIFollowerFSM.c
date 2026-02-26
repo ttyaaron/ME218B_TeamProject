@@ -27,6 +27,7 @@
 #include "ES_Framework.h"
 #include "ES_Port.h"
 #include "SPIFollowerFSM.h"
+#include "ServoFSM.h"
 #include "CommonDefinitions.h"
 #include "PIC32_SPI_HAL.h"
 #include <sys/attribs.h>
@@ -41,8 +42,8 @@ void __ISR(_SPI_1_VECTOR, IPL7SOFT) SPI_ISR(void);
 /*---------------------------- Module Variables ---------------------------*/
 static uint8_t MyPriority;
 static SPIFollowerState_t CurrentState;
-static uint8_t CurrentCommand = 0x00;  // Current command to send
-static bool NewCommandFlag = false;    // Flag indicating new command pending
+static uint8_t CurrentStatus = 0x00;  // Current status to send
+static bool NewStatusFlag = false;    // Flag indicating new status pending
 
 /*------------------------------ Module Code ------------------------------*/
 
@@ -203,101 +204,103 @@ ES_Event_t RunSPIFollowerFSM(ES_Event_t ThisEvent)
     {
       if (ThisEvent.EventType == ES_INIT)
       {
-        CurrentState = WaitingForCommand;
-        DB_printf("SPIFollower: Ready for keyboard input\n");
+        CurrentState = WaitingForStatus;
+        DB_printf("SPIFollower: Ready\n");
       }
     }
     break;
 
-    case WaitingForCommand:
+    case WaitingForStatus:
     {
-      if (ThisEvent.EventType == ES_NEW_KEY)
+      if (ThisEvent.EventType == ES_COMMAND_RETRIEVED)
       {
-        uint8_t newCommand = 0x00; // Default STOP
-        char key = (char)ThisEvent.EventParam;
+        DB_printf("Command retrieved by Leader: 0x%x\n", ThisEvent.EventParam);
+
+        ES_Event_t ServoEvent;
+        ServoEvent.EventType = ES_NO_EVENT;  // Default to no event
         
-        // Map keyboard input to commands (based on CommonDefinitions.h)
-        switch (key)
+        // Switch between different commands from the leader
+        switch (ThisEvent.EventParam)
         {
-          case 'S':
-          case 's':
-            newCommand = CMD_STOP;
-            DB_printf("Cmd: STOP\n");
+          case CMD_STOP:
+            // Idle command - Leader is waiting, do nothing
             break;
             
-          case 'W':
-          case 'w':
-            newCommand = CMD_DRIVE_FWD_FULL;
-            DB_printf("Cmd: FWD FULL\n");
+          case CMD_INIT_SERVOS:
+            InitializeAllServos();
+            CurrentStatus = CMD_INIT_SERVOS;
+            NewStatusFlag = true;
+            CurrentState = SendingNewFlag;
+            DB_printf("Servos initialized\n");
             break;
             
-          case 'Q':
-          case 'q':
-            newCommand = CMD_DRIVE_FWD_HALF;
-            DB_printf("Cmd: FWD HALF\n");
+          case CMD_SWEEP:
+            ServoEvent.EventType = EV_SWEEP_ACTION;
+            PostServoFSM(ServoEvent);
+            DB_printf("Sweep action posted\n");
             break;
             
-          case 'X':
-          case 'x':
-            newCommand = CMD_DRIVE_REV_FULL;
-            DB_printf("Cmd: REV FULL\n");
+          case CMD_SCOOP:
+            ServoEvent.EventType = EV_SCOOP_ACTION;
+            PostServoFSM(ServoEvent);
+            DB_printf("Scoop action posted\n");
             break;
             
-          case 'Z':
-          case 'z':
-            newCommand = CMD_DRIVE_REV_HALF;
-            DB_printf("Cmd: REV HALF\n");
+          case CMD_RELEASE:
+            ServoEvent.EventType = EV_RELEASE_ACTION;
+            PostServoFSM(ServoEvent);
+            DB_printf("Release action posted\n");
             break;
             
-          case 'D':
-          case 'd':
-            newCommand = CMD_ROTATE_CW_90;
-            DB_printf("Cmd: CW 90\n");
+          case CMD_SHOOT:
+            ServoEvent.EventType = EV_SHOOT_ACTION;
+            PostServoFSM(ServoEvent);
+            DB_printf("Shoot action posted\n");
             break;
             
-          case 'E':
-          case 'e':
-            newCommand = CMD_ROTATE_CW_45;
-            DB_printf("Cmd: CW 45\n");
+          case CMD_RETRACT_SWEEP:
+            ServoEvent.EventType = EV_SWEEP_RETRACT;
+            PostServoFSM(ServoEvent);
+            DB_printf("Sweep retract posted\n");
             break;
             
-          case 'A':
-          case 'a':
-            newCommand = CMD_ROTATE_CCW_90;
-            DB_printf("Cmd: CCW 90\n");
-            break;
-            
-          case 'R':
-          case 'r':
-            newCommand = CMD_ROTATE_CCW_45;
-            DB_printf("Cmd: CCW 45\n");
-            break;
-            
-          case 'B':
-          case 'b':
-            newCommand = CMD_ALIGN_BEACON;
-            DB_printf("Cmd: ALIGN BEACON\n");
-            break;
-            
-          case 'T':
-          case 't':
-            newCommand = CMD_SEARCH_TAPE;
-            DB_printf("Cmd: SEARCH TAPE\n");
+          case CMD_RETRACT_RELEASE:
+            ServoEvent.EventType = EV_RELEASE_RETRACT;
+            PostServoFSM(ServoEvent);
+            DB_printf("Release retract posted\n");
             break;
             
           default:
-            DB_printf("Unknown key: %c\n", key);
+            DB_printf("Unknown command: 0x%x\n", ThisEvent.EventParam);
             break;
         }
-        
-        // Update command and set flag for new command
-        if (newCommand != CurrentCommand || key == 'S' || key == 's')
+
+      }
+      // When servo action completes, update status and send to leader
+      else if (ThisEvent.EventType == ES_SERVO_ACTION_COMPLETE)
+      {
+        // Map servo ID to status code
+        uint8_t servoID = ThisEvent.EventParam;
+        if (servoID == SERVO_SWEEP)
         {
-          CurrentCommand = newCommand;
-          NewCommandFlag = true;
-          CurrentState = SendingNewFlag;
-          DB_printf("New command ready: 0x%u2X\n", CurrentCommand);
+          CurrentStatus = CMD_SWEEP;
         }
+        else if (servoID == SERVO_SCOOP)
+        {
+          CurrentStatus = CMD_SCOOP;
+        }
+        else if (servoID == SERVO_RELEASE)
+        {
+          CurrentStatus = CMD_RELEASE;
+        }
+        else if (servoID == SERVO_SHOOT)
+        {
+          CurrentStatus = CMD_SHOOT;
+        }
+        
+        NewStatusFlag = true;
+        DB_printf("Servo %d action completed, status: 0x%x\n", servoID, CurrentStatus);
+        CurrentState = SendingNewFlag;
       }
     }
     break;
@@ -371,6 +374,12 @@ void __ISR(_SPI_1_VECTOR, IPL7SOFT) SPI_ISR(void)
   
   // Clear interrupt flag
   IFS1CLR = _IFS1_SPI1RXIF_MASK;
+
+  // Post an event to itself to indicate a new SPI command has been retrieved
+  ES_Event_t ThisEvent;
+  ThisEvent.EventType = ES_COMMAND_RETRIEVED;
+  ThisEvent.EventParam = receivedData; // Include received data so we know the leader's command
+  PostSPIFollowerFSM(ThisEvent);
   
   // Determine what to send based on current state
   if (CurrentState == SendingNewFlag)
@@ -381,15 +390,15 @@ void __ISR(_SPI_1_VECTOR, IPL7SOFT) SPI_ISR(void)
   }
   else if (CurrentState == SendingCommand)
   {
-    // Send actual command
-    dataToSend = CurrentCommand;
-    NewCommandFlag = false;
-    CurrentState = WaitingForCommand;
+    // Send actual status
+    dataToSend = CurrentStatus;
+    NewStatusFlag = false;
+    CurrentState = WaitingForStatus;
   }
   else
   {
     // No new command, send current command
-    dataToSend = CurrentCommand;
+    dataToSend = CurrentStatus;
   }
   
   // Load data for next transmission

@@ -1552,26 +1552,6 @@
 	)
 	(wire
 		(pts
-			(xy 74.93 86.36) (xy 80.01 86.36)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "08633214-6abc-4b7b-bb65-2cdac787492b")
-	)
-	(wire
-		(pts
-			(xy 76.2 93.98) (xy 83.82 93.98)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "0c5fddd0-7676-496b-9d30-1e94833cfce9")
-	)
-	(wire
-		(pts
 			(xy 130.81 93.98) (xy 181.61 93.98)
 		)
 		(stroke
@@ -1622,16 +1602,6 @@
 	)
 	(wire
 		(pts
-			(xy 80.01 85.09) (xy 91.44 85.09)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "3ac00b43-35fd-4a7c-803c-c205ba22212f")
-	)
-	(wire
-		(pts
 			(xy 166.37 62.23) (xy 166.37 77.47)
 		)
 		(stroke
@@ -1649,16 +1619,6 @@
 			(type default)
 		)
 		(uuid "41c08f52-2933-4166-b405-96726095689e")
-	)
-	(wire
-		(pts
-			(xy 81.28 90.17) (xy 81.28 87.63)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "55fa6d18-b737-495e-a612-f87ba3d27af8")
 	)
 	(wire
 		(pts
@@ -1712,33 +1672,13 @@
 	)
 	(wire
 		(pts
-			(xy 76.2 90.17) (xy 81.28 90.17)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "6caccb10-0a7b-4e05-8a71-9ffd4722b283")
-	)
-	(wire
-		(pts
-			(xy 80.01 102.87) (xy 64.77 102.87)
+			(xy 64.77 85.09) (xy 91.44 85.09)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
 		(uuid "6da90aee-1a04-4def-b03b-a6f6f0a554b2")
-	)
-	(wire
-		(pts
-			(xy 80.01 102.87) (xy 80.01 96.52)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "6ff037a6-2dc9-48ca-ace8-a887449bfe2d")
 	)
 	(wire
 		(pts
@@ -1782,16 +1722,6 @@
 	)
 	(wire
 		(pts
-			(xy 83.82 93.98) (xy 83.82 90.17)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "8c951bf1-ff2f-4621-9d10-1c76f05c1c86")
-	)
-	(wire
-		(pts
 			(xy 138.43 77.47) (xy 138.43 71.12)
 		)
 		(stroke
@@ -1799,16 +1729,6 @@
 			(type default)
 		)
 		(uuid "8ec21b21-0623-4320-ae06-6ecd4c5b65a1")
-	)
-	(wire
-		(pts
-			(xy 130.81 104.14) (xy 180.34 104.14)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "9748e3bd-1b7c-4a7c-828b-87aba68e9d9b")
 	)
 	(wire
 		(pts
@@ -1839,16 +1759,6 @@
 			(type default)
 		)
 		(uuid "a328a349-f526-40d4-8940-45c1c6fbbee4")
-	)
-	(wire
-		(pts
-			(xy 81.28 87.63) (xy 91.44 87.63)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "a74d0538-1ab7-432d-a5ae-3a59fb55161b")
 	)
 	(wire
 		(pts
@@ -1889,26 +1799,6 @@
 			(type default)
 		)
 		(uuid "ba6a42b2-cf19-474d-ac23-a7090349537a")
-	)
-	(wire
-		(pts
-			(xy 83.82 90.17) (xy 91.44 90.17)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "ce50afdd-9358-41e5-964f-6b48e3de0e0e")
-	)
-	(wire
-		(pts
-			(xy 68.58 96.52) (xy 80.01 96.52)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "d0028056-6521-47aa-9caa-f7f53c1d4f6e")
 	)
 	(wire
 		(pts
@@ -1969,16 +1859,6 @@
 			(type default)
 		)
 		(uuid "f7dceb09-fd5b-491c-b03a-3e7d97a6e459")
-	)
-	(wire
-		(pts
-			(xy 80.01 85.09) (xy 80.01 86.36)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "fb81a5f5-fba0-46bc-b2f3-5309512545ff")
 	)
 	(label "FollowerSDO"
 		(at 91.44 82.55 180)
@@ -2042,28 +1922,6 @@
 			)
 		)
 	)
-	(global_label "UltraSound Trigger 2 OC5"
-		(shape output)
-		(at 180.34 104.14 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "25d0d62e-bace-41cd-8e60-fd2497126dfe")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 208.241 104.14 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-	)
 	(global_label "Ball Shooting PWM OC3"
 		(shape output)
 		(at 181.61 93.98 0)
@@ -2110,7 +1968,7 @@
 	)
 	(global_label "Ball Lifting PWM OC4"
 		(shape output)
-		(at 64.77 102.87 180)
+		(at 64.77 85.09 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -2120,7 +1978,7 @@
 		)
 		(uuid "47689395-befd-48d1-8ec4-a4063a7c5a01")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 41.1627 102.87 0)
+			(at 41.1627 85.09 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2130,52 +1988,8 @@
 			)
 		)
 	)
-	(global_label "UltraSound Trigger 1 OC4"
-		(shape output)
-		(at 76.2 93.98 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "663fea4b-afb9-4af8-8a0c-d05c80a1ff63")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 48.299 93.98 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "UltraSound Echo IC2"
+	(global_label "PIC32-Follower-Input"
 		(shape input)
-		(at 74.93 86.36 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "6fd2df5b-3cb4-4558-9327-4c63806b4dc4")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 51.9276 86.36 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "PIC32-Leader SDO"
-		(shape output)
 		(at 182.88 91.44 0)
 		(fields_autoplaced yes)
 		(effects
@@ -2186,34 +2000,12 @@
 		)
 		(uuid "71b915ee-192c-4ff5-a75c-fcd64bf6e6c4")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 204.0685 91.44 0)
+			(at 207.2736 91.44 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 				(justify left)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "UltraSound Echo IC1"
-		(shape input)
-		(at 76.2 90.17 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "96a1aad2-3fc7-49b7-bf5b-09536f9a368d")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 53.1976 90.17 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
 				(hide yes)
 			)
 		)
@@ -2262,8 +2054,8 @@
 			)
 		)
 	)
-	(global_label "PIC32-Leader-SDI"
-		(shape input)
+	(global_label "PIC32-Folower-Output"
+		(shape output)
 		(at 78.74 82.55 180)
 		(fields_autoplaced yes)
 		(effects
@@ -2274,7 +2066,7 @@
 		)
 		(uuid "c1c47c9a-0d63-445c-b33b-83c2ada223c8")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 57.6724 82.55 0)
+			(at 53.5602 82.55 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2284,8 +2076,8 @@
 			)
 		)
 	)
-	(global_label "PIC32-CommandGeneratorSCK-Pin5"
-		(shape output)
+	(global_label "PIC32-SPI-SCK"
+		(shape input)
 		(at 138.43 106.68 0)
 		(fields_autoplaced yes)
 		(effects
@@ -2296,7 +2088,7 @@
 		)
 		(uuid "d0e75a95-bdfd-4413-afdd-1a454b2cd71f")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 176.5515 106.68 0)
+			(at 156.9576 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2306,7 +2098,7 @@
 			)
 		)
 	)
-	(global_label "PIC32-CommandGeneratorSS-Pin6"
+	(global_label "PIC32-Follower-SS"
 		(shape output)
 		(at 78.74 80.01 180)
 		(fields_autoplaced yes)
@@ -2318,7 +2110,7 @@
 		)
 		(uuid "e2afc077-53de-4d9b-8cff-2fed7cc8178d")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 41.949 80.01 0)
+			(at 56.7049 80.01 0)
 			(effects
 				(font
 					(size 1.27 1.27)
