@@ -42,4 +42,16 @@ void MotorCommandWrapper(uint16_t speedLeft, uint16_t speedRight,
 // Encoder query function
 uint32_t Encoder_GetLatestPeriod(uint8_t motorIndex);
 
+// Tape sensor public functions
+void TapeSensor_Read(void);           // Read all tape sensors
+void TapeSensor_UpdateLineFollow(void); // Update line following control
+void TapeSensor_CheckIntersect(void);   // Check for intersections
+
+// Tape sensor value getters
+uint32_t TapeSensor_GetLeftAnalog(void);
+uint32_t TapeSensor_GetRightAnalog(void);
+bool TapeSensor_GetLeftDigital(void);
+bool TapeSensor_GetCenterDigital(void);
+bool TapeSensor_GetRightDigital(void);
+
 #endif /* DCMotorService_H */

@@ -32,6 +32,8 @@
 #include "DCMotorService.h"
 #include "ADService.h"
 #include "CommonDefinitions.h"
+#include "Ports.h"
+#include "PIC32_AD_Lib.h"
 #include "dbprintf.h"
 #include <xc.h>
 #include <sys/attribs.h>
@@ -80,6 +82,16 @@
 // RPM calculation constants
 #define INVALID_TIME 0xFFFFFFFF      // Marker for invalid/uninitialized time
 
+// Tape Sensor Configuration (5 sensors: 2 analog + 3 digital)
+#define TAPE_ANALOG_PINS (BIT12HI | BIT5HI)  // AN12 (RB12, pin23), AN5 (RB3, pin7)
+#define THRESH_DIV 2                          // Threshold divisor for tape detection
+
+// Line Following PID Parameters
+#define LINE_FOLLOW_KP 0.07f
+#define LINE_FOLLOW_KD 0.1f
+#define LINE_FOLLOW_KI 0.0f
+#define LINE_FOLLOWING_SPEED 1000            // Base speed for line following
+
 /*---------------------------- Module Functions ---------------------------*/
 /* Prototypes for private functions for this service */
 // Motor control functions
@@ -96,6 +108,12 @@ static void ConfigureTimingPin(void);
 // Speed control functions
 static void ConfigureControlTimer(void);
 static int16_t ClampDutyCycle(float value);
+
+// Tape sensor functions
+static void ConfigureTapeSensors(void);
+static void ReadTapeSensors(void);
+static void UpdateLineFollowing(void);
+static void CheckIntersections(void);
 
 /*---------------------------- Module Variables ---------------------------*/
 // Module level Priority variable
@@ -119,6 +137,33 @@ static int16_t LastDutyCycleTicks[2] = {0, 0};
 static volatile float CurrentDesiredSpeed[2] = {0.0f, 0.0f};
 static volatile float CurrentMeasuredSpeed[2] = {0.0f, 0.0f};
 static volatile int16_t CurrentDutyCycleTicks[2] = {0, 0};
+
+// Tape Sensor Variables
+static uint32_t ADValues[2] = {0, 0};           // Buffer for analog tape sensors
+static uint32_t leftVal = 0;                    // Left analog sensor (AN12/RB12)
+static uint32_t rightVal = 0;                   // Right analog sensor (AN5/RB3)
+static bool centerState = false;                // Center digital sensor
+static bool leftTState = false;                 // Left digital sensor
+static bool rightTState = false;                // Right digital sensor
+
+// Min/Max tracking for analog sensors
+static uint32_t MinLeftC = 1023;
+static uint32_t MaxLeftC = 0;
+static uint32_t MinRightC = 1023;
+static uint32_t MaxRightC = 0;
+
+// Line following control variables
+static int32_t error = 0;
+static int32_t error_p = 0;
+static int32_t sigma_e = 0;
+static int16_t LeftDC = 0;
+static int16_t RightDC = 0;
+static int8_t DirectionS = 1;  // 1 for forward, -1 for reverse
+
+// Intersection detection flags
+static bool lastLeftTState = false;
+static bool lastRightTState = false;
+static bool intersectionPublished = false;
 
 /*------------------------------ Module Code ------------------------------*/
 /****************************************************************************
@@ -197,6 +242,9 @@ bool InitDCMotorService(uint8_t Priority)
   
   // Configure the speed control timer (Timer4)
   ConfigureControlTimer();
+  
+  // Configure tape sensors (2 analog + 3 digital)
+  ConfigureTapeSensors();
   
   DB_printf("Integrated DC Motor Service Initialized\r\n");
   
@@ -375,6 +423,174 @@ uint32_t Encoder_GetLatestPeriod(uint8_t motorIndex)
     return EdgeTimeDifference[motorIndex];
   }
   return 0;
+}
+
+/****************************************************************************
+ Function
+     TapeSensor_Read
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Public wrapper to read all tape sensors
+
+ Author
+     Tianyu, 02/25/26
+****************************************************************************/
+void TapeSensor_Read(void)
+{
+  ReadTapeSensors();
+}
+
+/****************************************************************************
+ Function
+     TapeSensor_UpdateLineFollow
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Public wrapper to update line following control
+
+ Author
+     Tianyu, 02/25/26
+****************************************************************************/
+void TapeSensor_UpdateLineFollow(void)
+{
+  UpdateLineFollowing();
+}
+
+/****************************************************************************
+ Function
+     TapeSensor_CheckIntersect
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Public wrapper to check for intersections
+
+ Author
+     Tianyu, 02/25/26
+****************************************************************************/
+void TapeSensor_CheckIntersect(void)
+{
+  CheckIntersections();
+}
+
+/****************************************************************************
+ Function
+     TapeSensor_GetLeftAnalog
+
+ Parameters
+     None
+
+ Returns
+     uint32_t - left analog sensor value
+
+ Description
+     Returns the current left analog tape sensor reading
+
+ Author
+     Tianyu, 02/25/26
+****************************************************************************/
+uint32_t TapeSensor_GetLeftAnalog(void)
+{
+  return leftVal;
+}
+
+/****************************************************************************
+ Function
+     TapeSensor_GetRightAnalog
+
+ Parameters
+     None
+
+ Returns
+     uint32_t - right analog sensor value
+
+ Description
+     Returns the current right analog tape sensor reading
+
+ Author
+     Tianyu, 02/25/26
+****************************************************************************/
+uint32_t TapeSensor_GetRightAnalog(void)
+{
+  return rightVal;
+}
+
+/****************************************************************************
+ Function
+     TapeSensor_GetLeftDigital
+
+ Parameters
+     None
+
+ Returns
+     bool - left digital sensor state
+
+ Description
+     Returns the current left digital tape sensor reading
+
+ Author
+     Tianyu, 02/25/26
+****************************************************************************/
+bool TapeSensor_GetLeftDigital(void)
+{
+  return leftTState;
+}
+
+/****************************************************************************
+ Function
+     TapeSensor_GetCenterDigital
+
+ Parameters
+     None
+
+ Returns
+     bool - center digital sensor state
+
+ Description
+     Returns the current center digital tape sensor reading
+
+ Author
+     Tianyu, 02/25/26
+****************************************************************************/
+bool TapeSensor_GetCenterDigital(void)
+{
+  return centerState;
+}
+
+/****************************************************************************
+ Function
+     TapeSensor_GetRightDigital
+
+ Parameters
+     None
+
+ Returns
+     bool - right digital sensor state
+
+ Description
+     Returns the current right digital tape sensor reading
+
+ Author
+     Tianyu, 02/25/26
+****************************************************************************/
+bool TapeSensor_GetRightDigital(void)
+{
+  return rightTState;
 }
 
 /***************************************************************************
@@ -1024,6 +1240,232 @@ static int16_t ClampDutyCycle(float value)
   {
     return (int16_t)value;
   }
+}
+
+/****************************************************************************
+ Function
+     ConfigureTapeSensors
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Configures the tape sensors: 2 analog (AN12, AN5) and 3 digital
+
+ Author
+     Tianyu, 02/25/26
+****************************************************************************/
+static void ConfigureTapeSensors(void)
+{
+  // Initialize digital tape sensor pins
+  InitLeftTapeInputPin();
+  InitCenterTapeInputPin();
+  InitRightTapeInputPin();
+  
+  // Configure ADC to scan AN12 (RB12, pin23) and AN5 (RB3, pin7)
+  // Note: RB3 needs to be configured as analog for AN5
+  TRISBbits.TRISB12 = 1;   // Set as input
+  ANSELBbits.ANSB12 = 1;   // Enable analog function
+  
+  TRISBbits.TRISB3 = 1;    // Set as input  
+  ANSELBbits.ANSB3 = 1;    // Enable analog function
+  
+  ADC_ConfigAutoScan(TAPE_ANALOG_PINS);
+  
+  // Read initial ADC values
+  ADC_MultiRead(ADValues);
+  
+  leftVal = ADValues[0];   // AN5 (RB3) - listed first because lower bit number
+  rightVal = ADValues[1];  // AN12 (RB12)
+  
+  // Read initial digital sensor states
+  centerState = ReadCenterTapeInputPin();
+  leftTState = ReadLeftTapeInputPin();
+  rightTState = ReadRightTapeInputPin();
+  
+  // Initialize min/max values
+  MinLeftC = leftVal;
+  MaxLeftC = leftVal;
+  MinRightC = rightVal;
+  MaxRightC = rightVal;
+  
+  DB_printf("Tape Sensors Initialized\r\n");
+}
+
+/****************************************************************************
+ Function
+     ReadTapeSensors
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Reads all tape sensors and updates min/max tracking
+
+ Author
+     Tianyu, 02/25/26
+****************************************************************************/
+static void ReadTapeSensors(void)
+{
+  // Read analog sensors
+  ADC_MultiRead(ADValues);
+  leftVal = ADValues[0];   // AN5 (RB3)
+  rightVal = ADValues[1];  // AN12 (RB12)
+  
+  // Update min/max for left analog sensor
+  if (leftVal < MinLeftC)
+  {
+    MinLeftC = leftVal;
+  }
+  if (leftVal > MaxLeftC)
+  {
+    MaxLeftC = leftVal;
+  }
+  
+  // Update min/max for right analog sensor
+  if (rightVal < MinRightC)
+  {
+    MinRightC = rightVal;
+  }
+  if (rightVal > MaxRightC)
+  {
+    MaxRightC = rightVal;
+  }
+  
+  // Read digital sensors
+  leftTState = ReadLeftTapeInputPin();
+  centerState = ReadCenterTapeInputPin();
+  rightTState = ReadRightTapeInputPin();
+}
+
+/****************************************************************************
+ Function
+     UpdateLineFollowing
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Implements PID line following control based on analog tape sensors
+
+ Author
+     Tianyu, 02/25/26
+****************************************************************************/
+static void UpdateLineFollowing(void)
+{
+  // Calculate error between right and left analog sensors
+  error = (rightVal - leftVal);
+  
+  // Accumulate error for integral term
+  sigma_e += error;
+  
+  // PID control gains
+  static float kp = LINE_FOLLOW_KP;
+  static float kd = LINE_FOLLOW_KD;
+  static float ki = LINE_FOLLOW_KI;
+  
+  // Calculate motor duty cycles using PID
+  LeftDC = DirectionS * LINE_FOLLOWING_SPEED + 
+           (error * kp + (error - error_p) * kd + sigma_e * ki);
+  RightDC = DirectionS * LINE_FOLLOWING_SPEED - 
+            (error * kp + (error - error_p) * kd + sigma_e * ki);
+  
+  // Store current error as previous for next iteration
+  error_p = error;
+  
+  // Apply duty cycles to motors
+  // Note: This assumes motors are in FORWARD direction
+  DesiredSpeed[LEFT_MOTOR] = (LeftDC > 0) ? LeftDC : 0;
+  DesiredSpeed[RIGHT_MOTOR] = (RightDC > 0) ? RightDC : 0;
+  DesiredDirection[LEFT_MOTOR] = (LeftDC >= 0) ? FORWARD : REVERSE;
+  DesiredDirection[RIGHT_MOTOR] = (RightDC >= 0) ? FORWARD : REVERSE;
+  
+  // Post motor action change event
+  ES_Event_t MotorEvent;
+  MotorEvent.EventType = ES_MOTOR_ACTION_CHANGE;
+  MotorEvent.EventParam = 0;
+  PostDCMotorService(MotorEvent);
+}
+
+/****************************************************************************
+ Function
+     CheckIntersections
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Checks for tape intersections using digital sensors and thresholds
+
+ Author
+     Tianyu, 02/25/26
+****************************************************************************/
+static void CheckIntersections(void)
+{
+  // Calculate thresholds from min/max values
+  uint32_t LeftThreshC = (MaxLeftC - MinLeftC) / THRESH_DIV + MinLeftC;
+  uint32_t RightThreshC = (MaxRightC - MinRightC) / THRESH_DIV + MinRightC;
+  
+  // Check for T-intersection (tape on both sides)
+  if (leftVal > LeftThreshC && rightVal > RightThreshC)
+  {
+    if (!intersectionPublished)
+    {
+      // T-intersection found - both analog sensors see tape
+      DB_printf("T-Intersection detected\r\n");
+      
+      // Post event or take action as needed
+      // ES_Event_t event;
+      // event.EventType = ES_T_INTERSECTION;
+      // PostToSomeService(event);
+      
+      intersectionPublished = true;
+    }
+  }
+  // Check for left intersection (left digital sensor)
+  else if (leftTState && !lastLeftTState)
+  {
+    DB_printf("Left intersection detected\r\n");
+    
+    // Post event or take action as needed
+    // ES_Event_t event;
+    // event.EventType = ES_LEFT_INTERSECTION;
+    // PostToSomeService(event);
+  }
+  // Check for right intersection (right digital sensor)
+  else if (rightTState && !lastRightTState)
+  {
+    DB_printf("Right intersection detected\r\n");
+    
+    // Post event or take action as needed
+    // ES_Event_t event;
+    // event.EventType = ES_RIGHT_INTERSECTION;
+    // PostToSomeService(event);
+  }
+  else
+  {
+    // Reset publish flag when not at intersection
+    if (!leftVal > LeftThreshC || !rightVal > RightThreshC)
+    {
+      intersectionPublished = false;
+    }
+  }
+  
+  // Update last states for edge detection
+  lastLeftTState = leftTState;
+  lastRightTState = rightTState;
 }
 
 /*------------------------------- Footnotes -------------------------------*/
