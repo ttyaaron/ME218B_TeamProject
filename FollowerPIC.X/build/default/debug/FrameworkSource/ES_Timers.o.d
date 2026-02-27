@@ -16,6 +16,7 @@ build/default/debug/FrameworkSource/ES_Timers.o: \
  ProjectHeaders/TestHarnessService0.h FrameworkHeaders/ES_Events.h \
  FrameworkHeaders/ES_Port.h ProjectHeaders/SPIFollowerFSM.h \
  FrameworkHeaders/ES_Configure.h FrameworkHeaders/ES_Types.h \
+ ProjectHeaders/ServoFSM.h \
  FrameworkSource/../FrameworkHeaders/ES_General.h \
  FrameworkSource/../FrameworkHeaders/ES_Events.h \
  FrameworkSource/../FrameworkHeaders/ES_PostList.h \
@@ -60,6 +61,8 @@ ProjectHeaders/SPIFollowerFSM.h:
 FrameworkHeaders/ES_Configure.h:
 
 FrameworkHeaders/ES_Types.h:
+
+ProjectHeaders/ServoFSM.h:
 
 FrameworkSource/../FrameworkHeaders/ES_General.h:
 

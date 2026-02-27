@@ -7,8 +7,8 @@ build/default/debug/ProjectSource/SPIFollowerFSM.o: \
  FrameworkHeaders/ES_PostList.h FrameworkHeaders/ES_General.h \
  FrameworkHeaders/ES_Timers.h FrameworkHeaders/ES_Port.h \
  ProjectHeaders/SPIFollowerFSM.h FrameworkHeaders/ES_Types.h \
- ProjectHeaders/CommonDefinitions.h ProjectHeaders/PIC32_SPI_HAL.h \
- FrameworkHeaders/dbprintf.h
+ ProjectHeaders/ServoFSM.h ProjectHeaders/CommonDefinitions.h \
+ ProjectHeaders/PIC32_SPI_HAL.h FrameworkHeaders/dbprintf.h
 
 FrameworkHeaders/ES_Configure.h:
 
@@ -39,6 +39,8 @@ FrameworkHeaders/ES_Port.h:
 ProjectHeaders/SPIFollowerFSM.h:
 
 FrameworkHeaders/ES_Types.h:
+
+ProjectHeaders/ServoFSM.h:
 
 ProjectHeaders/CommonDefinitions.h:
 

@@ -137,7 +137,7 @@ bool InitSPIFollowerFSM(uint8_t Priority)
   SPISetup_EnableSPI(SPI_SPI1);
   
   // Load initial value (0x00 = STOP command)
-  SPI1BUF = CurrentCommand;
+  SPI1BUF = 0x00;
   
   // Enable global interrupts
   __builtin_enable_interrupts();

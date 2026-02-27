@@ -9,7 +9,8 @@ build/default/debug/ProjectSource/TestHarnessService0.o: \
  FrameworkHeaders/ES_Events.h FrameworkHeaders/ES_PostList.h \
  FrameworkHeaders/ES_General.h FrameworkHeaders/ES_Timers.h \
  FrameworkHeaders/ES_DeferRecall.h FrameworkHeaders/ES_Queue.h \
- FrameworkHeaders/terminal.h FrameworkHeaders/dbprintf.h
+ FrameworkHeaders/terminal.h FrameworkHeaders/dbprintf.h \
+ ProjectHeaders/ServoFSM.h FrameworkHeaders/ES_Types.h
 
 ProjectSource/../ProjectHeaders/TestHarnessService0.h:
 
@@ -48,3 +49,7 @@ FrameworkHeaders/ES_Queue.h:
 FrameworkHeaders/terminal.h:
 
 FrameworkHeaders/dbprintf.h:
+
+ProjectHeaders/ServoFSM.h:
+
+FrameworkHeaders/ES_Types.h:

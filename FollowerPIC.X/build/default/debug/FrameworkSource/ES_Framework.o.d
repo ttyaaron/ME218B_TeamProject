@@ -21,7 +21,8 @@ build/default/debug/FrameworkSource/ES_Framework.o: \
  ProjectHeaders/TestHarnessService0.h FrameworkHeaders/ES_Events.h \
  FrameworkHeaders/ES_Port.h ProjectHeaders/SPIFollowerFSM.h \
  FrameworkHeaders/ES_Configure.h FrameworkHeaders/ES_Types.h \
- ProjectHeaders/EventCheckWrapper.h ProjectHeaders/EventCheckers.h
+ ProjectHeaders/ServoFSM.h ProjectHeaders/EventCheckWrapper.h \
+ ProjectHeaders/EventCheckers.h
 
 FrameworkSource/../FrameworkHeaders/ES_Configure.h:
 
@@ -72,6 +73,8 @@ ProjectHeaders/SPIFollowerFSM.h:
 FrameworkHeaders/ES_Configure.h:
 
 FrameworkHeaders/ES_Types.h:
+
+ProjectHeaders/ServoFSM.h:
 
 ProjectHeaders/EventCheckWrapper.h:
 

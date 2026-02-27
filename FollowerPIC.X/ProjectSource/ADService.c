@@ -45,7 +45,6 @@
 #include "ES_Framework.h"
 #include "ES_Timers.h"
 #include "ADService.h"
-#include "DCMotorService.h"
 #include "PIC32_AD_Lib.h"
 #include "dbprintf.h"
 #include <stdlib.h>
@@ -209,7 +208,6 @@ ES_Event_t RunADService(ES_Event_t ThisEvent)
           ES_Event_t SpeedChangedEvent;
           SpeedChangedEvent.EventType = ES_MOTOR_ACTION_CHANGE;
           SpeedChangedEvent.EventParam = CurrentDesiredSpeed;
-          PostDCMotorService(SpeedChangedEvent);
         }
         
         // Restart the ADC checking timer

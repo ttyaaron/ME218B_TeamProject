@@ -52,6 +52,7 @@
 
 // Servo pulse widths in timer ticks (TICS_PER_MS = 2500 from PWM library)
 // These are example values - adjust based on your specific servos
+// Bigger number -> bigger CCW angle with output axis pointing at you
 #define SWEEP_IDLE_PW       (1.5 * 2500)  // 1.5ms - neutral/idle position
 #define SWEEP_ACTION_PW     (2.0 * 2500)  // 2.0ms - sweep position
 #define SWEEP_RETRACT_PW    (1.0 * 2500)  // 1.0ms - retracted position
@@ -63,14 +64,14 @@
 #define RELEASE_ACTION_PW      (2.0 * 2500)  // 2.0ms - release/dispense position
 #define RELEASE_RETRACT_PW     (1.0 * 2500)  // 1.0ms - retracted position
 
-#define SHOOT_IDLE_PW       (1.5 * 2500)  // 1.5ms - idle/ready position
-#define SHOOT_ACTION_PW     (2.0 * 2500)  // 2.0ms - shoot/release position
+#define SHOOT_IDLE_PW       (0.5 * 2500)  // 1.5ms - idle/ready position
+#define SHOOT_ACTION_PW     (2.5 * 2500)  // 2.0ms - shoot/release position
 
 // Action durations in milliseconds
 #define SWEEP_ACTION_TIME   500   // Time to complete sweep action
 #define SCOOP_ACTION_TIME   600   // Time to complete scoop action
 #define RELEASE_ACTION_TIME    700   // Time to complete release action
-#define SHOOT_ACTION_TIME   400   // Time to complete shoot action
+#define SHOOT_ACTION_TIME   1000   // Time to complete shoot action
 
 /*---------------------------- Module Variables ---------------------------*/
 static uint8_t MyPriority;
