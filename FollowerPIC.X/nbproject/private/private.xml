@@ -7,6 +7,9 @@
             <file>file:/U:/ttyaaron/ME218B_TeamProject/FollowerPIC.X/ProjectSource/SPIFollowerFSM.c</file>
             <file>file:/U:/ttyaaron/ME218B_TeamProject/FollowerPIC.X/ProjectSource/EventCheckers.c</file>
             <file>file:/U:/ttyaaron/ME218B_TeamProject/FollowerPIC.X/ProjectSource/PIC32_SPI_HAL.c</file>
+            <file>file:/U:/ttyaaron/ME218B_TeamProject/FollowerPIC.X/nbproject/Makefile-default.mk</file>
+            <file>file:/U:/ttyaaron/ME218B_TeamProject/FollowerPIC.X/ProjectSource/ADService.c</file>
+            <file>file:/U:/ttyaaron/ME218B_TeamProject/FollowerPIC.X/ProjectSource/ServoFSM.c</file>
         </group>
     </open-files>
 </project-private>

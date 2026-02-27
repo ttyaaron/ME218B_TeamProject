@@ -8,7 +8,7 @@ build/default/debug/ProjectSource/EventCheckers.o: \
  FrameworkHeaders/ES_Timers.h FrameworkHeaders/ES_Events.h \
  FrameworkHeaders/ES_PostList.h FrameworkHeaders/ES_ServiceHeaders.h \
  ProjectHeaders/TestHarnessService0.h FrameworkHeaders/ES_Port.h \
- ProjectHeaders/CommandRetrieveService.h FrameworkHeaders/ES_Types.h \
+ ProjectHeaders/SPILeaderFSM.h FrameworkHeaders/ES_Types.h \
  ProjectHeaders/MainLogicFSM.h ProjectHeaders/DCMotorService.h \
  ProjectHeaders/BeaconDetectFSM.h ProjectHeaders/EventCheckers.h \
  ProjectHeaders/CommonDefinitions.h FrameworkHeaders/dbprintf.h \
@@ -48,7 +48,7 @@ ProjectHeaders/TestHarnessService0.h:
 
 FrameworkHeaders/ES_Port.h:
 
-ProjectHeaders/CommandRetrieveService.h:
+ProjectHeaders/SPILeaderFSM.h:
 
 FrameworkHeaders/ES_Types.h:
 

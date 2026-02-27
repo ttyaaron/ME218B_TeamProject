@@ -57,10 +57,10 @@ typedef enum
     CMD_RETRACT_SCOOP = 0x55      // Retract scoop servo
 } Command_t;
 
-extern const uint8_t validCommandBytes[18];
-
 // Prescale lookup table (maps enum to hardware register bits)
 extern const uint8_t PrescaleLookup[];
+
+extern const uint8_t validCommandBytes[11];
 
 // System clock configuration
 #define PBCLK_FREQ 20000000         // 20 MHz peripheral bus clock
