@@ -72,6 +72,9 @@
 #define CONTROL_PRESCALE_CHOSEN PRESCALE_8
 #define CONTROL_TIMER_PERIOD ((PBCLK_FREQ / CONTROL_TIMER_PRESCALE / 500) - 1)
 
+// Control mode selection
+#define USE_OPEN_LOOP_CONTROL true  // Set to true for open-loop, false for closed-loop
+
 // PI Controller parameters
 #define KP 65.0f                     // Proportional gain
 #define KI 1000.0f                   // Integral gain
@@ -319,32 +322,37 @@ ES_Event_t RunDCMotorService(ES_Event_t ThisEvent)
 
       // This is driving the motor in drive-brake mode
 
-      uint16_t dutyCycle = MapSpeedToDutyCycle(DesiredSpeed[LEFT_MOTOR]);
+      // Calculate duty cycle for LEFT motor
+      uint16_t dutyCycleLeft = MapSpeedToDutyCycle(DesiredSpeed[LEFT_MOTOR]);
+      // Calculate duty cycle for RIGHT motor
+      uint16_t dutyCycleRight = MapSpeedToDutyCycle(DesiredSpeed[RIGHT_MOTOR]);
 
-      if (DesiredDirection[0] == 0)
+      // LEFT MOTOR
+      if (DesiredDirection[LEFT_MOTOR] == 0)
       {
         MOTOR_REVERSE_PIN_L = 0;
-        OC1RS = dutyCycle;
-//        DB_printf("dutyCycle left 0:%u\r\n", dutyCycle);
+        OC1RS = dutyCycleLeft;
+//        DB_printf("dutyCycle left 0:%u\r\n", dutyCycleLeft);
       }
       else
       {
         MOTOR_REVERSE_PIN_L = 1;
-        OC1RS = PWM_PERIOD_TICKS - dutyCycle + 1;
+        OC1RS = PWM_PERIOD_TICKS - dutyCycleLeft + 1;
 //        DB_printf("dutyCycle left 1:%u\r\n", OC1RS);
       }
 
+      // RIGHT MOTOR
       // Hardware motor already inversed for right motor, when forward means same current go through left and right motor
-      if (DesiredDirection[1] == 0)
+      if (DesiredDirection[RIGHT_MOTOR] == 0)
       {
         MOTOR_REVERSE_PIN_R = 0;
-        OC2RS = dutyCycle;
-//        DB_printf("dutyCycle right 0:%u\r\n", dutyCycle);
+        OC2RS = dutyCycleRight;
+//        DB_printf("dutyCycle right 0:%u\r\n", dutyCycleRight);
       }
       else
       {
         MOTOR_REVERSE_PIN_R = 1;
-        OC2RS = PWM_PERIOD_TICKS - dutyCycle + 1;
+        OC2RS = PWM_PERIOD_TICKS - dutyCycleRight + 1;
 //        DB_printf("dutyCycle right 1:%u\r\n", OC2RS);
       }
 
@@ -757,6 +765,15 @@ void __ISR(_TIMER_4_VECTOR, IPL5SOFT) ControlTimerISR(void)
 {
   TIMING_PIN_LAT = 1;
   
+  // Clear control timer interrupt flag
+  IFS0CLR = _IFS0_T4IF_MASK;
+  
+  // If using open-loop control, skip the PI control logic
+  #if USE_OPEN_LOOP_CONTROL
+    TIMING_PIN_LAT = 0;
+    return;
+  #endif
+  
   // Read desired speed from ADC (same for both motors in this implementation)
   uint16_t adcValue = GetDesiredSpeed();
   float desiredSpeed = ADToRPM(adcValue);
@@ -868,9 +885,6 @@ void __ISR(_TIMER_4_VECTOR, IPL5SOFT) ControlTimerISR(void)
   ControlEvent.EventType = ES_MOTOR_ACTION_CHANGE;
   ControlEvent.EventParam = 0;
   PostDCMotorService(ControlEvent);
-  
-  // Clear control timer interrupt flag
-  IFS0CLR = _IFS0_T4IF_MASK;
   
   TIMING_PIN_LAT = 0;
 }
