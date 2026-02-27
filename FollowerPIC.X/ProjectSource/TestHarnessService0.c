@@ -113,8 +113,8 @@ bool InitTestHarnessService0(uint8_t Priority)
   DB_printf( "w - Sweep servo action\r\n");
   DB_printf( "W - Sweep servo retract\r\n");
   DB_printf( "s - Scoop servo action\r\n");
+  DB_printf( "S - Scoop servo retract\r\n");
   DB_printf( "r - Release servo action\r\n");
-  DB_printf( "R - Release servo retract\r\n");
   DB_printf( "f - Shoot servo action (fire)\r\n");
   DB_printf( "h - Display help\r\n");
   DB_printf( "========================\r\n\n");
@@ -243,6 +243,13 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
           DB_printf("Posted SCOOP_ACTION to ServoFSM\r\n");
           break;
           
+        case 'S':  // Scoop retract
+          ServoEvent.EventType = EV_SCOOP_RETRACT;
+          ServoEvent.EventParam = 0;
+          PostServoFSM(ServoEvent);
+          DB_printf("Posted SCOOP_RETRACT to ServoFSM\r\n");
+          break;
+          
         case 'r':  // Release action
           ServoEvent.EventType = EV_RELEASE_ACTION;
           ServoEvent.EventParam = 0;
@@ -250,11 +257,11 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
           DB_printf("Posted RELEASE_ACTION to ServoFSM\r\n");
           break;
           
-        case 'R':  // Release retract
-          ServoEvent.EventType = EV_RELEASE_RETRACT;
+        case 'R':  // Release retract -> changed to Scoop retract
+          ServoEvent.EventType = EV_SCOOP_RETRACT;
           ServoEvent.EventParam = 0;
           PostServoFSM(ServoEvent);
-          DB_printf("Posted RELEASE_RETRACT to ServoFSM\r\n");
+          DB_printf("Posted SCOOP_RETRACT to ServoFSM\r\n");
           break;
           
         case 'f':  // Shoot action (f for fire)
@@ -269,8 +276,8 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
           DB_printf("w - Sweep servo action\r\n");
           DB_printf("W - Sweep servo retract\r\n");
           DB_printf("s - Scoop servo action\r\n");
+          DB_printf("S - Scoop servo retract\r\n");
           DB_printf("r - Release servo action\r\n");
-          DB_printf("R - Release servo retract\r\n");
           DB_printf("f - Shoot servo action (fire)\r\n");
           DB_printf("h - Display this help\r\n");
           DB_printf("========================\r\n\n");

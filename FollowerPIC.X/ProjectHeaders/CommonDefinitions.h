@@ -54,7 +54,7 @@ typedef enum
     CMD_RELEASE = 0x52,           // Release servo action
     CMD_SHOOT = 0x53,             // Shoot servo action
     CMD_RETRACT_SWEEP = 0x54,     // Retract sweep servo
-    CMD_RETRACT_RELEASE = 0x55    // Retract release servo
+    CMD_RETRACT_SCOOP = 0x55      // Retract scoop servo
 } Command_t;
 
 extern const uint8_t validCommandBytes[18];

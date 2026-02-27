@@ -273,7 +273,7 @@ typedef enum
   EV_RELEASE_ACTION,        /* Trigger release servo action */
   EV_SHOOT_ACTION,          /* Trigger shoot servo action */
   EV_SWEEP_RETRACT,         /* Retract sweep servo */
-  EV_RELEASE_RETRACT        /* Retract release servo */
+  EV_SCOOP_RETRACT          /* Retract scoop servo */
 }ES_EventType_t;
 
 /****************************************************************************/

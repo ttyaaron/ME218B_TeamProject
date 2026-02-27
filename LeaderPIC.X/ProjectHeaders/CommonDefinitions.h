@@ -38,6 +38,7 @@ typedef enum {
 typedef enum
 {
     CMD_STOP = 0x00,
+    CMD_INIT_SERVOS = 0x01,       // Initialize all servos
     CMD_ROTATE_CW_90 = 0x02,
     CMD_ROTATE_CW_45 = 0x03,
     CMD_ROTATE_CCW_90 = 0x04,
@@ -47,11 +48,16 @@ typedef enum
     CMD_DRIVE_REV_HALF = 0x10,
     CMD_DRIVE_REV_FULL = 0x11,
     CMD_ALIGN_BEACON = 0x20,
-    CMD_SEARCH_TAPE = 0x40
-    
+    CMD_SEARCH_TAPE = 0x40,
+    CMD_SWEEP = 0x50,             // Sweep servo action
+    CMD_SCOOP = 0x51,             // Scoop servo action
+    CMD_RELEASE = 0x52,           // Release servo action
+    CMD_SHOOT = 0x53,             // Shoot servo action
+    CMD_RETRACT_SWEEP = 0x54,     // Retract sweep servo
+    CMD_RETRACT_SCOOP = 0x55      // Retract scoop servo
 } Command_t;
 
-extern const uint8_t validCommandBytes[11];
+extern const uint8_t validCommandBytes[18];
 
 // Prescale lookup table (maps enum to hardware register bits)
 extern const uint8_t PrescaleLookup[];

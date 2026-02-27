@@ -46,6 +46,8 @@
 // Project modules
 #include "MainLogicFSM.h"
 #include "DCMotorService.h"
+#include "SPILeaderFSM.h"
+#include "CommonDefinitions.h"
 
 /*----------------------------- Module Defines ----------------------------*/
 // these times assume a 10.000mS/tick timing
@@ -110,6 +112,16 @@ bool InitTestHarnessService0(uint8_t Priority)
   DB_printf( "compiled at %s on %s\n", __TIME__, __DATE__);
   DB_printf( "\n\r\n");
   DB_printf( "Press any key to post key-stroke events to Service 0\n\r");
+  DB_printf( "\r\n=== Servo Control Keys (send via SPI to Follower) ===\r\n");
+  DB_printf( "w - Sweep servo action\r\n");
+  DB_printf( "W - Sweep servo retract\r\n");
+  DB_printf( "s - Scoop servo action\r\n");
+  DB_printf( "S - Scoop servo retract\r\n");
+  DB_printf( "r - Release servo action\r\n");
+  DB_printf( "f - Shoot servo action (fire)\r\n");
+  DB_printf( "i - Initialize all servos\r\n");
+  DB_printf( "h - Display help\r\n");
+  DB_printf( "================================================\r\n\n");
 
   /********************************************
    in here you write your initialization code
@@ -223,17 +235,86 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
       puts("\rES_SHORT_TIMEOUT received\r\n");
     }
     break;
-    case ES_NEW_KEY:   // announce
+    case ES_NEW_KEY:   // announce and handle servo control keys
     {
       DB_printf("ES_NEW_KEY received with -> %c <- in Service 0\r\n",
           (char)ThisEvent.EventParam);
+
+      // Handle key mappings for servo control via SPI
+      ES_Event_t CommandEvent;
+      char key = (char)ThisEvent.EventParam;
+      
+      switch(key)
+      {
+        // Servo control commands - send to Follower via SPI
+        case 'w':  // Sweep action
+          CommandEvent.EventType = ES_NEW_COMMAND;
+          CommandEvent.EventParam = CMD_SWEEP;
+          PostSPILeaderFSM(CommandEvent);
+          DB_printf("Posted CMD_SWEEP to SPILeaderFSM\r\n");
+          break;
+          
+        case 'W':  // Sweep retract
+          CommandEvent.EventType = ES_NEW_COMMAND;
+          CommandEvent.EventParam = CMD_RETRACT_SWEEP;
+          PostSPILeaderFSM(CommandEvent);
+          DB_printf("Posted CMD_RETRACT_SWEEP to SPILeaderFSM\r\n");
+          break;
+          
+        case 's':  // Scoop action
+          CommandEvent.EventType = ES_NEW_COMMAND;
+          CommandEvent.EventParam = CMD_SCOOP;
+          PostSPILeaderFSM(CommandEvent);
+          DB_printf("Posted CMD_SCOOP to SPILeaderFSM\r\n");
+          break;
+          
+        case 'S':  // Scoop retract
+          CommandEvent.EventType = ES_NEW_COMMAND;
+          CommandEvent.EventParam = CMD_RETRACT_SCOOP;
+          PostSPILeaderFSM(CommandEvent);
+          DB_printf("Posted CMD_RETRACT_SCOOP to SPILeaderFSM\r\n");
+          break;
+          
+        case 'r':  // Release action
+          CommandEvent.EventType = ES_NEW_COMMAND;
+          CommandEvent.EventParam = CMD_RELEASE;
+          PostSPILeaderFSM(CommandEvent);
+          DB_printf("Posted CMD_RELEASE to SPILeaderFSM\r\n");
+          break;
+          
+        case 'f':  // Shoot action (f for fire)
+          CommandEvent.EventType = ES_NEW_COMMAND;
+          CommandEvent.EventParam = CMD_SHOOT;
+          PostSPILeaderFSM(CommandEvent);
+          DB_printf("Posted CMD_SHOOT to SPILeaderFSM\r\n");
+          break;
+          
+        case 'i':  // Initialize all servos
+          CommandEvent.EventType = ES_NEW_COMMAND;
+          CommandEvent.EventParam = CMD_INIT_SERVOS;
+          PostSPILeaderFSM(CommandEvent);
+          DB_printf("Posted CMD_INIT_SERVOS to SPILeaderFSM\r\n");
+          break;
+          
+        case 'h':  // Help - display key mappings
+          DB_printf("\r\n=== Servo Control Keys (send via SPI to Follower) ===\r\n");
+          DB_printf("w - Sweep servo action\r\n");
+          DB_printf("W - Sweep servo retract\r\n");
+          DB_printf("s - Scoop servo action\r\n");
+          DB_printf("S - Scoop servo retract\r\n");
+          DB_printf("r - Release servo action\r\n");
+          DB_printf("f - Shoot servo action (fire)\r\n");
+          DB_printf("i - Initialize all servos\r\n");
+          DB_printf("h - Display this help\r\n");
+          DB_printf("================================================\r\n\n");
+          break;
+      }
 
       // If the key is 'b''g''r''l', post an ES_BEACON_DETECTED event with the key as a parameter
       switch (ThisEvent.EventParam)
       {
           case 'b':
           case 'g':
-          case 'r':
           case 'l':
           {
               ES_Event_t BeaconEvent;

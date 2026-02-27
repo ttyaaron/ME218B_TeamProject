@@ -8,8 +8,8 @@
  Description
    Unified state machine for controlling four angle servos:
    - Sweep servo: Normal position ↔ Sweep action ↔ Retracted
-   - Scoop servo: Idle ↔ Scoop action
-   - Release servo: Normal position ↔ Release action ↔ Retracted
+   - Scoop servo: Normal position ↔ Scoop action ↔ Retracted
+   - Release servo: Idle ↔ Release action
    - Shoot servo: Idle ↔ Shoot action
    
    All servos are controlled via PWM pulse widths and operate independently.
@@ -192,9 +192,9 @@ ES_Event_t RunServoFSM(ES_Event_t ThisEvent)
       // Transition all servos to IDLE state
       for (uint8_t i = 0; i < NUM_SERVOS; i++)
       {
-        if (i == SERVO_SWEEP || i == SERVO_RELEASE)
+        if (i == SERVO_SWEEP || i == SERVO_SCOOP)
         {
-          // Sweep and Release start in retracted state
+          // Sweep and Scoop start in retracted state
           ServoStates[i] = SERVO_RETRACTED;
         }
         else
@@ -221,7 +221,8 @@ ES_Event_t RunServoFSM(ES_Event_t ThisEvent)
     
     case EV_SCOOP_ACTION:
     {
-      if (ServoStates[SERVO_SCOOP] == SERVO_IDLE)
+      if (ServoStates[SERVO_SCOOP] == SERVO_IDLE || 
+          ServoStates[SERVO_SCOOP] == SERVO_RETRACTED)
       {
         StartServoAction(SERVO_SCOOP);
         ServoStates[SERVO_SCOOP] = SERVO_ACTING;
@@ -233,8 +234,7 @@ ES_Event_t RunServoFSM(ES_Event_t ThisEvent)
     
     case EV_RELEASE_ACTION:
     {
-      if (ServoStates[SERVO_RELEASE] == SERVO_IDLE || 
-          ServoStates[SERVO_RELEASE] == SERVO_RETRACTED)
+      if (ServoStates[SERVO_RELEASE] == SERVO_IDLE)
       {
         StartServoAction(SERVO_RELEASE);
         ServoStates[SERVO_RELEASE] = SERVO_ACTING;
@@ -273,18 +273,18 @@ ES_Event_t RunServoFSM(ES_Event_t ThisEvent)
       break;
     }
     
-    case EV_RELEASE_RETRACT:
+    case EV_SCOOP_RETRACT:
     {
-      if (ServoStates[SERVO_RELEASE] == SERVO_IDLE)
+      if (ServoStates[SERVO_SCOOP] == SERVO_IDLE)
       {
-        RetractServo(SERVO_RELEASE);
-        ServoStates[SERVO_RELEASE] = SERVO_RETRACTED;
-        DB_printf("Release servo: Retracted\r\n");
+        RetractServo(SERVO_SCOOP);
+        ServoStates[SERVO_SCOOP] = SERVO_RETRACTED;
+        DB_printf("Scoop servo: Retracted\r\n");
         
         // Post completion event
         ES_Event_t CompleteEvent;
         CompleteEvent.EventType = ES_SERVO_ACTION_COMPLETE;
-        CompleteEvent.EventParam = SERVO_RELEASE;
+        CompleteEvent.EventParam = SERVO_SCOOP;
         PostSPIFollowerFSM(CompleteEvent);
       }
       break;
@@ -388,12 +388,12 @@ ServoState_t QueryServoState(ServoID_t whichServo)
 ****************************************************************************/
 void InitializeAllServos(void)
 {
-  // Sweep and Release start in retracted positions
+  // Sweep and Scoop start in retracted positions
   PWMOperate_SetPulseWidthOnChannel(SWEEP_RETRACT_PW, SWEEP_CHANNEL);
-  PWMOperate_SetPulseWidthOnChannel(RELEASE_RETRACT_PW, RELEASE_CHANNEL);
+  PWMOperate_SetPulseWidthOnChannel(SCOOP_RETRACT_PW, SCOOP_CHANNEL);
   
-  // Scoop and Shoot start in idle positions
-  PWMOperate_SetPulseWidthOnChannel(SCOOP_IDLE_PW, SCOOP_CHANNEL);
+  // Release and Shoot start in idle positions
+  PWMOperate_SetPulseWidthOnChannel(RELEASE_IDLE_PW, RELEASE_CHANNEL);
   PWMOperate_SetPulseWidthOnChannel(SHOOT_IDLE_PW, SHOOT_CHANNEL);
   
   DB_printf("All servos initialized to default positions\r\n");
@@ -479,7 +479,7 @@ static void ReturnServoToIdle(ServoID_t servo)
    RetractServo
 
  Description
-   Moves servo to retracted position (only applicable to Sweep and Release)
+   Moves servo to retracted position (only applicable to Sweep and Scoop)
 ****************************************************************************/
 static void RetractServo(ServoID_t servo)
 {
@@ -488,8 +488,8 @@ static void RetractServo(ServoID_t servo)
     case SERVO_SWEEP:
       MoveServoToPosition(SERVO_SWEEP, SWEEP_RETRACT_PW);
       break;
-    case SERVO_RELEASE:
-      MoveServoToPosition(SERVO_RELEASE, RELEASE_RETRACT_PW);
+    case SERVO_SCOOP:
+      MoveServoToPosition(SERVO_SCOOP, SCOOP_RETRACT_PW);
       break;
     default:
       // Other servos don't have retract positions

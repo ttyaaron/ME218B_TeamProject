@@ -4,13 +4,13 @@
  Description
      Unified state machine for controlling four servos:
      - Sweep servo (with retract capability)
-     - Scoop servo
-     - Release servo (with retract capability)
+     - Scoop servo (with retract capability)
+     - Release servo
      - Shoot servo
 
  Notes
      Each servo operates independently with its own state tracking.
-     Sweep and Release servos have retracted states for volume reduction.
+     Sweep and Scoop servos have retracted states for volume reduction.
 
  History
  When           Who     What/Why

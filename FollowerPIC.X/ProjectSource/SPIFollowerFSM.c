@@ -264,10 +264,10 @@ ES_Event_t RunSPIFollowerFSM(ES_Event_t ThisEvent)
             DB_printf("Sweep retract posted\n");
             break;
             
-          case CMD_RETRACT_RELEASE:
-            ServoEvent.EventType = EV_RELEASE_RETRACT;
+          case CMD_RETRACT_SCOOP:
+            ServoEvent.EventType = EV_SCOOP_RETRACT;
             PostServoFSM(ServoEvent);
-            DB_printf("Release retract posted\n");
+            DB_printf("Scoop retract posted\n");
             break;
             
           default:
