@@ -1,12 +1,14 @@
 /****************************************************************************
  Module
-   MainLogicFSM.c
+   AtomBehaviorFSM.c
 
  Revision
-   0.1
+   0.2
 
  Description
-   Main logic state machine for command-driven robot behavior.
+   Atomic Behavior state machine for executing individual robot behaviors.
+   Renamed from MainLogicFSM to better reflect its role as executor of
+   atomic behaviors commanded by MainStrategyHSM.
 
  Notes
    States:
@@ -14,10 +16,12 @@
      - SimpleMoving
      - SearchingForTape
      - AligningWithBeacon
+     - DrivingToBeacon
 
  History
  When           Who     What/Why
  -------------- ---     --------
+ 02/28/26       Tianyu  Renamed from MainLogicFSM to AtomBehaviorFSM
  02/03/26       Tianyu  Initial creation for Lab 8 main logic
 ****************************************************************************/
 
@@ -25,7 +29,7 @@
 #include "ES_Configure.h"
 #include "ES_Framework.h"
 #include "ES_Timers.h"
-#include "MainLogicFSM.h"
+#include "AtomBehaviorFSM.h"
 #include "BeaconDetectFSM.h"
 #include "DCMotorService.h"
 #include "CommonDefinitions.h"
@@ -48,13 +52,13 @@ static void SearchForTape(void);
 static void AlignWithBeacon(void);
 
 /*---------------------------- Module Variables ---------------------------*/
-static MainLogicState_t CurrentState;
+static AtomBehaviorState_t CurrentState;
 static uint8_t MyPriority;
 
 /*------------------------------ Module Code ------------------------------*/
 /****************************************************************************
  Function
-     InitMainLogicFSM
+     InitAtomBehaviorFSM
 
  Parameters
      uint8_t : the priority of this service
@@ -63,12 +67,12 @@ static uint8_t MyPriority;
      bool, false if error in initialization, true otherwise
 
  Description
-     Initializes the main logic state machine.
+     Initializes the atomic behavior state machine.
 
  Author
-     Tianyu, 02/03/26
+     Tianyu, 02/28/26
 ****************************************************************************/
-bool InitMainLogicFSM(uint8_t Priority)
+bool InitAtomBehaviorFSM(uint8_t Priority)
 {
   ES_Event_t ThisEvent;
 
@@ -81,7 +85,7 @@ bool InitMainLogicFSM(uint8_t Priority)
   // - Beacon pin (RB2): initialized by BeaconDetectFSM
   // - Tape sensors: initialized by DCMotorService
   // - SPI pins: initialized by SPILeaderFSM
-  // - Debug pin: initialized below (MainLogic-specific debugging)
+  // - Debug pin: initialized below (AtomBehavior-specific debugging)
   InitDebugOutputPin();
 
   CurrentState = Stopped;
@@ -99,7 +103,7 @@ bool InitMainLogicFSM(uint8_t Priority)
 
 /****************************************************************************
  Function
-     PostMainLogicFSM
+     PostAtomBehaviorFSM
 
  Parameters
      ES_Event_t ThisEvent , the event to post to the queue
@@ -111,16 +115,16 @@ bool InitMainLogicFSM(uint8_t Priority)
      Posts an event to this state machine's queue
 
  Author
-     Tianyu, 02/03/26
+     Tianyu, 02/28/26
 ****************************************************************************/
-bool PostMainLogicFSM(ES_Event_t ThisEvent)
+bool PostAtomBehaviorFSM(ES_Event_t ThisEvent)
 {
   return ES_PostToService(MyPriority, ThisEvent);
 }
 
 /****************************************************************************
  Function
-    RunMainLogicFSM
+    RunAtomBehaviorFSM
 
  Parameters
    ES_Event_t : the event to process
@@ -129,12 +133,12 @@ bool PostMainLogicFSM(ES_Event_t ThisEvent)
    ES_Event_t, ES_NO_EVENT if no error ES_ERROR otherwise
 
  Description
-   State machine for command-driven robot behavior.
+   State machine for executing atomic robot behaviors.
 
  Author
-     Tianyu, 02/03/26
+     Tianyu, 02/28/26
 ****************************************************************************/
-ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
+ES_Event_t RunAtomBehaviorFSM(ES_Event_t ThisEvent)
 {
   ES_Event_t ReturnEvent;
   ReturnEvent.EventType = ES_NO_EVENT;
@@ -151,7 +155,7 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
         ES_Event_t BeaconCommand;
         BeaconCommand.EventType = ES_COMMAND_RETRIEVED;
         BeaconCommand.EventParam = CMD_ALIGN_BEACON;
-        PostMainLogicFSM(BeaconCommand);
+        PostAtomBehaviorFSM(BeaconCommand);
         break;
       }
       if (ThisEvent.EventType == ES_COMMAND_RETRIEVED)
@@ -212,7 +216,7 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
               ES_Event_t BeaconEvent;
               BeaconEvent.EventType = ES_BEACON_DETECTED;
               BeaconEvent.EventParam = QueryLockedBeaconId();
-              PostMainLogicFSM(BeaconEvent);
+              PostAtomBehaviorFSM(BeaconEvent);
             }
             else {
               // No beacon locked yet (NoSignal or SignalDetected) - start rotating to search
@@ -227,7 +231,7 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
               ES_Event_t TapeEvent;
               TapeEvent.EventType = ES_TAPE_DETECTED;
               TapeEvent.EventParam = 0;
-              PostMainLogicFSM(TapeEvent);
+              PostAtomBehaviorFSM(TapeEvent);
             }
             else{
             // If not detected, act to look for line detect signal
@@ -253,7 +257,7 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
       {
         DB_printf("New command received while moving\r\n");
         CurrentState = Stopped;
-        PostMainLogicFSM(ThisEvent); //go back to stopped list to take action on new command
+        PostAtomBehaviorFSM(ThisEvent); //go back to stopped list to take action on new command
       }
       break;
 
@@ -275,7 +279,7 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
       {
         DB_printf("New command received while searching for tape\r\n");
         CurrentState = Stopped;
-        PostMainLogicFSM(ThisEvent);
+        PostAtomBehaviorFSM(ThisEvent);
       }
       break;
 
@@ -299,7 +303,7 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
       {
         DB_printf("New command received while aligning with beacon\r\n");
         CurrentState = Stopped;
-        PostMainLogicFSM(ThisEvent);
+        PostAtomBehaviorFSM(ThisEvent);
       }
       break;
     
@@ -312,7 +316,7 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
         ES_Event_t BeaconCommand;
         BeaconCommand.EventType = ES_COMMAND_RETRIEVED;
         BeaconCommand.EventParam = CMD_ALIGN_BEACON;
-        PostMainLogicFSM(BeaconCommand);
+        PostAtomBehaviorFSM(BeaconCommand);
       }
       else if (ThisEvent.EventType == ES_COMMAND_RETRIEVED)
       {
@@ -320,7 +324,7 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
         MotorCommandWrapper(0, 0, FORWARD, FORWARD);
         ES_Timer_StopTimer(DRIVE_TO_BEACON_TIMER);
         CurrentState = Stopped;
-        PostMainLogicFSM(ThisEvent);
+        PostAtomBehaviorFSM(ThisEvent);
       }
       break;
 
@@ -333,21 +337,21 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
 
 /****************************************************************************
  Function
-     QueryMainLogicFSM
+     QueryAtomBehaviorFSM
 
  Parameters
      None
 
  Returns
-     MainLogicState_t: the current state of the main logic FSM
+     AtomBehaviorState_t: the current state of the atom behavior FSM
 
  Description
-     Returns the current state of the main logic FSM
+     Returns the current state of the atom behavior FSM
 
  Author
-     Tianyu, 02/03/26
+     Tianyu, 02/28/26
 ****************************************************************************/
-MainLogicState_t QueryMainLogicFSM(void)
+AtomBehaviorState_t QueryAtomBehaviorFSM(void)
 {
   return CurrentState;
 }

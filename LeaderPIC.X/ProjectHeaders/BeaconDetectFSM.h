@@ -13,7 +13,7 @@
                        Reported frequency is 0 Hz.
       SignalDetected - Valid signal edges are being received. Smoothed
                        frequency is computed and ES_BEACON_DETECTED is
-                       posted to MainLogicFSM when within tolerance.
+                       posted to AtomBehaviorFSM when within tolerance.
 
   Transitions
       NoSignal       --[ES_NEW_SIGNAL_EDGE]--> SignalDetected

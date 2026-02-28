@@ -34,7 +34,7 @@
 #include "SPILeaderFSM.h"
 #include "CommonDefinitions.h"
 #include "PIC32_SPI_HAL.h"
-#include "MainLogicFSM.h"
+#include "AtomBehaviorFSM.h"
 #include "dbprintf.h"
 #include <xc.h>
 #include <sys/attribs.h>
@@ -243,7 +243,7 @@ ES_Event_t RunSPILeaderFSM(ES_Event_t ThisEvent)
             // ES_Event_t StatusEvent;
             // StatusEvent.EventType = ES_FOLLOWER_STATUS;
             // StatusEvent.EventParam = statusByte;
-            // PostMainLogicFSM(StatusEvent);
+            // PostAtomBehaviorFSM(StatusEvent);
           }
           SawNewStatusFlag = false;
         }

@@ -33,7 +33,7 @@
 /****************************************************************************/
 // This macro determines that nuber of services that are *actually* used in
 // a particular application. It will vary in value from 1 to MAX_NUM_SERVICES
-#define NUM_SERVICES 5
+#define NUM_SERVICES 2
 
 /****************************************************************************/
 // These are the definitions for Service 0, the lowest priority service.
@@ -41,13 +41,13 @@
 // services are added in numeric sequence (1,2,3,...) with increasing
 // priorities
 // the header file with the public function prototypes
-#define SERV_0_HEADER "TestHarnessService0.h"
+#define SERV_0_HEADER "MW_MapKeys.h"
 // the name of the Init function
-#define SERV_0_INIT InitTestHarnessService0
+#define SERV_0_INIT InitMapKeys
 // the name of the run function
-#define SERV_0_RUN RunTestHarnessService0
+#define SERV_0_RUN RunMapKeys
 // How big should this services Queue be?
-#define SERV_0_QUEUE_SIZE 5
+#define SERV_0_QUEUE_SIZE 2
 
 /****************************************************************************/
 // The following sections are used to define the parameters for each of the
@@ -56,12 +56,11 @@
 /****************************************************************************/
 // These are the definitions for Service 1
 #if NUM_SERVICES > 1
-// the header file with the public function prototypes
-#define SERV_1_HEADER "SPILeaderFSM.h"
+#define SERV_1_HEADER "MW_MasterMachine.h"
 // the name of the Init function
-#define SERV_1_INIT InitSPILeaderFSM
+#define SERV_1_INIT InitMasterSM
 // the name of the run function
-#define SERV_1_RUN RunSPILeaderFSM
+#define SERV_1_RUN RunMasterSM
 // How big should this services Queue be?
 #define SERV_1_QUEUE_SIZE 3
 #endif
@@ -70,11 +69,11 @@
 // These are the definitions for Service 2
 #if NUM_SERVICES > 2
 // the header file with the public function prototypes
-#define SERV_2_HEADER "AtomBehaviorFSM.h"
+#define SERV_2_HEADER "TestHarnessService2.h"
 // the name of the Init function
-#define SERV_2_INIT InitAtomBehaviorFSM
+#define SERV_2_INIT InitTestHarnessService2
 // the name of the run function
-#define SERV_2_RUN RunAtomBehaviorFSM
+#define SERV_2_RUN RunTestHarnessService2
 // How big should this services Queue be?
 #define SERV_2_QUEUE_SIZE 3
 #endif
@@ -83,11 +82,11 @@
 // These are the definitions for Service 3
 #if NUM_SERVICES > 3
 // the header file with the public function prototypes
-#define SERV_3_HEADER "DCMotorService.h"
+#define SERV_3_HEADER "TestHarnessService3.h"
 // the name of the Init function
-#define SERV_3_INIT InitDCMotorService
+#define SERV_3_INIT InitTestHarnessService3
 // the name of the run function
-#define SERV_3_RUN RunDCMotorService
+#define SERV_3_RUN RunTestHarnessService3
 // How big should this services Queue be?
 #define SERV_3_QUEUE_SIZE 3
 #endif
@@ -96,11 +95,11 @@
 // These are the definitions for Service 4
 #if NUM_SERVICES > 4
 // the header file with the public function prototypes
-#define SERV_4_HEADER "BeaconDetectFSM.h"
+#define SERV_4_HEADER "TestHarnessService4.h"
 // the name of the Init function
-#define SERV_4_INIT InitBeaconDetectFSM
+#define SERV_4_INIT InitTestHarnessService4
 // the name of the run function
-#define SERV_4_RUN RunBeaconDetectFSM
+#define SERV_4_RUN RunTestHarnessService4
 // How big should this services Queue be?
 #define SERV_4_QUEUE_SIZE 3
 #endif
@@ -258,15 +257,17 @@ typedef enum
   ES_INIT,                  /* used to transition from initial pseudo-state */
   ES_TIMEOUT,               /* signals that the timer has expired */
   ES_SHORT_TIMEOUT,         /* signals that a short timer has expired */
+  ES_ENTRY,
+  ES_ENTRY_HISTORY,
+  ES_EXIT,
   /* User-defined events start here */
-  ES_NEW_KEY,               /* signals a new key received from terminal */
-  ES_LOCK,
-  ES_MOTOR_ACTION_CHANGE,          /* signals a speed change and direction change for DC motor */
-  ES_NEW_SIGNAL_EDGE,       /* signals a new signal edge from phototransistor */
-  ES_COMMAND_RETRIEVED,     /* signals a new command byte from SPI */
-  ES_BEACON_DETECTED,       /* signals a beacon detection */
-  ES_TAPE_DETECTED,          /* signals a tape detection */
-  ES_NEW_COMMAND            /* New command received from command generator */
+  EV_NEW_KEY,
+  EV_SET,
+  EV_START,
+  EV_POPCORN,
+  EV_DEF_LIGHT,
+  EV_DOOR_OPEN,
+  EV_CLEAR
 }ES_EventType_t;
 
 /****************************************************************************/
@@ -302,7 +303,6 @@ typedef enum
 /****************************************************************************/
 // This is the list of event checking functions
 #define EVENT_CHECK_LIST Check4Keystroke
-// , Check4TapeDetected, Check4BeaconDetected
 
 /****************************************************************************/
 // These are the definitions for the post functions to be executed when the
@@ -311,15 +311,14 @@ typedef enum
 // Unlike services, any combination of timers may be used and there is no
 // priority in servicing them
 #define TIMER_UNUSED ((pPostFunc)0)
-#define TIMER0_RESP_FUNC PostSPILeaderFSM
-// #define TIMER1_RESP_FUNC PostBeaconDetectService
-#define TIMER1_RESP_FUNC PostBeaconDetectFSM
-#define TIMER2_RESP_FUNC PostAtomBehaviorFSM
-#define TIMER3_RESP_FUNC PostAtomBehaviorFSM
-#define TIMER4_RESP_FUNC PostAtomBehaviorFSM
+#define TIMER0_RESP_FUNC PostMasterSM
+#define TIMER1_RESP_FUNC PostMapKeys
+#define TIMER2_RESP_FUNC TIMER_UNUSED
+#define TIMER3_RESP_FUNC TIMER_UNUSED
+#define TIMER4_RESP_FUNC TIMER_UNUSED
 #define TIMER5_RESP_FUNC TIMER_UNUSED
-#define TIMER6_RESP_FUNC PostBeaconDetectFSM
-#define TIMER7_RESP_FUNC PostAtomBehaviorFSM
+#define TIMER6_RESP_FUNC TIMER_UNUSED
+#define TIMER7_RESP_FUNC TIMER_UNUSED
 #define TIMER8_RESP_FUNC TIMER_UNUSED
 #define TIMER9_RESP_FUNC TIMER_UNUSED
 #define TIMER10_RESP_FUNC TIMER_UNUSED
@@ -327,7 +326,7 @@ typedef enum
 #define TIMER12_RESP_FUNC TIMER_UNUSED
 #define TIMER13_RESP_FUNC TIMER_UNUSED
 #define TIMER14_RESP_FUNC TIMER_UNUSED
-#define TIMER15_RESP_FUNC PostTestHarnessService0
+#define TIMER15_RESP_FUNC TIMER_UNUSED
 
 /****************************************************************************/
 // Give the timer numbers symbolc names to make it easier to move them
@@ -336,15 +335,12 @@ typedef enum
 // the timer number matches where the timer event will be routed
 // These symbolic names should be changed to be relevant to your application
 
-#define SERVICE0_TIMER 15
-#define COMMAND_SPI_TIMER 0
-#define PRINT_FREQUENCY_TIMER 1
-#define SIMPLE_MOVE_TIMER 2
-#define TAPE_SEARCH_TIMER 3
-#define BEACON_ALIGN_TIMER 4
-#define AD_TIMER 5
-#define SIGNAL_WATCHDOG_TIMER 6
-#define DRIVE_TO_BEACON_TIMER 7
+#define OVEN_TIMER 0
+#define DISPLAY_TIMER 1
 
+/**************************************************************************/
+// uncomment this ine to get some basic framework operation debugging on
+// PF1 & PF2
+//#define _INCLUDE_BASIC_FRAMEWORK_DEBUG_
 
 #endif /* ES_CONFIGURE_H */

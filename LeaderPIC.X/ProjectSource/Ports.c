@@ -128,14 +128,23 @@ bool ReadTapeSensorPin(void)
      None
 
  Description
-     Initializes the SPI pins used for the CommandGenerator link.
+     [OBSOLETE] SPI pin initialization is now handled directly by SPILeaderFSM.
+     This function is kept for backwards compatibility but does nothing.
+
+ Notes
+     SPI pins are configured in InitSPILeaderFSM() including:
+     - SS (Chip Select) pin
+     - SDO (MOSI) pin
+     - SDI (MISO) pin
+     - Clock and control registers
 
  Author
      Tianyu, 02/03/26
 ****************************************************************************/
 void InitCommandSPIPins(void)
 {
-  // TODO: Configure SPI pins for leader mode (SCK, MOSI, MISO, CS)
+  // OBSOLETE: SPI initialization is now done in SPILeaderFSM Init function
+  // This function is kept empty for backwards compatibility
 }
 
 /****************************************************************************

@@ -30,24 +30,19 @@
 #include "../ProjectHeaders/TestHarnessService0.h"
 
 // debugging printf()
+//#include "dbprintf.h"
 
 // Hardware
 #include <xc.h>
-//#include <proc/p32mx170f256b.h>
+#include <proc/p32mx170f256b.h>
+#include <sys/attribs.h> // for ISR macors
 
 // Event & Services Framework
 #include "ES_Configure.h"
 #include "ES_Framework.h"
 #include "ES_DeferRecall.h"
+#include "ES_ShortTimer.h"
 #include "ES_Port.h"
-#include "terminal.h"
-#include "dbprintf.h"
-
-// Project modules
-#include "AtomBehaviorFSM.h"
-#include "DCMotorService.h"
-#include "SPILeaderFSM.h"
-#include "CommonDefinitions.h"
 
 /*----------------------------- Module Defines ----------------------------*/
 // these times assume a 10.000mS/tick timing
@@ -60,17 +55,14 @@
 #define ENTER_RUN      ((MyPriority<<3)|1)
 #define ENTER_TIMEOUT  ((MyPriority<<3)|2)
 
-//#define TEST_INT_POST
-//#define BLINK LED
+#define TEST_INT_POST
 /*---------------------------- Module Functions ---------------------------*/
 /* prototypes for private functions for this service.They should be functions
    relevant to the behavior of this service
 */
-#ifdef BLINK_LED
+
 static void InitLED(void);
 static void BlinkLED(void);
-#endif
-
 #ifdef TEST_INT_POST
 static void InitTMR2(void);
 static void StartTMR2(void);
@@ -78,6 +70,8 @@ static void StartTMR2(void);
 /*---------------------------- Module Variables ---------------------------*/
 // with the introduction of Gen2, we need a module level Priority variable
 static uint8_t MyPriority;
+// add a deferral queue for up to 3 pending deferrals +1 to allow for overhead
+static ES_Event_t DeferralQueue[3 + 1];
 
 /*------------------------------ Module Code ------------------------------*/
 /****************************************************************************
@@ -103,33 +97,13 @@ bool InitTestHarnessService0(uint8_t Priority)
   ES_Event_t ThisEvent;
 
   MyPriority = Priority;
-
-  // When doing testing, it is useful to announce just which program
-  // is running.
-  clrScrn();
-  puts("\rStarting Test Harness for \r");
-  DB_printf( "the 2nd Generation Events & Services Framework V2.4\r\n");
-  DB_printf( "compiled at %s on %s\n", __TIME__, __DATE__);
-  DB_printf( "\n\r\n");
-  DB_printf( "Press any key to post key-stroke events to Service 0\n\r");
-  DB_printf( "\r\n=== Servo Control Keys (send via SPI to Follower) ===\r\n");
-  DB_printf( "w - Sweep servo action\r\n");
-  DB_printf( "W - Sweep servo retract\r\n");
-  DB_printf( "s - Scoop servo action\r\n");
-  DB_printf( "S - Scoop servo retract\r\n");
-  DB_printf( "r - Release servo action\r\n");
-  DB_printf( "f - Shoot servo action (fire)\r\n");
-  DB_printf( "i - Initialize all servos\r\n");
-  DB_printf( "h - Display help\r\n");
-  DB_printf( "================================================\r\n\n");
-
   /********************************************
    in here you write your initialization code
    *******************************************/
+  // initialize deferral queue for testing Deferal function
+  ES_InitDeferralQueueWith(DeferralQueue, ARRAY_SIZE(DeferralQueue));
   // initialize LED drive for testing/debug output
-#ifdef BLINK_LED
-  InitLED();
-#endif
+  //InitLED();
 #ifdef TEST_INT_POST
   InitTMR2();
 #endif
@@ -153,7 +127,7 @@ bool InitTestHarnessService0(uint8_t Priority)
      PostTestHarnessService0
 
  Parameters
-     ES_Event ThisEvent ,the event to post to the queue
+     EF_Event ThisEvent ,the event to post to the queue
 
  Returns
      bool false if the Enqueue operation failed, true otherwise
@@ -191,6 +165,7 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
 {
   ES_Event_t ReturnEvent;
   ReturnEvent.EventType = ES_NO_EVENT; // assume no errors
+  static char DeferredChar = '1';
 
 #ifdef _INCLUDE_BYTE_DEBUG_
   _HW_ByteDebug_SetValueWithStrobe( ENTER_RUN );
@@ -201,33 +176,16 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
     {
       ES_Timer_InitTimer(SERVICE0_TIMER, HALF_SEC);
       puts("Service 00:");
-      DB_printf("\rES_INIT received in Service %d\r\n", MyPriority);
-      DB_printf("Starting tape sensor monitoring (0.5 sec interval)\r\n");
+      printf("\rES_INIT received in Service %d\r\n", MyPriority);
     }
     break;
     case ES_TIMEOUT:   // re-start timer & announce
     {
-      // Read all tape sensors
-      TapeSensor_Read();
-      
-      // Get analog sensor values
-      uint32_t leftAnalog = TapeSensor_GetLeftAnalog();
-      uint32_t rightAnalog = TapeSensor_GetRightAnalog();
-      uint32_t centerAnalog = TapeSensor_GetCenterAnalog();
-      
-      // Get digital sensor states
-      bool leftDigital = TapeSensor_GetLeftDigital();
-      bool rightDigital = TapeSensor_GetRightDigital();
-      
-      // Print tape sensor status
-      DB_printf("\r\n=== Tape Sensors ===\r\n");
-      DB_printf("Analog: L=%d  C=%d  R=%d\r\n", leftAnalog, centerAnalog, rightAnalog);
-      DB_printf("Digital: L=%d  R=%d\r\n", 
-                leftDigital ? 1 : 0, 
-                rightDigital ? 1 : 0);
-      
-      // Restart timer for next reading
-      ES_Timer_InitTimer(SERVICE0_TIMER, HALF_SEC);
+      ES_Timer_InitTimer(SERVICE0_TIMER, FIVE_SEC);
+      printf("ES_TIMEOUT received from Timer %d in Service %d\r\n",
+          ThisEvent.EventParam, MyPriority);
+      StartTMR2();
+      BlinkLED();
     }
     break;
     case ES_SHORT_TIMEOUT:   // lower the line & announce
@@ -235,106 +193,34 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
       puts("\rES_SHORT_TIMEOUT received\r\n");
     }
     break;
-    case ES_NEW_KEY:   // announce and handle servo control keys
+    case ES_NEW_KEY:   // announce
     {
-      DB_printf("ES_NEW_KEY received with -> %c <- in Service 0\r\n",
+      printf("ES_NEW_KEY received with -> %c <- in Service 0\r\n",
           (char)ThisEvent.EventParam);
-
-      // Handle key mappings for servo control via SPI
-      ES_Event_t CommandEvent;
-      char key = (char)ThisEvent.EventParam;
-      
-      switch(key)
+      if ('d' == ThisEvent.EventParam)
       {
-        // Servo control commands - send to Follower via SPI
-        case 'w':  // Sweep action
-          CommandEvent.EventType = ES_NEW_COMMAND;
-          CommandEvent.EventParam = CMD_SWEEP;
-          PostSPILeaderFSM(CommandEvent);
-          DB_printf("Posted CMD_SWEEP to SPILeaderFSM\r\n");
-          break;
-          
-        case 'W':  // Sweep retract
-          CommandEvent.EventType = ES_NEW_COMMAND;
-          CommandEvent.EventParam = CMD_RETRACT_SWEEP;
-          PostSPILeaderFSM(CommandEvent);
-          DB_printf("Posted CMD_RETRACT_SWEEP to SPILeaderFSM\r\n");
-          break;
-          
-        case 's':  // Scoop action
-          CommandEvent.EventType = ES_NEW_COMMAND;
-          CommandEvent.EventParam = CMD_SCOOP;
-          PostSPILeaderFSM(CommandEvent);
-          DB_printf("Posted CMD_SCOOP to SPILeaderFSM\r\n");
-          break;
-          
-        case 'S':  // Scoop retract
-          CommandEvent.EventType = ES_NEW_COMMAND;
-          CommandEvent.EventParam = CMD_RETRACT_SCOOP;
-          PostSPILeaderFSM(CommandEvent);
-          DB_printf("Posted CMD_RETRACT_SCOOP to SPILeaderFSM\r\n");
-          break;
-          
-        case 'r':  // Release action
-          CommandEvent.EventType = ES_NEW_COMMAND;
-          CommandEvent.EventParam = CMD_RELEASE;
-          PostSPILeaderFSM(CommandEvent);
-          DB_printf("Posted CMD_RELEASE to SPILeaderFSM\r\n");
-          break;
-          
-        case 'f':  // Shoot action (f for fire)
-          CommandEvent.EventType = ES_NEW_COMMAND;
-          CommandEvent.EventParam = CMD_SHOOT;
-          PostSPILeaderFSM(CommandEvent);
-          DB_printf("Posted CMD_SHOOT to SPILeaderFSM\r\n");
-          break;
-          
-        case 'i':  // Initialize all servos
-          CommandEvent.EventType = ES_NEW_COMMAND;
-          CommandEvent.EventParam = CMD_INIT_SERVOS;
-          PostSPILeaderFSM(CommandEvent);
-          DB_printf("Posted CMD_INIT_SERVOS to SPILeaderFSM\r\n");
-          break;
-          
-        case 'h':  // Help - display key mappings
-          DB_printf("\r\n=== Servo Control Keys (send via SPI to Follower) ===\r\n");
-          DB_printf("w - Sweep servo action\r\n");
-          DB_printf("W - Sweep servo retract\r\n");
-          DB_printf("s - Scoop servo action\r\n");
-          DB_printf("S - Scoop servo retract\r\n");
-          DB_printf("r - Release servo action\r\n");
-          DB_printf("f - Shoot servo action (fire)\r\n");
-          DB_printf("i - Initialize all servos\r\n");
-          DB_printf("h - Display this help\r\n");
-          DB_printf("================================================\r\n\n");
-          break;
+        ThisEvent.EventParam = DeferredChar++;   //
+        if (ES_DeferEvent(DeferralQueue, ThisEvent))
+        {
+          puts("ES_NEW_KEY deferred in Service 0\r");
+        }
       }
-
-      // If the key is 'b''g''r''l', post an ES_BEACON_DETECTED event with the key as a parameter
-      switch (ThisEvent.EventParam)
+      if ('r' == ThisEvent.EventParam)
       {
-          case 'b':
-          case 'g':
-          case 'l':
-          {
-              ES_Event_t BeaconEvent;
-              DB_printf("Posting ES_BEACON_DETECTED with param -> %c <- to AtomBehaviorFSM\r\n",
-                  (char)ThisEvent.EventParam);
-              BeaconEvent.EventType = ES_BEACON_DETECTED;
-              BeaconEvent.EventParam = ThisEvent.EventParam;
-              PostAtomBehaviorFSM(BeaconEvent);
-          }
-          break;
-          default:
-            break;
+        ThisEvent.EventParam = 'Q';   // This one gets posted normally
+        ES_PostToService(MyPriority, ThisEvent);
+        // but we slide the deferred events under it so it(they) should come out first
+        if (true == ES_RecallEvents(MyPriority, DeferralQueue))
+        {
+          puts("ES_NEW_KEY(s) recalled in Service 0\r");
+          DeferredChar = '1';
+        }
       }
-        
-    }
-    break;
-    case ES_BEACON_DETECTED:
-    {
-      DB_printf("ES_BEACON_DETECTED received with -> %c <- in Service 0\r\n",
-          (char)ThisEvent.EventParam);
+      if ('p' == ThisEvent.EventParam)
+      {
+        //ES_ShortTimerStart(TIMER_A, 10);
+        //puts("Pulsed!\r");
+      }
     }
     break;
     default:
@@ -348,7 +234,6 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
 /***************************************************************************
  private functions
  ***************************************************************************/
-#ifdef BLINK_LED
 #define LED LATBbits.LATB6
 static void InitLED(void)
 {
@@ -361,11 +246,8 @@ static void BlinkLED(void)
   // toggle state of LED
   LED = ~LED;
 }
-#endif
 
 #ifdef TEST_INT_POST
-#include <sys/attribs.h> // for ISR macors
-
 // for testing posting from interrupts.
 // Intializes TMR2 to gerenate an interrupt at 100ms
 static void InitTMR2(void)
@@ -394,7 +276,7 @@ static void StartTMR2(void)
   // clear timer
   TMR2 = 0;
   // start timer
-  //LATBbits.LATB14 = 0;
+  LATBbits.LATB14 = 0;
   T2CONbits.ON = 1;
 }
 
