@@ -54,13 +54,16 @@ typedef enum
     CMD_RELEASE = 0x52,           // Release servo action
     CMD_SHOOT = 0x53,             // Shoot servo action
     CMD_RETRACT_SWEEP = 0x54,     // Retract sweep servo
-    CMD_RETRACT_SCOOP = 0x55      // Retract scoop servo
+    CMD_RETRACT_SCOOP = 0x55,     // Retract scoop servo
+    CMD_SIDE_BLUE = 0x60,         // Set side servo to blue field position
+    CMD_SIDE_GREEN = 0x61,        // Set side servo to green field position
+    CMD_SIDE_MIDDLE = 0x62        // Set side servo to middle/neutral position
 } Command_t;
 
 // Prescale lookup table (maps enum to hardware register bits)
 extern const uint8_t PrescaleLookup[];
 
-extern const uint8_t validCommandBytes[11];
+extern const uint8_t validCommandBytes[14];
 
 // System clock configuration
 #define PBCLK_FREQ 20000000         // 20 MHz peripheral bus clock

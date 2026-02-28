@@ -44,6 +44,7 @@ static uint8_t MyPriority;
 static SPIFollowerState_t CurrentState;
 static uint8_t CurrentStatus = 0x00;  // Current status to send
 static bool NewStatusFlag = false;    // Flag indicating new status pending
+static uint8_t LastSideCommand = CMD_SIDE_MIDDLE;  // Track last side servo command
 
 /*------------------------------ Module Code ------------------------------*/
 
@@ -270,6 +271,27 @@ ES_Event_t RunSPIFollowerFSM(ES_Event_t ThisEvent)
             DB_printf("Scoop retract posted\n");
             break;
             
+          case CMD_SIDE_BLUE:
+            ServoEvent.EventType = EV_SIDE_BLUE;
+            PostServoFSM(ServoEvent);
+            LastSideCommand = CMD_SIDE_BLUE;  // Track the command
+            DB_printf("Side servo BLUE posted\n");
+            break;
+            
+          case CMD_SIDE_GREEN:
+            ServoEvent.EventType = EV_SIDE_GREEN;
+            PostServoFSM(ServoEvent);
+            LastSideCommand = CMD_SIDE_GREEN;  // Track the command
+            DB_printf("Side servo GREEN posted\n");
+            break;
+            
+          case CMD_SIDE_MIDDLE:
+            ServoEvent.EventType = EV_SIDE_MIDDLE;
+            PostServoFSM(ServoEvent);
+            LastSideCommand = CMD_SIDE_MIDDLE;  // Track the command
+            DB_printf("Side servo MIDDLE posted\n");
+            break;
+            
           default:
             DB_printf("Unknown command: 0x%x\n", ThisEvent.EventParam);
             break;
@@ -296,6 +318,10 @@ ES_Event_t RunSPIFollowerFSM(ES_Event_t ThisEvent)
         else if (servoID == SERVO_SHOOT)
         {
           CurrentStatus = CMD_SHOOT;
+        }
+        else if (servoID == SERVO_SIDE)
+        {
+          CurrentStatus = LastSideCommand;  // Use the tracked command
         }
         
         NewStatusFlag = true;

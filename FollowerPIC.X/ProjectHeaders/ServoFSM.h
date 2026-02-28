@@ -32,6 +32,7 @@ typedef enum
   SERVO_SCOOP,
   SERVO_RELEASE,
   SERVO_SHOOT,
+  SERVO_SIDE,
   NUM_SERVOS
 } ServoID_t;
 

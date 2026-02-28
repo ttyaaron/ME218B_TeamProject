@@ -38,17 +38,19 @@
 #include <xc.h>
 
 /*----------------------------- Module Defines ----------------------------*/
-// PWM Channel assignments (using channels 1-4)
+// PWM Channel assignments (using channels 1-5)
 #define SWEEP_CHANNEL 1
 #define SCOOP_CHANNEL 2
 #define RELEASE_CHANNEL  3
 #define SHOOT_CHANNEL 4
+#define SIDE_CHANNEL 5
 
 // Pin assignments (from your original code)
 #define SWEEP_SERVO_PIN PWM_RPB4
 #define SCOOP_SERVO_PIN PWM_RPB5
 #define RELEASE_SERVO_PIN  PWM_RPB9
 #define SHOOT_SERVO_PIN PWM_RPA2
+#define SIDE_SERVO_PIN PWM_RPB6
 
 // Servo pulse widths in timer ticks (TICS_PER_MS = 2500 from PWM library)
 // These are example values - adjust based on your specific servos
@@ -67,11 +69,16 @@
 #define SHOOT_IDLE_PW       (0.5 * 2500)  // 1.5ms - idle/ready position
 #define SHOOT_ACTION_PW     (2.5 * 2500)  // 2.0ms - shoot/release position
 
+#define SIDE_MIDDLE_PW      (1.5 * 2500)  // 1.5ms - middle/neutral position
+#define SIDE_BLUE_PW        (1.0 * 2500)  // 1.0ms - blue field indicator position
+#define SIDE_GREEN_PW       (2.0 * 2500)  // 2.0ms - green field indicator position
+
 // Action durations in milliseconds
 #define SWEEP_ACTION_TIME   500   // Time to complete sweep action
 #define SCOOP_ACTION_TIME   600   // Time to complete scoop action
 #define RELEASE_ACTION_TIME    700   // Time to complete release action
 #define SHOOT_ACTION_TIME   1000   // Time to complete shoot action
+#define SIDE_ACTION_TIME    300    // Time to move side servo to position
 
 /*---------------------------- Module Variables ---------------------------*/
 static uint8_t MyPriority;
@@ -79,15 +86,15 @@ static ServoState_t ServoStates[NUM_SERVOS];
 
 // Mapping arrays for easier servo control
 static const uint8_t ServoChannels[NUM_SERVOS] = {
-  SWEEP_CHANNEL, SCOOP_CHANNEL, RELEASE_CHANNEL, SHOOT_CHANNEL
+  SWEEP_CHANNEL, SCOOP_CHANNEL, RELEASE_CHANNEL, SHOOT_CHANNEL, SIDE_CHANNEL
 };
 
 static const uint8_t ServoTimers[NUM_SERVOS] = {
-  SWEEP_TIMER, SCOOP_TIMER, RELEASE_TIMER, SHOOT_TIMER
+  SWEEP_TIMER, SCOOP_TIMER, RELEASE_TIMER, SHOOT_TIMER, SIDE_TIMER
 };
 
 static const PWM_PinMap_t ServoPins[NUM_SERVOS] = {
-  SWEEP_SERVO_PIN, SCOOP_SERVO_PIN, RELEASE_SERVO_PIN, SHOOT_SERVO_PIN
+  SWEEP_SERVO_PIN, SCOOP_SERVO_PIN, RELEASE_SERVO_PIN, SHOOT_SERVO_PIN, SIDE_SERVO_PIN
 };
 
 /*---------------------------- Module Functions ---------------------------*/
@@ -122,8 +129,8 @@ bool InitServoFSM(uint8_t Priority)
     ServoStates[i] = SERVO_INIT;
   }
 
-  // Initialize PWM system for all 4 servo channels
-  PWMSetup_BasicConfig(4);  // 4 channels for 4 servos
+  // Initialize PWM system for all 5 servo channels
+  PWMSetup_BasicConfig(5);  // 5 channels for 5 servos
   
   // Set 50Hz frequency (20ms period) for servo control on Timer3
   PWMSetup_SetFreqOnTimer(50, _Timer3_);
@@ -290,6 +297,42 @@ ES_Event_t RunServoFSM(ES_Event_t ThisEvent)
       break;
     }
     
+    case EV_SIDE_BLUE:
+    {
+      if (ServoStates[SERVO_SIDE] == SERVO_IDLE)
+      {
+        MoveServoToPosition(SERVO_SIDE, SIDE_BLUE_PW);
+        ServoStates[SERVO_SIDE] = SERVO_ACTING;
+        ES_Timer_InitTimer(SIDE_TIMER, SIDE_ACTION_TIME);
+        DB_printf("Side servo: Moving to BLUE position\r\n");
+      }
+      break;
+    }
+    
+    case EV_SIDE_GREEN:
+    {
+      if (ServoStates[SERVO_SIDE] == SERVO_IDLE)
+      {
+        MoveServoToPosition(SERVO_SIDE, SIDE_GREEN_PW);
+        ServoStates[SERVO_SIDE] = SERVO_ACTING;
+        ES_Timer_InitTimer(SIDE_TIMER, SIDE_ACTION_TIME);
+        DB_printf("Side servo: Moving to GREEN position\r\n");
+      }
+      break;
+    }
+    
+    case EV_SIDE_MIDDLE:
+    {
+      if (ServoStates[SERVO_SIDE] == SERVO_IDLE)
+      {
+        MoveServoToPosition(SERVO_SIDE, SIDE_MIDDLE_PW);
+        ServoStates[SERVO_SIDE] = SERVO_ACTING;
+        ES_Timer_InitTimer(SIDE_TIMER, SIDE_ACTION_TIME);
+        DB_printf("Side servo: Moving to MIDDLE position\r\n");
+      }
+      break;
+    }
+    
     case ES_TIMEOUT:
     {
       // Handle timeout for each servo
@@ -350,6 +393,19 @@ ES_Event_t RunServoFSM(ES_Event_t ThisEvent)
           PostSPIFollowerFSM(CompleteEvent);
         }
       }
+      else if (ThisEvent.EventParam == SIDE_TIMER)
+      {
+        if (ServoStates[SERVO_SIDE] == SERVO_ACTING)
+        {
+          ServoStates[SERVO_SIDE] = SERVO_IDLE;
+          DB_printf("Side servo: Position reached\r\n");
+          
+          ES_Event_t CompleteEvent;
+          CompleteEvent.EventType = ES_SERVO_ACTION_COMPLETE;
+          CompleteEvent.EventParam = SERVO_SIDE;
+          PostSPIFollowerFSM(CompleteEvent);
+        }
+      }
       break;
     }
     
@@ -395,6 +451,9 @@ void InitializeAllServos(void)
   // Release and Shoot start in idle positions
   PWMOperate_SetPulseWidthOnChannel(RELEASE_IDLE_PW, RELEASE_CHANNEL);
   PWMOperate_SetPulseWidthOnChannel(SHOOT_IDLE_PW, SHOOT_CHANNEL);
+  
+  // Side servo starts in middle/neutral position
+  PWMOperate_SetPulseWidthOnChannel(SIDE_MIDDLE_PW, SIDE_CHANNEL);
   
   DB_printf("All servos initialized to default positions\r\n");
 }

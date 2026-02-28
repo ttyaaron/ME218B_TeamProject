@@ -273,7 +273,10 @@ typedef enum
   EV_RELEASE_ACTION,        /* Trigger release servo action */
   EV_SHOOT_ACTION,          /* Trigger shoot servo action */
   EV_SWEEP_RETRACT,         /* Retract sweep servo */
-  EV_SCOOP_RETRACT          /* Retract scoop servo */
+  EV_SCOOP_RETRACT,         /* Retract scoop servo */
+  EV_SIDE_BLUE,             /* Set side servo to blue field position */
+  EV_SIDE_GREEN,            /* Set side servo to green field position */
+  EV_SIDE_MIDDLE            /* Set side servo to middle (neutral) position */
 }ES_EventType_t;
 
 /****************************************************************************/
@@ -331,7 +334,7 @@ typedef enum
 #define TIMER7_RESP_FUNC PostServoFSM
 #define TIMER8_RESP_FUNC PostServoFSM
 #define TIMER9_RESP_FUNC PostServoFSM
-#define TIMER10_RESP_FUNC TIMER_UNUSED
+#define TIMER10_RESP_FUNC PostServoFSM
 #define TIMER11_RESP_FUNC TIMER_UNUSED
 #define TIMER12_RESP_FUNC TIMER_UNUSED
 #define TIMER13_RESP_FUNC TIMER_UNUSED
@@ -356,6 +359,7 @@ typedef enum
 #define SCOOP_TIMER 7
 #define RELEASE_TIMER 8
 #define SHOOT_TIMER 9
+#define SIDE_TIMER 10
 
 
 #endif /* ES_CONFIGURE_H */

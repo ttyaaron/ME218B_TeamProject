@@ -68,7 +68,7 @@ const uint8_t PrescaleLookup[] = {
 };
 
 // Lookup table for Commands
-const uint8_t validCommandBytes[11] = {
+const uint8_t validCommandBytes[14] = {
   0x00, // Stop
   0x02, // Rotate Clockwise 90 degrees
   0x03, // Rotate Clockwise 45 degrees
@@ -79,7 +79,10 @@ const uint8_t validCommandBytes[11] = {
   0x10, // Drive in reverse half speed
   0x11, // Drive in reverse full speed
   0x20, // Align with beacon
-  0x40  // Drive forward until tape detected
+  0x40, // Drive forward until tape detected
+  0x60, // Side servo to blue field position
+  0x61, // Side servo to green field position
+  0x62  // Side servo to middle position
 };
 
 /*------------------------------ Module Code ------------------------------*/
