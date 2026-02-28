@@ -1,2 +1,21 @@
 Game Start
 
+SearchForTapeCCW (The robot first rotates counter-clockwise to search for the tape. Once the central tape detector detects the tape, move on)
+
+SearchForBeacon(['g', 'b']) (First query the BeaconDetectFSM to see what beacon is possibly locked. If the phototransistor (located 6-7 degrees to the left of the robot's front) receives a G or B signal, it can determine that the robot is currently facing the field and is in a G or B position, and remember it for the next atom behavior IndicateSide. If no signal is received, it will continue searching by rotating 180 degrees clockwise and to see if it receives G/B again)
+
+IndicateSide (Depending on the side detected, command the side indicator servo to show its side)
+
+SearchForIntersection (Move forward until an intersection is found)
+
+SearchForIntersection (Move forward until an intersection is found. If it is already at an intersection, it will search for the next intersection)
+
+SearchForT(Move forward until a "tee" is found)
+
+Rotate90CCW
+
+MoveForward(speed, distance) (use an odometer (made possible by encoder) and move until that distance is achieved)
+
+Ball Collection (Once the robot reaches the node closest to the dispenser and its orientation is correctly adjusted, it enters this state machine. First, it performs docking, a position control based on encoder information. After that, it uses a loop of pusher pushing and scoop collecting until the recorded number of balls reaches the preset number. Then, it backtracks to the previous node, ending the collection process.)
+
+End of strategy

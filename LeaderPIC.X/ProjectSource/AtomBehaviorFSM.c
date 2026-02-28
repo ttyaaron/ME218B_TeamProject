@@ -30,6 +30,7 @@
 #include "ES_Framework.h"
 #include "ES_Timers.h"
 #include "AtomBehaviorFSM.h"
+#include "MainStrategyHSM.h"
 #include "BeaconDetectFSM.h"
 #include "DCMotorService.h"
 #include "CommonDefinitions.h"
@@ -54,6 +55,7 @@ static void AlignWithBeacon(void);
 /*---------------------------- Module Variables ---------------------------*/
 static AtomBehaviorState_t CurrentState;
 static uint8_t MyPriority;
+static AtomBehavior_t CurrentBehavior = ATOM_IDLE;  // Track current atom behavior for completion events
 
 /*------------------------------ Module Code ------------------------------*/
 /****************************************************************************
@@ -158,6 +160,111 @@ ES_Event_t RunAtomBehaviorFSM(ES_Event_t ThisEvent)
         PostAtomBehaviorFSM(BeaconCommand);
         break;
       }
+      
+      // Handle ES_START_ATOM_BEHAVIOR from MainStrategyHSM
+      if (ThisEvent.EventType == ES_START_ATOM_BEHAVIOR)
+      {
+        AtomBehavior_t behavior = (AtomBehavior_t)ThisEvent.EventParam;
+        CurrentBehavior = behavior;  // Track current behavior for completion events
+        DB_printf("AtomBehaviorFSM: Starting atom behavior %d\r\n", behavior);
+        
+        switch (behavior)
+        {
+          case ATOM_IDLE:
+            // Just stop - already in Stopped state
+            MotorCommandWrapper(0, 0, FORWARD, FORWARD);
+            // Post completion event back to strategy
+            ES_Event_t CompleteEvent;
+            CompleteEvent.EventType = ES_ATOM_BEHAVIOR_COMPLETE;
+            CompleteEvent.EventParam = ATOM_IDLE;
+            PostMainStrategyHSM(CompleteEvent);
+            break;
+            
+          case ATOM_ROTATE_CW_90:
+            RotateCW90();
+            CurrentState = SimpleMoving;
+            break;
+            
+          case ATOM_ROTATE_CW_45:
+            RotateCW45();
+            CurrentState = SimpleMoving;
+            break;
+            
+          case ATOM_ROTATE_CCW_90:
+            RotateCCW90();
+            CurrentState = SimpleMoving;
+            break;
+            
+          case ATOM_ROTATE_CCW_45:
+            RotateCCW45();
+            CurrentState = SimpleMoving;
+            break;
+            
+          case ATOM_DRIVE_FWD_HALF:
+            DriveForwardHalf();
+            CurrentState = SimpleMoving;
+            break;
+            
+          case ATOM_DRIVE_FWD_FULL:
+            DriveForwardFull();
+            CurrentState = SimpleMoving;
+            break;
+            
+          case ATOM_DRIVE_REV_HALF:
+            DriveReverseHalf();
+            CurrentState = SimpleMoving;
+            break;
+            
+          case ATOM_DRIVE_REV_FULL:
+            DriveReverseFull();
+            CurrentState = SimpleMoving;
+            break;
+            
+          case ATOM_BEACON_ALIGN:
+            // Check if a specific beacon is already locked
+            BeaconState_t beaconState = QueryBeaconDetectFSM();
+            if (beaconState == BeaconLocked) {
+              // Beacon already locked - post event immediately with beacon ID
+              ES_Event_t BeaconEvent;
+              BeaconEvent.EventType = ES_BEACON_DETECTED;
+              BeaconEvent.EventParam = QueryLockedBeaconId();
+              PostAtomBehaviorFSM(BeaconEvent);
+            }
+            else {
+              // No beacon locked yet - start rotating to search
+              AlignWithBeacon();
+            }
+            CurrentState = AligningWithBeacon;
+            break;
+            
+          case ATOM_TAPE_SEARCH:
+            // If already HIGH, post event immediately
+            if( ReadTapeSensorPin() == true ) {
+              ES_Event_t TapeEvent;
+              TapeEvent.EventType = ES_TAPE_DETECTED;
+              TapeEvent.EventParam = 0;
+              PostAtomBehaviorFSM(TapeEvent);
+            }
+            else {
+              // Start searching
+              SearchForTape();
+            }
+            CurrentState = SearchingForTape;
+            break;
+            
+          default:
+            DB_printf("Unknown atom behavior: %d\r\n", behavior);
+            // Post failure event
+            ES_Event_t FailEvent;
+            FailEvent.EventType = ES_ATOM_BEHAVIOR_FAILED;
+            FailEvent.EventParam = behavior;
+            PostMainStrategyHSM(FailEvent);
+            break;
+        }
+        break;
+      }
+      
+      // Legacy ES_COMMAND_RETRIEVED support (for backward compatibility)
       if (ThisEvent.EventType == ES_COMMAND_RETRIEVED)
       {
         switch (ThisEvent.EventParam)
@@ -252,6 +359,13 @@ ES_Event_t RunAtomBehaviorFSM(ES_Event_t ThisEvent)
           DB_printf("Motor Timeout Received while moving\r\n");
         MotorCommandWrapper(0, 0, FORWARD, FORWARD);
         CurrentState = Stopped;
+        
+        // Notify strategy of completion
+        ES_Event_t CompleteEvent;
+        CompleteEvent.EventType = ES_ATOM_BEHAVIOR_COMPLETE;
+        CompleteEvent.EventParam = CurrentBehavior;
+        PostMainStrategyHSM(CompleteEvent);
+        CurrentBehavior = ATOM_IDLE;  // Reset to idle after completion
       }
       else if (ThisEvent.EventType == ES_COMMAND_RETRIEVED) // while simple moving, new command received
       {
@@ -267,6 +381,12 @@ ES_Event_t RunAtomBehaviorFSM(ES_Event_t ThisEvent)
           DB_printf("Tape detected\r\n");
         MotorCommandWrapper(0, 0, FORWARD, FORWARD);
         CurrentState = Stopped;
+        
+        // Notify strategy of successful tape search completion
+        ES_Event_t CompleteEvent;
+        CompleteEvent.EventType = ES_ATOM_BEHAVIOR_COMPLETE;
+        CompleteEvent.EventParam = ATOM_TAPE_SEARCH;
+        PostMainStrategyHSM(CompleteEvent);
       }
       else if (ThisEvent.EventType == ES_TIMEOUT &&
                ThisEvent.EventParam == TAPE_SEARCH_TIMER) // stop looking for tape after set time
@@ -274,6 +394,12 @@ ES_Event_t RunAtomBehaviorFSM(ES_Event_t ThisEvent)
         MotorCommandWrapper(0, 0, FORWARD, FORWARD);
         DB_printf("Tape Search Failed: Timeout");
         CurrentState = Stopped;
+        
+        // Notify strategy of failed tape search
+        ES_Event_t FailEvent;
+        FailEvent.EventType = ES_ATOM_BEHAVIOR_FAILED;
+        FailEvent.EventParam = ATOM_TAPE_SEARCH;
+        PostMainStrategyHSM(FailEvent);
       }
       else if (ThisEvent.EventType == ES_COMMAND_RETRIEVED)    // new command received while searching for tape
       {
@@ -290,6 +416,8 @@ ES_Event_t RunAtomBehaviorFSM(ES_Event_t ThisEvent)
         MotorCommandWrapper(QUARTER_SPEED, QUARTER_SPEED, FORWARD, FORWARD);
         ES_Timer_InitTimer(DRIVE_TO_BEACON_TIMER, DRIVE_TO_BEACON_MS);
         CurrentState = DrivingToBeacon;
+        
+        // Note: Completion event will be sent when DrivingToBeacon finishes
       }
       /*
       else if (ThisEvent.EventType == ES_TIMEOUT &&

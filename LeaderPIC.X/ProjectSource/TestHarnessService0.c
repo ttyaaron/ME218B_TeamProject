@@ -44,6 +44,7 @@
 #include "dbprintf.h"
 
 // Project modules
+#include "MainStrategyHSM.h"
 #include "AtomBehaviorFSM.h"
 #include "DCMotorService.h"
 #include "SPILeaderFSM.h"
@@ -111,16 +112,23 @@ bool InitTestHarnessService0(uint8_t Priority)
   DB_printf( "the 2nd Generation Events & Services Framework V2.4\r\n");
   DB_printf( "compiled at %s on %s\n", __TIME__, __DATE__);
   DB_printf( "\n\r\n");
-  DB_printf( "Press any key to post key-stroke events to Service 0\n\r");
-  DB_printf( "\r\n=== Servo Control Keys (send via SPI to Follower) ===\r\n");
-  DB_printf( "w - Sweep servo action\r\n");
-  DB_printf( "W - Sweep servo retract\r\n");
-  DB_printf( "s - Scoop servo action\r\n");
-  DB_printf( "S - Scoop servo retract\r\n");
-  DB_printf( "r - Release servo action\r\n");
-  DB_printf( "f - Shoot servo action (fire)\r\n");
-  DB_printf( "i - Initialize all servos\r\n");
-  DB_printf( "h - Display help\r\n");
+  DB_printf( "=== Strategy & Atom Behavior Control ===\r\n");
+  DB_printf( "G - Start main game strategy\r\n");
+  DB_printf( "P - Force STOP (preempt, abort mode)\r\n");
+  DB_printf( "1-9 - Force specific atom behavior\r\n");
+  DB_printf( "  1: Rotate CW 90   2: Rotate CW 45\r\n");
+  DB_printf( "  3: Rotate CCW 90  4: Rotate CCW 45\r\n");
+  DB_printf( "  5: Drive Fwd Half 6: Drive Fwd Full\r\n");
+  DB_printf( "  7: Align Beacon   8: Search Tape\r\n");
+  DB_printf( "b/g/l - Force beacon detected event\r\n");
+  DB_printf( "\r\n=== Servo Control (send via SPI to Follower) ===\r\n");
+  DB_printf( "w - Sweep servo    W - Retract sweep\r\n");
+  DB_printf( "s - Scoop servo    S - Retract scoop\r\n");
+  DB_printf( "r - Release servo  f - Shoot servo\r\n");
+  DB_printf( "i - Initialize servos\r\n");
+  DB_printf( "\r\n=== Other ===\r\n");
+  DB_printf( "h - Display this help\r\n");
+  DB_printf( "t - Read tape sensors\r\n");
   DB_printf( "================================================\r\n\n");
 
   /********************************************
@@ -246,7 +254,126 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
       
       switch(key)
       {
-        // Servo control commands - send to Follower via SPI
+        //=== Strategy Control ===
+        case 'G':  // Start main game strategy
+        {
+          ES_Event_t StrategyEvent;
+          StrategyEvent.EventType = ES_STRATEGY_START;
+          StrategyEvent.EventParam = STRATEGY_MAIN_GAME;
+          PostMainStrategyHSM(StrategyEvent);
+          DB_printf(">>> Starting MAIN GAME STRATEGY <<<\r\n");
+        }
+        break;
+        
+        case 'P':  // Force stop/preempt (abort mode)
+        {
+          ES_Event_t PreemptEvent;
+          PreemptEvent.EventType = ES_FORCE_ATOM_BEHAVIOR;
+          PreemptEvent.EventParam = ATOM_IDLE;
+          PostMainStrategyHSM(PreemptEvent);
+          DB_printf(">>> FORCE STOP (Preempt) <<<\r\n");
+        }
+        break;
+        
+        //=== Force Atom Behaviors ===
+        case '1':  // Rotate CW 90
+        {
+          ES_Event_t AtomEvent;
+          AtomEvent.EventType = ES_FORCE_ATOM_BEHAVIOR;
+          AtomEvent.EventParam = ATOM_ROTATE_CW_90;
+          PostMainStrategyHSM(AtomEvent);
+          DB_printf(">>> Force Atom: Rotate CW 90 <<<\r\n");
+        }
+        break;
+        
+        case '2':  // Rotate CW 45
+        {
+          ES_Event_t AtomEvent;
+          AtomEvent.EventType = ES_FORCE_ATOM_BEHAVIOR;
+          AtomEvent.EventParam = ATOM_ROTATE_CW_45;
+          PostMainStrategyHSM(AtomEvent);
+          DB_printf(">>> Force Atom: Rotate CW 45 <<<\r\n");
+        }
+        break;
+        
+        case '3':  // Rotate CCW 90
+        {
+          ES_Event_t AtomEvent;
+          AtomEvent.EventType = ES_FORCE_ATOM_BEHAVIOR;
+          AtomEvent.EventParam = ATOM_ROTATE_CCW_90;
+          PostMainStrategyHSM(AtomEvent);
+          DB_printf(">>> Force Atom: Rotate CCW 90 <<<\r\n");
+        }
+        break;
+        
+        case '4':  // Rotate CCW 45
+        {
+          ES_Event_t AtomEvent;
+          AtomEvent.EventType = ES_FORCE_ATOM_BEHAVIOR;
+          AtomEvent.EventParam = ATOM_ROTATE_CCW_45;
+          PostMainStrategyHSM(AtomEvent);
+          DB_printf(">>> Force Atom: Rotate CCW 45 <<<\r\n");
+        }
+        break;
+        
+        case '5':  // Drive forward half
+        {
+          ES_Event_t AtomEvent;
+          AtomEvent.EventType = ES_FORCE_ATOM_BEHAVIOR;
+          AtomEvent.EventParam = ATOM_DRIVE_FWD_HALF;
+          PostMainStrategyHSM(AtomEvent);
+          DB_printf(">>> Force Atom: Drive Fwd Half <<<\r\n");
+        }
+        break;
+        
+        case '6':  // Drive forward full
+        {
+          ES_Event_t AtomEvent;
+          AtomEvent.EventType = ES_FORCE_ATOM_BEHAVIOR;
+          AtomEvent.EventParam = ATOM_DRIVE_FWD_FULL;
+          PostMainStrategyHSM(AtomEvent);
+          DB_printf(">>> Force Atom: Drive Fwd Full <<<\r\n");
+        }
+        break;
+        
+        case '7':  // Align with beacon
+        {
+          ES_Event_t AtomEvent;
+          AtomEvent.EventType = ES_FORCE_ATOM_BEHAVIOR;
+          AtomEvent.EventParam = ATOM_BEACON_ALIGN;
+          PostMainStrategyHSM(AtomEvent);
+          DB_printf(">>> Force Atom: Align Beacon <<<\r\n");
+        }
+        break;
+        
+        case '8':  // Search for tape
+        {
+          ES_Event_t AtomEvent;
+          AtomEvent.EventType = ES_FORCE_ATOM_BEHAVIOR;
+          AtomEvent.EventParam = ATOM_TAPE_SEARCH;
+          PostMainStrategyHSM(AtomEvent);
+          DB_printf(">>> Force Atom: Search Tape <<<\r\n");
+        }
+        break;
+        
+        case 't':  // Read tape sensors manually
+        {
+          TapeSensor_Read();
+          uint32_t leftAnalog = TapeSensor_GetLeftAnalog();
+          uint32_t rightAnalog = TapeSensor_GetRightAnalog();
+          uint32_t centerAnalog = TapeSensor_GetCenterAnalog();
+          bool leftDigital = TapeSensor_GetLeftDigital();
+          bool rightDigital = TapeSensor_GetRightDigital();
+          
+          DB_printf("\r\n=== Tape Sensors (Manual Read) ===\r\n");
+          DB_printf("Analog: L=%d  C=%d  R=%d\r\n", leftAnalog, centerAnalog, rightAnalog);
+          DB_printf("Digital: L=%d  R=%d\r\n", 
+                    leftDigital ? 1 : 0, 
+                    rightDigital ? 1 : 0);
+        }
+        break;
+        
+        //=== Servo control commands - send to Follower via SPI ===
         case 'w':  // Sweep action
           CommandEvent.EventType = ES_NEW_COMMAND;
           CommandEvent.EventParam = CMD_SWEEP;
@@ -297,15 +424,23 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
           break;
           
         case 'h':  // Help - display key mappings
-          DB_printf("\r\n=== Servo Control Keys (send via SPI to Follower) ===\r\n");
-          DB_printf("w - Sweep servo action\r\n");
-          DB_printf("W - Sweep servo retract\r\n");
-          DB_printf("s - Scoop servo action\r\n");
-          DB_printf("S - Scoop servo retract\r\n");
-          DB_printf("r - Release servo action\r\n");
-          DB_printf("f - Shoot servo action (fire)\r\n");
-          DB_printf("i - Initialize all servos\r\n");
+          DB_printf("\r\n=== Strategy & Atom Behavior Control ===\r\n");
+          DB_printf("G - Start main game strategy\r\n");
+          DB_printf("P - Force STOP (preempt, abort mode)\r\n");
+          DB_printf("1-9 - Force specific atom behavior\r\n");
+          DB_printf("  1: Rotate CW 90   2: Rotate CW 45\r\n");
+          DB_printf("  3: Rotate CCW 90  4: Rotate CCW 45\r\n");
+          DB_printf("  5: Drive Fwd Half 6: Drive Fwd Full\r\n");
+          DB_printf("  7: Align Beacon   8: Search Tape\r\n");
+          DB_printf("b/g/l - Force beacon detected event\r\n");
+          DB_printf("\r\n=== Servo Control (send via SPI to Follower) ===\r\n");
+          DB_printf("w - Sweep servo    W - Retract sweep\r\n");
+          DB_printf("s - Scoop servo    S - Retract scoop\r\n");
+          DB_printf("r - Release servo  f - Shoot servo\r\n");
+          DB_printf("i - Initialize servos\r\n");
+          DB_printf("\r\n=== Other ===\r\n");
           DB_printf("h - Display this help\r\n");
+          DB_printf("t - Read tape sensors\r\n");
           DB_printf("================================================\r\n\n");
           break;
       }
