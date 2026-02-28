@@ -356,6 +356,33 @@ AtomBehaviorState_t QueryAtomBehaviorFSM(void)
   return CurrentState;
 }
 
+/****************************************************************************
+ Function
+     StartAtomBehaviorFSM
+
+ Parameters
+     ES_Event_t CurrentEvent
+
+ Returns
+     None
+
+ Description
+     Starts/restarts the Atom Behavior FSM. Used by MainStrategyHSM
+     to initialize or resume the lower level state machine.
+
+ Author
+     Tianyu, 02/28/26
+****************************************************************************/
+void StartAtomBehaviorFSM(ES_Event_t CurrentEvent)
+{
+  // For now, we maintain current state on Start
+  // (allows history restoration)
+  // Can be enhanced to reset to Stopped if needed
+  
+  // Call Run to process the entry event
+  RunAtomBehaviorFSM(CurrentEvent);
+}
+
 /*----------------------------- Helper Functions --------------------------*/
 /****************************************************************************
  Function

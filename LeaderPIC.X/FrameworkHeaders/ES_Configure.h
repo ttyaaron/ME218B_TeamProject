@@ -33,7 +33,7 @@
 /****************************************************************************/
 // This macro determines that nuber of services that are *actually* used in
 // a particular application. It will vary in value from 1 to MAX_NUM_SERVICES
-#define NUM_SERVICES 5
+#define NUM_SERVICES 6
 
 /****************************************************************************/
 // These are the definitions for Service 0, the lowest priority service.
@@ -70,11 +70,11 @@
 // These are the definitions for Service 2
 #if NUM_SERVICES > 2
 // the header file with the public function prototypes
-#define SERV_2_HEADER "AtomBehaviorFSM.h"
+#define SERV_2_HEADER "MainStrategyHSM.h"
 // the name of the Init function
-#define SERV_2_INIT InitAtomBehaviorFSM
+#define SERV_2_INIT InitMainStrategyHSM
 // the name of the run function
-#define SERV_2_RUN RunAtomBehaviorFSM
+#define SERV_2_RUN RunMainStrategyHSM
 // How big should this services Queue be?
 #define SERV_2_QUEUE_SIZE 3
 #endif
@@ -83,11 +83,11 @@
 // These are the definitions for Service 3
 #if NUM_SERVICES > 3
 // the header file with the public function prototypes
-#define SERV_3_HEADER "DCMotorService.h"
+#define SERV_3_HEADER "AtomBehaviorFSM.h"
 // the name of the Init function
-#define SERV_3_INIT InitDCMotorService
+#define SERV_3_INIT InitAtomBehaviorFSM
 // the name of the run function
-#define SERV_3_RUN RunDCMotorService
+#define SERV_3_RUN RunAtomBehaviorFSM
 // How big should this services Queue be?
 #define SERV_3_QUEUE_SIZE 3
 #endif
@@ -96,11 +96,11 @@
 // These are the definitions for Service 4
 #if NUM_SERVICES > 4
 // the header file with the public function prototypes
-#define SERV_4_HEADER "BeaconDetectFSM.h"
+#define SERV_4_HEADER "DCMotorService.h"
 // the name of the Init function
-#define SERV_4_INIT InitBeaconDetectFSM
+#define SERV_4_INIT InitDCMotorService
 // the name of the run function
-#define SERV_4_RUN RunBeaconDetectFSM
+#define SERV_4_RUN RunDCMotorService
 // How big should this services Queue be?
 #define SERV_4_QUEUE_SIZE 3
 #endif
@@ -109,11 +109,11 @@
 // These are the definitions for Service 5
 #if NUM_SERVICES > 5
 // the header file with the public function prototypes
-#define SERV_5_HEADER "TestHarnessService5.h"
+#define SERV_5_HEADER "BeaconDetectFSM.h"
 // the name of the Init function
-#define SERV_5_INIT InitTestHarnessService5
+#define SERV_5_INIT InitBeaconDetectFSM
 // the name of the run function
-#define SERV_5_RUN RunTestHarnessService5
+#define SERV_5_RUN RunBeaconDetectFSM
 // How big should this services Queue be?
 #define SERV_5_QUEUE_SIZE 3
 #endif
@@ -256,6 +256,7 @@ typedef enum
   ES_NO_EVENT = 0,
   ES_ERROR,                 /* used to indicate an error from the service */
   ES_INIT,                  /* used to transition from initial pseudo-state */
+  ES_ENTRY_HISTORY,         /* used to enter a state with history restoration */
   ES_TIMEOUT,               /* signals that the timer has expired */
   ES_SHORT_TIMEOUT,         /* signals that a short timer has expired */
   /* User-defined events start here */
@@ -266,7 +267,15 @@ typedef enum
   ES_COMMAND_RETRIEVED,     /* signals a new command byte from SPI */
   ES_BEACON_DETECTED,       /* signals a beacon detection */
   ES_TAPE_DETECTED,          /* signals a tape detection */
-  ES_NEW_COMMAND            /* New command received from command generator */
+  ES_NEW_COMMAND,           /* New command received from command generator */
+  /* Strategy and Atom Behavior events */
+  ES_STRATEGY_START,        /* Start executing a strategy sequence */
+  ES_STRATEGY_COMPLETE,     /* Strategy sequence completed successfully */
+  ES_FORCE_ATOM_BEHAVIOR,   /* Preempt current behavior and force atom action */
+  ES_START_ATOM_BEHAVIOR,   /* Start an atomic behavior */
+  ES_ATOM_BEHAVIOR_COMPLETE,/* Atomic behavior completed successfully */
+  ES_ATOM_BEHAVIOR_FAILED,  /* Atomic behavior failed or timed out */
+  ES_FOLLOWER_STATUS        /* Status update from Follower PIC */
 }ES_EventType_t;
 
 /****************************************************************************/

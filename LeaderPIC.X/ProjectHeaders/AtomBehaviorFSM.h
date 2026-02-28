@@ -45,5 +45,6 @@ bool InitAtomBehaviorFSM(uint8_t Priority);
 bool PostAtomBehaviorFSM(ES_Event_t ThisEvent);
 ES_Event_t RunAtomBehaviorFSM(ES_Event_t ThisEvent);
 AtomBehaviorState_t QueryAtomBehaviorFSM(void);
+void StartAtomBehaviorFSM(ES_Event_t CurrentEvent);
 
 #endif /* AtomBehaviorFSM_H */
