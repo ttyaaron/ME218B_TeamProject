@@ -44,15 +44,14 @@
       <itemPath>ProjectHeaders/EventCheckWrapper.h</itemPath>
       <itemPath>ProjectHeaders/EventCheckers.h</itemPath>
       <itemPath>ProjectHeaders/TestHarnessService0.h</itemPath>
-      <itemPath>ProjectHeaders/ADService.h</itemPath>
       <itemPath>ProjectHeaders/PIC32_AD_Lib.h</itemPath>
       <itemPath>ProjectHeaders/DCMotorService.h</itemPath>
       <itemPath>ProjectHeaders/PIC32_SPI_HAL.h</itemPath>
       <itemPath>ProjectHeaders/SPILeaderFSM.h</itemPath>
       <itemPath>ProjectHeaders/CommonDefinitions.h</itemPath>
-      <itemPath>ProjectHeaders/MainLogicFSM.h</itemPath>
       <itemPath>ProjectHeaders/Ports.h</itemPath>
       <itemPath>ProjectHeaders/BeaconDetectFSM.h</itemPath>
+      <itemPath>ProjectHeaders/MainLogicFSM.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -69,15 +68,14 @@
       <itemPath>ProjectSource/EventCheckers.c</itemPath>
       <itemPath>ProjectSource/TestHarnessService0.c</itemPath>
       <itemPath>ProjectSource/main.c</itemPath>
-      <itemPath>ProjectSource/ADService.c</itemPath>
       <itemPath>ProjectSource/PIC32_AD_Lib.c</itemPath>
       <itemPath>ProjectSource/DCMotorService.c</itemPath>
       <itemPath>ProjectSource/PIC32_SPI_HAL.c</itemPath>
       <itemPath>ProjectSource/SPILeaderFSM.c</itemPath>
-      <itemPath>ProjectSource/MainLogicFSM.c</itemPath>
       <itemPath>ProjectSource/Ports.c</itemPath>
       <itemPath>ProjectSource/CommonDefinitions.c</itemPath>
       <itemPath>ProjectSource/BeaconDetectFSM.c</itemPath>
+      <itemPath>ProjectSource/MainLogicFSM.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>

@@ -302,7 +302,7 @@ ES_Event_t RunBeaconDetectFSM(ES_Event_t ThisEvent)
           if (ThisEvent.EventParam == PRINT_FREQUENCY_TIMER)
           {
             // No signal - report 0 Hz and restart the print timer
-            DB_printf("Frequency: 0 Hz (no signal)\r\n");
+//            DB_printf("Frequency: 0 Hz (no signal)\r\n");
             ES_Timer_InitTimer(PRINT_FREQUENCY_TIMER, PRINT_FREQUENCY_INTERVAL);
           }
           // Ignore SIGNAL_WATCHDOG_TIMER timeouts while already in NoSignal

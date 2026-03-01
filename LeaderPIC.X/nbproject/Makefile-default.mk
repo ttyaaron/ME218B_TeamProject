@@ -51,17 +51,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=FrameworkSource/ES_CheckEvents.c FrameworkSource/ES_DeferRecall.c FrameworkSource/ES_Framework.c FrameworkSource/ES_LookupTables.c FrameworkSource/ES_Port.c FrameworkSource/ES_PostList.c FrameworkSource/ES_Queue.c FrameworkSource/ES_Timers.c FrameworkSource/terminal.c FrameworkSource/circular_buffer_no_modulo_threadsafe.c FrameworkSource/dbprintf.c ProjectSource/EventCheckers.c ProjectSource/TestHarnessService0.c ProjectSource/main.c ProjectSource/ADService.c ProjectSource/PIC32_AD_Lib.c ProjectSource/DCMotorService.c ProjectSource/PIC32_SPI_HAL.c ProjectSource/SPILeaderFSM.c ProjectSource/MainLogicFSM.c ProjectSource/Ports.c ProjectSource/CommonDefinitions.c ProjectSource/BeaconDetectFSM.c
+SOURCEFILES_QUOTED_IF_SPACED=FrameworkSource/ES_CheckEvents.c FrameworkSource/ES_DeferRecall.c FrameworkSource/ES_Framework.c FrameworkSource/ES_LookupTables.c FrameworkSource/ES_Port.c FrameworkSource/ES_PostList.c FrameworkSource/ES_Queue.c FrameworkSource/ES_Timers.c FrameworkSource/terminal.c FrameworkSource/circular_buffer_no_modulo_threadsafe.c FrameworkSource/dbprintf.c ProjectSource/EventCheckers.c ProjectSource/TestHarnessService0.c ProjectSource/main.c ProjectSource/PIC32_AD_Lib.c ProjectSource/DCMotorService.c ProjectSource/PIC32_SPI_HAL.c ProjectSource/SPILeaderFSM.c ProjectSource/Ports.c ProjectSource/CommonDefinitions.c ProjectSource/BeaconDetectFSM.c ProjectSource/MainLogicFSM.c
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/FrameworkSource/ES_CheckEvents.o ${OBJECTDIR}/FrameworkSource/ES_DeferRecall.o ${OBJECTDIR}/FrameworkSource/ES_Framework.o ${OBJECTDIR}/FrameworkSource/ES_LookupTables.o ${OBJECTDIR}/FrameworkSource/ES_Port.o ${OBJECTDIR}/FrameworkSource/ES_PostList.o ${OBJECTDIR}/FrameworkSource/ES_Queue.o ${OBJECTDIR}/FrameworkSource/ES_Timers.o ${OBJECTDIR}/FrameworkSource/terminal.o ${OBJECTDIR}/FrameworkSource/circular_buffer_no_modulo_threadsafe.o ${OBJECTDIR}/FrameworkSource/dbprintf.o ${OBJECTDIR}/ProjectSource/EventCheckers.o ${OBJECTDIR}/ProjectSource/TestHarnessService0.o ${OBJECTDIR}/ProjectSource/main.o ${OBJECTDIR}/ProjectSource/ADService.o ${OBJECTDIR}/ProjectSource/PIC32_AD_Lib.o ${OBJECTDIR}/ProjectSource/DCMotorService.o ${OBJECTDIR}/ProjectSource/PIC32_SPI_HAL.o ${OBJECTDIR}/ProjectSource/SPILeaderFSM.o ${OBJECTDIR}/ProjectSource/MainLogicFSM.o ${OBJECTDIR}/ProjectSource/Ports.o ${OBJECTDIR}/ProjectSource/CommonDefinitions.o ${OBJECTDIR}/ProjectSource/BeaconDetectFSM.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/FrameworkSource/ES_CheckEvents.o.d ${OBJECTDIR}/FrameworkSource/ES_DeferRecall.o.d ${OBJECTDIR}/FrameworkSource/ES_Framework.o.d ${OBJECTDIR}/FrameworkSource/ES_LookupTables.o.d ${OBJECTDIR}/FrameworkSource/ES_Port.o.d ${OBJECTDIR}/FrameworkSource/ES_PostList.o.d ${OBJECTDIR}/FrameworkSource/ES_Queue.o.d ${OBJECTDIR}/FrameworkSource/ES_Timers.o.d ${OBJECTDIR}/FrameworkSource/terminal.o.d ${OBJECTDIR}/FrameworkSource/circular_buffer_no_modulo_threadsafe.o.d ${OBJECTDIR}/FrameworkSource/dbprintf.o.d ${OBJECTDIR}/ProjectSource/EventCheckers.o.d ${OBJECTDIR}/ProjectSource/TestHarnessService0.o.d ${OBJECTDIR}/ProjectSource/main.o.d ${OBJECTDIR}/ProjectSource/ADService.o.d ${OBJECTDIR}/ProjectSource/PIC32_AD_Lib.o.d ${OBJECTDIR}/ProjectSource/DCMotorService.o.d ${OBJECTDIR}/ProjectSource/PIC32_SPI_HAL.o.d ${OBJECTDIR}/ProjectSource/SPILeaderFSM.o.d ${OBJECTDIR}/ProjectSource/MainLogicFSM.o.d ${OBJECTDIR}/ProjectSource/Ports.o.d ${OBJECTDIR}/ProjectSource/CommonDefinitions.o.d ${OBJECTDIR}/ProjectSource/BeaconDetectFSM.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/FrameworkSource/ES_CheckEvents.o ${OBJECTDIR}/FrameworkSource/ES_DeferRecall.o ${OBJECTDIR}/FrameworkSource/ES_Framework.o ${OBJECTDIR}/FrameworkSource/ES_LookupTables.o ${OBJECTDIR}/FrameworkSource/ES_Port.o ${OBJECTDIR}/FrameworkSource/ES_PostList.o ${OBJECTDIR}/FrameworkSource/ES_Queue.o ${OBJECTDIR}/FrameworkSource/ES_Timers.o ${OBJECTDIR}/FrameworkSource/terminal.o ${OBJECTDIR}/FrameworkSource/circular_buffer_no_modulo_threadsafe.o ${OBJECTDIR}/FrameworkSource/dbprintf.o ${OBJECTDIR}/ProjectSource/EventCheckers.o ${OBJECTDIR}/ProjectSource/TestHarnessService0.o ${OBJECTDIR}/ProjectSource/main.o ${OBJECTDIR}/ProjectSource/PIC32_AD_Lib.o ${OBJECTDIR}/ProjectSource/DCMotorService.o ${OBJECTDIR}/ProjectSource/PIC32_SPI_HAL.o ${OBJECTDIR}/ProjectSource/SPILeaderFSM.o ${OBJECTDIR}/ProjectSource/Ports.o ${OBJECTDIR}/ProjectSource/CommonDefinitions.o ${OBJECTDIR}/ProjectSource/BeaconDetectFSM.o ${OBJECTDIR}/ProjectSource/MainLogicFSM.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/FrameworkSource/ES_CheckEvents.o.d ${OBJECTDIR}/FrameworkSource/ES_DeferRecall.o.d ${OBJECTDIR}/FrameworkSource/ES_Framework.o.d ${OBJECTDIR}/FrameworkSource/ES_LookupTables.o.d ${OBJECTDIR}/FrameworkSource/ES_Port.o.d ${OBJECTDIR}/FrameworkSource/ES_PostList.o.d ${OBJECTDIR}/FrameworkSource/ES_Queue.o.d ${OBJECTDIR}/FrameworkSource/ES_Timers.o.d ${OBJECTDIR}/FrameworkSource/terminal.o.d ${OBJECTDIR}/FrameworkSource/circular_buffer_no_modulo_threadsafe.o.d ${OBJECTDIR}/FrameworkSource/dbprintf.o.d ${OBJECTDIR}/ProjectSource/EventCheckers.o.d ${OBJECTDIR}/ProjectSource/TestHarnessService0.o.d ${OBJECTDIR}/ProjectSource/main.o.d ${OBJECTDIR}/ProjectSource/PIC32_AD_Lib.o.d ${OBJECTDIR}/ProjectSource/DCMotorService.o.d ${OBJECTDIR}/ProjectSource/PIC32_SPI_HAL.o.d ${OBJECTDIR}/ProjectSource/SPILeaderFSM.o.d ${OBJECTDIR}/ProjectSource/Ports.o.d ${OBJECTDIR}/ProjectSource/CommonDefinitions.o.d ${OBJECTDIR}/ProjectSource/BeaconDetectFSM.o.d ${OBJECTDIR}/ProjectSource/MainLogicFSM.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/FrameworkSource/ES_CheckEvents.o ${OBJECTDIR}/FrameworkSource/ES_DeferRecall.o ${OBJECTDIR}/FrameworkSource/ES_Framework.o ${OBJECTDIR}/FrameworkSource/ES_LookupTables.o ${OBJECTDIR}/FrameworkSource/ES_Port.o ${OBJECTDIR}/FrameworkSource/ES_PostList.o ${OBJECTDIR}/FrameworkSource/ES_Queue.o ${OBJECTDIR}/FrameworkSource/ES_Timers.o ${OBJECTDIR}/FrameworkSource/terminal.o ${OBJECTDIR}/FrameworkSource/circular_buffer_no_modulo_threadsafe.o ${OBJECTDIR}/FrameworkSource/dbprintf.o ${OBJECTDIR}/ProjectSource/EventCheckers.o ${OBJECTDIR}/ProjectSource/TestHarnessService0.o ${OBJECTDIR}/ProjectSource/main.o ${OBJECTDIR}/ProjectSource/ADService.o ${OBJECTDIR}/ProjectSource/PIC32_AD_Lib.o ${OBJECTDIR}/ProjectSource/DCMotorService.o ${OBJECTDIR}/ProjectSource/PIC32_SPI_HAL.o ${OBJECTDIR}/ProjectSource/SPILeaderFSM.o ${OBJECTDIR}/ProjectSource/MainLogicFSM.o ${OBJECTDIR}/ProjectSource/Ports.o ${OBJECTDIR}/ProjectSource/CommonDefinitions.o ${OBJECTDIR}/ProjectSource/BeaconDetectFSM.o
+OBJECTFILES=${OBJECTDIR}/FrameworkSource/ES_CheckEvents.o ${OBJECTDIR}/FrameworkSource/ES_DeferRecall.o ${OBJECTDIR}/FrameworkSource/ES_Framework.o ${OBJECTDIR}/FrameworkSource/ES_LookupTables.o ${OBJECTDIR}/FrameworkSource/ES_Port.o ${OBJECTDIR}/FrameworkSource/ES_PostList.o ${OBJECTDIR}/FrameworkSource/ES_Queue.o ${OBJECTDIR}/FrameworkSource/ES_Timers.o ${OBJECTDIR}/FrameworkSource/terminal.o ${OBJECTDIR}/FrameworkSource/circular_buffer_no_modulo_threadsafe.o ${OBJECTDIR}/FrameworkSource/dbprintf.o ${OBJECTDIR}/ProjectSource/EventCheckers.o ${OBJECTDIR}/ProjectSource/TestHarnessService0.o ${OBJECTDIR}/ProjectSource/main.o ${OBJECTDIR}/ProjectSource/PIC32_AD_Lib.o ${OBJECTDIR}/ProjectSource/DCMotorService.o ${OBJECTDIR}/ProjectSource/PIC32_SPI_HAL.o ${OBJECTDIR}/ProjectSource/SPILeaderFSM.o ${OBJECTDIR}/ProjectSource/Ports.o ${OBJECTDIR}/ProjectSource/CommonDefinitions.o ${OBJECTDIR}/ProjectSource/BeaconDetectFSM.o ${OBJECTDIR}/ProjectSource/MainLogicFSM.o
 
 # Source Files
-SOURCEFILES=FrameworkSource/ES_CheckEvents.c FrameworkSource/ES_DeferRecall.c FrameworkSource/ES_Framework.c FrameworkSource/ES_LookupTables.c FrameworkSource/ES_Port.c FrameworkSource/ES_PostList.c FrameworkSource/ES_Queue.c FrameworkSource/ES_Timers.c FrameworkSource/terminal.c FrameworkSource/circular_buffer_no_modulo_threadsafe.c FrameworkSource/dbprintf.c ProjectSource/EventCheckers.c ProjectSource/TestHarnessService0.c ProjectSource/main.c ProjectSource/ADService.c ProjectSource/PIC32_AD_Lib.c ProjectSource/DCMotorService.c ProjectSource/PIC32_SPI_HAL.c ProjectSource/SPILeaderFSM.c ProjectSource/MainLogicFSM.c ProjectSource/Ports.c ProjectSource/CommonDefinitions.c ProjectSource/BeaconDetectFSM.c
+SOURCEFILES=FrameworkSource/ES_CheckEvents.c FrameworkSource/ES_DeferRecall.c FrameworkSource/ES_Framework.c FrameworkSource/ES_LookupTables.c FrameworkSource/ES_Port.c FrameworkSource/ES_PostList.c FrameworkSource/ES_Queue.c FrameworkSource/ES_Timers.c FrameworkSource/terminal.c FrameworkSource/circular_buffer_no_modulo_threadsafe.c FrameworkSource/dbprintf.c ProjectSource/EventCheckers.c ProjectSource/TestHarnessService0.c ProjectSource/main.c ProjectSource/PIC32_AD_Lib.c ProjectSource/DCMotorService.c ProjectSource/PIC32_SPI_HAL.c ProjectSource/SPILeaderFSM.c ProjectSource/Ports.c ProjectSource/CommonDefinitions.c ProjectSource/BeaconDetectFSM.c ProjectSource/MainLogicFSM.c
 
 
 
@@ -185,12 +185,6 @@ ${OBJECTDIR}/ProjectSource/main.o: ProjectSource/main.c  .generated_files/flags/
 	@${RM} ${OBJECTDIR}/ProjectSource/main.o 
 	${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -I"FrameworkHeaders" -I"ProjectHeaders" -fno-common -MP -MMD -MF "${OBJECTDIR}/ProjectSource/main.o.d" -o ${OBJECTDIR}/ProjectSource/main.o ProjectSource/main.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}"  
 	
-${OBJECTDIR}/ProjectSource/ADService.o: ProjectSource/ADService.c  .generated_files/flags/default/4b3162bbbdb83eaa46523c2707b698dcdc219de6 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
-	@${MKDIR} "${OBJECTDIR}/ProjectSource" 
-	@${RM} ${OBJECTDIR}/ProjectSource/ADService.o.d 
-	@${RM} ${OBJECTDIR}/ProjectSource/ADService.o 
-	${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -I"FrameworkHeaders" -I"ProjectHeaders" -fno-common -MP -MMD -MF "${OBJECTDIR}/ProjectSource/ADService.o.d" -o ${OBJECTDIR}/ProjectSource/ADService.o ProjectSource/ADService.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}"  
-	
 ${OBJECTDIR}/ProjectSource/PIC32_AD_Lib.o: ProjectSource/PIC32_AD_Lib.c  .generated_files/flags/default/33acbad139ea228064ee669df41ef80f521025c8 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
 	@${MKDIR} "${OBJECTDIR}/ProjectSource" 
 	@${RM} ${OBJECTDIR}/ProjectSource/PIC32_AD_Lib.o.d 
@@ -215,12 +209,6 @@ ${OBJECTDIR}/ProjectSource/SPILeaderFSM.o: ProjectSource/SPILeaderFSM.c  .genera
 	@${RM} ${OBJECTDIR}/ProjectSource/SPILeaderFSM.o 
 	${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -I"FrameworkHeaders" -I"ProjectHeaders" -fno-common -MP -MMD -MF "${OBJECTDIR}/ProjectSource/SPILeaderFSM.o.d" -o ${OBJECTDIR}/ProjectSource/SPILeaderFSM.o ProjectSource/SPILeaderFSM.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}"  
 	
-${OBJECTDIR}/ProjectSource/MainLogicFSM.o: ProjectSource/MainLogicFSM.c  .generated_files/flags/default/25937a1eb416f1efa1b7a06af19c8e354cc3311a .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
-	@${MKDIR} "${OBJECTDIR}/ProjectSource" 
-	@${RM} ${OBJECTDIR}/ProjectSource/MainLogicFSM.o.d 
-	@${RM} ${OBJECTDIR}/ProjectSource/MainLogicFSM.o 
-	${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -I"FrameworkHeaders" -I"ProjectHeaders" -fno-common -MP -MMD -MF "${OBJECTDIR}/ProjectSource/MainLogicFSM.o.d" -o ${OBJECTDIR}/ProjectSource/MainLogicFSM.o ProjectSource/MainLogicFSM.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}"  
-	
 ${OBJECTDIR}/ProjectSource/Ports.o: ProjectSource/Ports.c  .generated_files/flags/default/4ad3fc7176e4ddfaf245a2939f5e7d7614ffba98 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
 	@${MKDIR} "${OBJECTDIR}/ProjectSource" 
 	@${RM} ${OBJECTDIR}/ProjectSource/Ports.o.d 
@@ -238,6 +226,12 @@ ${OBJECTDIR}/ProjectSource/BeaconDetectFSM.o: ProjectSource/BeaconDetectFSM.c  .
 	@${RM} ${OBJECTDIR}/ProjectSource/BeaconDetectFSM.o.d 
 	@${RM} ${OBJECTDIR}/ProjectSource/BeaconDetectFSM.o 
 	${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -I"FrameworkHeaders" -I"ProjectHeaders" -fno-common -MP -MMD -MF "${OBJECTDIR}/ProjectSource/BeaconDetectFSM.o.d" -o ${OBJECTDIR}/ProjectSource/BeaconDetectFSM.o ProjectSource/BeaconDetectFSM.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}"  
+	
+${OBJECTDIR}/ProjectSource/MainLogicFSM.o: ProjectSource/MainLogicFSM.c  .generated_files/flags/default/25937a1eb416f1efa1b7a06af19c8e354cc3311a .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
+	@${MKDIR} "${OBJECTDIR}/ProjectSource" 
+	@${RM} ${OBJECTDIR}/ProjectSource/MainLogicFSM.o.d 
+	@${RM} ${OBJECTDIR}/ProjectSource/MainLogicFSM.o 
+	${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -I"FrameworkHeaders" -I"ProjectHeaders" -fno-common -MP -MMD -MF "${OBJECTDIR}/ProjectSource/MainLogicFSM.o.d" -o ${OBJECTDIR}/ProjectSource/MainLogicFSM.o ProjectSource/MainLogicFSM.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}"  
 	
 else
 ${OBJECTDIR}/FrameworkSource/ES_CheckEvents.o: FrameworkSource/ES_CheckEvents.c  .generated_files/flags/default/ac0e46430f7493175bea6604f52a871d5c941477 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
@@ -324,12 +318,6 @@ ${OBJECTDIR}/ProjectSource/main.o: ProjectSource/main.c  .generated_files/flags/
 	@${RM} ${OBJECTDIR}/ProjectSource/main.o 
 	${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -I"FrameworkHeaders" -I"ProjectHeaders" -fno-common -MP -MMD -MF "${OBJECTDIR}/ProjectSource/main.o.d" -o ${OBJECTDIR}/ProjectSource/main.o ProjectSource/main.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}"  
 	
-${OBJECTDIR}/ProjectSource/ADService.o: ProjectSource/ADService.c  .generated_files/flags/default/c04d21bc8f2b6896099b5f6c785e7fc794bf1b68 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
-	@${MKDIR} "${OBJECTDIR}/ProjectSource" 
-	@${RM} ${OBJECTDIR}/ProjectSource/ADService.o.d 
-	@${RM} ${OBJECTDIR}/ProjectSource/ADService.o 
-	${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -I"FrameworkHeaders" -I"ProjectHeaders" -fno-common -MP -MMD -MF "${OBJECTDIR}/ProjectSource/ADService.o.d" -o ${OBJECTDIR}/ProjectSource/ADService.o ProjectSource/ADService.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}"  
-	
 ${OBJECTDIR}/ProjectSource/PIC32_AD_Lib.o: ProjectSource/PIC32_AD_Lib.c  .generated_files/flags/default/86096a455f1e6db6e68d2071636a013160f1e25b .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
 	@${MKDIR} "${OBJECTDIR}/ProjectSource" 
 	@${RM} ${OBJECTDIR}/ProjectSource/PIC32_AD_Lib.o.d 
@@ -354,12 +342,6 @@ ${OBJECTDIR}/ProjectSource/SPILeaderFSM.o: ProjectSource/SPILeaderFSM.c  .genera
 	@${RM} ${OBJECTDIR}/ProjectSource/SPILeaderFSM.o 
 	${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -I"FrameworkHeaders" -I"ProjectHeaders" -fno-common -MP -MMD -MF "${OBJECTDIR}/ProjectSource/SPILeaderFSM.o.d" -o ${OBJECTDIR}/ProjectSource/SPILeaderFSM.o ProjectSource/SPILeaderFSM.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}"  
 	
-${OBJECTDIR}/ProjectSource/MainLogicFSM.o: ProjectSource/MainLogicFSM.c  .generated_files/flags/default/461bf7d5421ec127631b9931bc829e3757b62529 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
-	@${MKDIR} "${OBJECTDIR}/ProjectSource" 
-	@${RM} ${OBJECTDIR}/ProjectSource/MainLogicFSM.o.d 
-	@${RM} ${OBJECTDIR}/ProjectSource/MainLogicFSM.o 
-	${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -I"FrameworkHeaders" -I"ProjectHeaders" -fno-common -MP -MMD -MF "${OBJECTDIR}/ProjectSource/MainLogicFSM.o.d" -o ${OBJECTDIR}/ProjectSource/MainLogicFSM.o ProjectSource/MainLogicFSM.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}"  
-	
 ${OBJECTDIR}/ProjectSource/Ports.o: ProjectSource/Ports.c  .generated_files/flags/default/f2b6a9a7592bb740e62d367e0cc273f1e98b84f .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
 	@${MKDIR} "${OBJECTDIR}/ProjectSource" 
 	@${RM} ${OBJECTDIR}/ProjectSource/Ports.o.d 
@@ -377,6 +359,12 @@ ${OBJECTDIR}/ProjectSource/BeaconDetectFSM.o: ProjectSource/BeaconDetectFSM.c  .
 	@${RM} ${OBJECTDIR}/ProjectSource/BeaconDetectFSM.o.d 
 	@${RM} ${OBJECTDIR}/ProjectSource/BeaconDetectFSM.o 
 	${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -I"FrameworkHeaders" -I"ProjectHeaders" -fno-common -MP -MMD -MF "${OBJECTDIR}/ProjectSource/BeaconDetectFSM.o.d" -o ${OBJECTDIR}/ProjectSource/BeaconDetectFSM.o ProjectSource/BeaconDetectFSM.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}"  
+	
+${OBJECTDIR}/ProjectSource/MainLogicFSM.o: ProjectSource/MainLogicFSM.c  .generated_files/flags/default/461bf7d5421ec127631b9931bc829e3757b62529 .generated_files/flags/default/da39a3ee5e6b4b0d3255bfef95601890afd80709
+	@${MKDIR} "${OBJECTDIR}/ProjectSource" 
+	@${RM} ${OBJECTDIR}/ProjectSource/MainLogicFSM.o.d 
+	@${RM} ${OBJECTDIR}/ProjectSource/MainLogicFSM.o 
+	${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -I"FrameworkHeaders" -I"ProjectHeaders" -fno-common -MP -MMD -MF "${OBJECTDIR}/ProjectSource/MainLogicFSM.o.d" -o ${OBJECTDIR}/ProjectSource/MainLogicFSM.o ProjectSource/MainLogicFSM.c    -DXPRJ_default=$(CND_CONF)    $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}"  
 	
 endif
 

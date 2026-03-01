@@ -189,7 +189,7 @@ ES_Event_t RunSPILeaderFSM(ES_Event_t ThisEvent)
       if (ThisEvent.EventType == ES_INIT)
       {
         CurrentState = WaitingToSend;
-        DB_printf("SPILeader: Ready\\n");
+        DB_printf("SPILeader: Ready\n");
       }
     }
     break;

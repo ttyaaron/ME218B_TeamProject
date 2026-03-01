@@ -73,7 +73,7 @@
 #define CONTROL_TIMER_PERIOD ((PBCLK_FREQ / CONTROL_TIMER_PRESCALE / 500) - 1)
 
 // Control mode selection
-#define USE_OPEN_LOOP_CONTROL true  // Set to true for open-loop, false for closed-loop
+#define USE_OPEN_LOOP_CONTROL false  // Set to true for open-loop, false for closed-loop
 
 // PI Controller parameters
 #define KP 65.0f                     // Proportional gain
@@ -338,7 +338,7 @@ ES_Event_t RunDCMotorService(ES_Event_t ThisEvent)
       {
         MOTOR_REVERSE_PIN_L = 1;
         OC1RS = PWM_PERIOD_TICKS - dutyCycleLeft + 1;
-//        DB_printf("dutyCycle left 1:%u\r\n", OC1RS);
+        DB_printf("dutyCycle left 1:%u\r\n", OC1RS);
       }
 
       // RIGHT MOTOR
@@ -347,13 +347,13 @@ ES_Event_t RunDCMotorService(ES_Event_t ThisEvent)
       {
         MOTOR_REVERSE_PIN_R = 0;
         OC2RS = dutyCycleRight;
-//        DB_printf("dutyCycle right 0:%u\r\n", dutyCycleRight);
+        DB_printf("dutyCycle right 0:%u\r\n", dutyCycleRight);
       }
       else
       {
         MOTOR_REVERSE_PIN_R = 1;
         OC2RS = PWM_PERIOD_TICKS - dutyCycleRight + 1;
-//        DB_printf("dutyCycle right 1:%u\r\n", OC2RS);
+        DB_printf("dutyCycle right 1:%u\r\n", OC2RS);
       }
 
       break;
@@ -774,9 +774,8 @@ void __ISR(_TIMER_4_VECTOR, IPL5SOFT) ControlTimerISR(void)
     return;
   #endif
   
-  // Read desired speed from ADC (same for both motors in this implementation)
-  uint16_t adcValue = GetDesiredSpeed();
-  float desiredSpeed = ADToRPM(adcValue);
+  // Read desired speed
+  float desiredSpeed = 
   
   // Process control for LEFT motor
   {

@@ -219,12 +219,12 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
       bool leftDigital = TapeSensor_GetLeftDigital();
       bool rightDigital = TapeSensor_GetRightDigital();
       
-      // Print tape sensor status
-      DB_printf("\r\n=== Tape Sensors ===\r\n");
-      DB_printf("Analog: L=%d  C=%d  R=%d\r\n", leftAnalog, centerAnalog, rightAnalog);
-      DB_printf("Digital: L=%d  R=%d\r\n", 
-                leftDigital ? 1 : 0, 
-                rightDigital ? 1 : 0);
+//      // Print tape sensor status
+//      DB_printf("\r\n=== Tape Sensors ===\r\n");
+//      DB_printf("Analog: L=%d  C=%d  R=%d\r\n", leftAnalog, centerAnalog, rightAnalog);
+//      DB_printf("Digital: L=%d  R=%d\r\n", 
+//                leftDigital ? 1 : 0, 
+//                rightDigital ? 1 : 0);
       
       // Restart timer for next reading
       ES_Timer_InitTimer(SERVICE0_TIMER, HALF_SEC);
