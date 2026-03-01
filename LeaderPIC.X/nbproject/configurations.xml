@@ -53,8 +53,8 @@
       <itemPath>ProjectHeaders/Ports.h</itemPath>
       <itemPath>ProjectHeaders/BeaconDetectFSM.h</itemPath>
       <itemPath>ProjectHeaders/AtomBehaviorFSM.h</itemPath>
-      <itemPath>ProjectHeaders/MainStrategyHSM.h</itemPath>
       <itemPath>ProjectHeaders/BallCollectionFSM.h</itemPath>
+      <itemPath>ProjectHeaders/MainStrategyHSM.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -80,8 +80,8 @@
       <itemPath>ProjectSource/CommonDefinitions.c</itemPath>
       <itemPath>ProjectSource/BeaconDetectFSM.c</itemPath>
       <itemPath>ProjectSource/AtomBehaviorFSM.c</itemPath>
-      <itemPath>ProjectSource/MainStrategyHSM.c</itemPath>
       <itemPath>ProjectSource/BallCollectionFSM.c</itemPath>
+      <itemPath>ProjectSource/MainStrategyHSM.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>

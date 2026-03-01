@@ -61,21 +61,12 @@
 #define ENTER_RUN      ((MyPriority<<3)|1)
 #define ENTER_TIMEOUT  ((MyPriority<<3)|2)
 
-//#define TEST_INT_POST
-//#define BLINK LED
+
 /*---------------------------- Module Functions ---------------------------*/
 /* prototypes for private functions for this service.They should be functions
    relevant to the behavior of this service
 */
-#ifdef BLINK_LED
-static void InitLED(void);
-static void BlinkLED(void);
-#endif
 
-#ifdef TEST_INT_POST
-static void InitTMR2(void);
-static void StartTMR2(void);
-#endif
 /*---------------------------- Module Variables ---------------------------*/
 // with the introduction of Gen2, we need a module level Priority variable
 static uint8_t MyPriority;
@@ -134,13 +125,8 @@ bool InitTestHarnessService0(uint8_t Priority)
   /********************************************
    in here you write your initialization code
    *******************************************/
-  // initialize LED drive for testing/debug output
-#ifdef BLINK_LED
-  InitLED();
-#endif
-#ifdef TEST_INT_POST
-  InitTMR2();
-#endif
+
+
   // initialize the Short timer system for channel A
   //ES_ShortTimerInit(MyPriority, SHORT_TIMER_UNUSED);
 
@@ -483,69 +469,6 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
 /***************************************************************************
  private functions
  ***************************************************************************/
-#ifdef BLINK_LED
-#define LED LATBbits.LATB6
-static void InitLED(void)
-{
-  LED = 0; //start with it off
-  TRISBbits.TRISB6 = 0; // set RB6 as an output
-}
-
-static void BlinkLED(void)
-{
-  // toggle state of LED
-  LED = ~LED;
-}
-#endif
-
-#ifdef TEST_INT_POST
-#include <sys/attribs.h> // for ISR macors
-
-// for testing posting from interrupts.
-// Intializes TMR2 to gerenate an interrupt at 100ms
-static void InitTMR2(void)
-{
-  // turn timer off
-  T2CONbits.ON = 0;
-  // Use internal peripheral clock
-  T2CONbits.TCS = 0;
-  // setup for 16 bit mode
-  T2CONbits.T32 = 0;
-  // set prescale to 1:1
-  T2CONbits.TCKPS = 0;
-  // load period value
-  PR2 = 2000-1; // creates a 100ms period with a 20MHz peripheral clock
-  // set priority
-  IPC2bits.T2IP = 2;
-  // clear interrupt flag
-  IFS0bits.T2IF = 0;
-  // enable the timer interrupt
-  IEC0bits.T2IE = 1;
-}
-
-// Clears and Starts TMR2
-static void StartTMR2(void)
-{
-  // clear timer
-  TMR2 = 0;
-  // start timer
-  //LATBbits.LATB14 = 0;
-  T2CONbits.ON = 1;
-}
-
-void __ISR(_TIMER_2_VECTOR, IPL2AUTO) Timer2ISR(void)
-{
-  // clear flag
-  IFS0bits.T2IF = 0;
-  // post event
-  static ES_Event_t interruptEvent = {ES_SHORT_TIMEOUT, 0};
-  PostTestHarnessService0(interruptEvent);
-  
-  // stop timer
-  T2CONbits.ON = 0;
-  return;
-}
-#endif
 /*------------------------------- Footnotes -------------------------------*/
 /*------------------------------ End of file ------------------------------*/
 
