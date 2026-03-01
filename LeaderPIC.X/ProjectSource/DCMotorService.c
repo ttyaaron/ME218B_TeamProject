@@ -30,7 +30,6 @@
 #include "ES_Framework.h"
 #include "ES_Timers.h"
 #include "DCMotorService.h"
-#include "ADService.h"
 #include "CommonDefinitions.h"
 #include "Ports.h"
 #include "PIC32_AD_Lib.h"
@@ -73,7 +72,7 @@
 #define CONTROL_TIMER_PERIOD ((PBCLK_FREQ / CONTROL_TIMER_PRESCALE / 500) - 1)
 
 // Control mode selection
-#define USE_OPEN_LOOP_CONTROL false  // Set to true for open-loop, false for closed-loop
+#define USE_OPEN_LOOP_CONTROL true  // Set to true for open-loop, false for closed-loop
 
 // PI Controller parameters
 #define KP 65.0f                     // Proportional gain
@@ -402,7 +401,7 @@ void MotorCommandWrapper(uint16_t speedLeft, uint16_t speedRight,
     // In open-loop mode, set duty cycles directly
     DesiredSpeed[LEFT_MOTOR] = speedLeft;
     DesiredSpeed[RIGHT_MOTOR] = speedRight;
-    
+        
     ThisEvent.EventType = ES_MOTOR_ACTION_CHANGE;
     ThisEvent.EventParam = 0;
     PostDCMotorService(ThisEvent);
@@ -410,7 +409,8 @@ void MotorCommandWrapper(uint16_t speedLeft, uint16_t speedRight,
   // In closed-loop mode, PI controller will update DesiredSpeed (duty cycles)
   // and post the motor action change event
 
-  DB_printf("TargetSpeed:%.1f %.1f, DesiredDirection: %u %u\r\n", TargetSpeed[0], TargetSpeed[1], DesiredDirection[0], DesiredDirection[1]);
+  DB_printf("TargetSpeed:%u %u, DesiredDirection: %u %u\r\n", speedLeft, speedRight
+          , DesiredDirection[0], DesiredDirection[1]);
 }
 
 /****************************************************************************
@@ -774,17 +774,14 @@ void __ISR(_TIMER_3_VECTOR, IPL6SOFT) Timer3ISR(void)
      Tianyu, 02/25/26
 ****************************************************************************/
 void __ISR(_TIMER_4_VECTOR, IPL5SOFT) ControlTimerISR(void)
-{
-  TIMING_PIN_LAT = 1;
-  
+{  
   // Clear control timer interrupt flag
   IFS0CLR = _IFS0_T4IF_MASK;
   
   // If using open-loop control, skip the PI control logic
-  #if USE_OPEN_LOOP_CONTROL
-    TIMING_PIN_LAT = 0;
-    return;
-  #endif
+#if USE_OPEN_LOOP_CONTROL
+  return;
+#endif
   
   // Process control for LEFT motor
   {

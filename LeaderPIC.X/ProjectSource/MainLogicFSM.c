@@ -594,6 +594,6 @@ static void AlignWithBeacon(void)
   // Pseudocode:
   // MotorCommandWrapper(FULL_SPEED, FULL_SPEED, FORWARD, REVERSE)
   // Initialize BEACON_ALIGN_TIMER
-  MotorCommandWrapper(QUARTER_SPEED, QUARTER_SPEED, FORWARD, REVERSE);
+  MotorCommandWrapper(HALF_SPEED, HALF_SPEED, FORWARD, REVERSE);
   ES_Timer_InitTimer(BEACON_ALIGN_TIMER, BEACON_ALIGN_MS);
 }
