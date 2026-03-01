@@ -61,6 +61,7 @@
 
 #define SCOOP_IDLE_PW       (1.5 * 2500)  // 1.5ms - idle/open position
 #define SCOOP_ACTION_PW     (2.0 * 2500)  // 2.0ms - scoop/closed position
+#define SCOOP_RETRACT_PW    (2.0 * 2500)
 
 #define RELEASE_IDLE_PW        (1.5 * 2500)  // 1.5ms - neutral/stored position
 #define RELEASE_ACTION_PW      (2.0 * 2500)  // 2.0ms - release/dispense position
