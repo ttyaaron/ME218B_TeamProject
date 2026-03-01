@@ -256,6 +256,8 @@ typedef enum
   ES_NO_EVENT = 0,
   ES_ERROR,                 /* used to indicate an error from the service */
   ES_INIT,                  /* used to transition from initial pseudo-state */
+  ES_ENTRY,
+  ES_EXIT,
   ES_ENTRY_HISTORY,         /* used to enter a state with history restoration */
   ES_TIMEOUT,               /* signals that the timer has expired */
   ES_SHORT_TIMEOUT,         /* signals that a short timer has expired */

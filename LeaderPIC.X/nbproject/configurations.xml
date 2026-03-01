@@ -50,9 +50,10 @@
       <itemPath>ProjectHeaders/PIC32_SPI_HAL.h</itemPath>
       <itemPath>ProjectHeaders/SPILeaderFSM.h</itemPath>
       <itemPath>ProjectHeaders/CommonDefinitions.h</itemPath>
-      <itemPath>ProjectHeaders/MainLogicFSM.h</itemPath>
       <itemPath>ProjectHeaders/Ports.h</itemPath>
       <itemPath>ProjectHeaders/BeaconDetectFSM.h</itemPath>
+      <itemPath>ProjectHeaders/MainStrategyHSM.h</itemPath>
+      <itemPath>ProjectHeaders/AtomBehaviorFSM.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -74,10 +75,11 @@
       <itemPath>ProjectSource/DCMotorService.c</itemPath>
       <itemPath>ProjectSource/PIC32_SPI_HAL.c</itemPath>
       <itemPath>ProjectSource/SPILeaderFSM.c</itemPath>
-      <itemPath>ProjectSource/MainLogicFSM.c</itemPath>
       <itemPath>ProjectSource/Ports.c</itemPath>
       <itemPath>ProjectSource/CommonDefinitions.c</itemPath>
       <itemPath>ProjectSource/BeaconDetectFSM.c</itemPath>
+      <itemPath>ProjectSource/AtomBehaviorFSM.c</itemPath>
+      <itemPath>ProjectSource/MainStrategyHSM.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
