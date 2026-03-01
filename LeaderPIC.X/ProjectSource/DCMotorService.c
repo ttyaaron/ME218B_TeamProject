@@ -72,12 +72,21 @@
 #define CONTROL_TIMER_PERIOD ((PBCLK_FREQ / CONTROL_TIMER_PRESCALE / 500) - 1)
 
 // Control mode selection
-#define USE_OPEN_LOOP_CONTROL true  // Set to true for open-loop, false for closed-loop
+#define USE_OPEN_LOOP_CONTROL false  // Set to true for open-loop, false for closed-loop
 
 // PI Controller parameters
-#define KP 65.0f                     // Proportional gain
-#define KI 1000.0f                   // Integral gain
+// PI gains for mm/s closed-loop control.
+// Tuning procedure: increase KP until output tracks setpoint without
+// oscillation, then increase KI to eliminate steady-state error.
+// Use EncoderTestService serial output to observe measured vs target mm/s.
+#define KP 2.3f                      // Proportional gain - start conservative
+#define KI 3.5f                     // Integral gain - start small
 #define TS 0.002f                    // Sampling time in seconds (2 ms)
+#define INTEGRAL_CLAMP_TICKS  (DUTY_MAX_TICKS * 2 / 3)
+
+// Smoothing factor: 0.0 = no update (frozen), 1.0 = no filtering (raw)
+// 0.3 means each new reading contributes 30% of the new value
+#define MEAS_SPEED_ALPHA  0.4f
 
 // RPM calculation constants
 #define INVALID_TIME 0xFFFFFFFF      // Marker for invalid/uninitialized time
@@ -121,7 +130,7 @@ static void CheckIntersections(void);
 static uint8_t MyPriority;
 
 // Motor control variables
-static float TargetSpeed[2];          // Target speed in RPM (set by wrapper, read by PI controller)
+static float TargetSpeed_mm_s[2];     // Target speed in mm/s (set by DCMotor_SetSpeed_mm_s, read by PI controller)
 static uint16_t DesiredSpeed[2];      // Duty cycle ticks (output from PI controller)
 static uint8_t DesiredDirection[2];
 
@@ -142,6 +151,7 @@ static int16_t LastDutyCycleTicks[2] = {0, 0};
 // Control monitoring variables (updated by ISR)
 static volatile float CurrentDesiredSpeed[2] = {0.0f, 0.0f};
 static volatile float CurrentMeasuredSpeed[2] = {0.0f, 0.0f};
+static float FilteredSpeed[2] = {0.0f, 0.0f};
 static volatile int16_t CurrentDutyCycleTicks[2] = {0, 0};
 
 // Tape Sensor Variables
@@ -198,8 +208,8 @@ bool InitDCMotorService(uint8_t Priority)
   MyPriority = Priority;
   
   // Initialize motor control variables
-  TargetSpeed[LEFT_MOTOR] = 0.0f;
-  TargetSpeed[RIGHT_MOTOR] = 0.0f;
+  TargetSpeed_mm_s[LEFT_MOTOR] = 0.0f;
+  TargetSpeed_mm_s[RIGHT_MOTOR] = 0.0f;
   DesiredSpeed[LEFT_MOTOR] = 0;
   DesiredSpeed[RIGHT_MOTOR] = 0;
   DesiredDirection[LEFT_MOTOR] = FORWARD;
@@ -346,7 +356,7 @@ ES_Event_t RunDCMotorService(ES_Event_t ThisEvent)
       {
         MOTOR_REVERSE_PIN_L = 1;
         OC1RS = PWM_PERIOD_TICKS - dutyCycleLeft + 1;
-        DB_printf("dutyCycle left 1:%u\r\n", OC1RS);
+        // DB_printf("dutyCycle left 1:%u\r\n", OC1RS);
       }
 
       // RIGHT MOTOR
@@ -355,13 +365,13 @@ ES_Event_t RunDCMotorService(ES_Event_t ThisEvent)
       {
         MOTOR_REVERSE_PIN_R = 0;
         OC2RS = dutyCycleRight;
-        DB_printf("dutyCycle right 0:%u\r\n", dutyCycleRight);
+        // DB_printf("dutyCycle right 0:%u\r\n", dutyCycleRight);
       }
       else
       {
         MOTOR_REVERSE_PIN_R = 1;
         OC2RS = PWM_PERIOD_TICKS - dutyCycleRight + 1;
-        DB_printf("dutyCycle right 1:%u\r\n", OC2RS);
+        // DB_printf("dutyCycle right 1:%u\r\n", OC2RS);
       }
 
       break;
@@ -386,8 +396,9 @@ ES_Event_t RunDCMotorService(ES_Event_t ThisEvent)
      None
 
  Description
-     Writes desired speeds/directions into module variables and posts
-     ES_MOTOR_ACTION_CHANGE events to DCMotorService.
+     Legacy wrapper for open-loop duty cycle commands.
+     WARNING: Does NOT set TargetSpeed_mm_s. For closed-loop control,
+     use DCMotor_SetSpeed_mm_s() instead.
 
  Author
      Tianyu, 02/03/26
@@ -397,9 +408,7 @@ void MotorCommandWrapper(uint16_t speedLeft, uint16_t speedRight,
 {
   ES_Event_t ThisEvent;
 
-  // Set target speeds (in RPM) - these will be used by PI controller
-  TargetSpeed[LEFT_MOTOR] = (float)speedLeft;
-  TargetSpeed[RIGHT_MOTOR] = (float)speedRight;
+  // Set desired directions
   DesiredDirection[LEFT_MOTOR] = dirLeft;
   DesiredDirection[RIGHT_MOTOR] = dirRight;
 
@@ -433,10 +442,10 @@ void MotorCommandWrapper(uint16_t speedLeft, uint16_t speedRight,
      None
 
  Description
-     Converts mm/s targets to open-loop duty cycle ticks and commands
-     both motors. Linear scaling: duty = speed * DUTY_MAX_TICKS / SPEED_FULL_MM_S
-     Clamps output to [DUTY_MIN_TICKS, DUTY_MAX_TICKS].
-     Phase 3 will replace the linear mapping with PI closed-loop control.
+     Sets target speeds in mm/s for closed-loop PI control.
+     In closed-loop mode (USE_OPEN_LOOP_CONTROL false), the PI controller
+     handles duty cycle conversion. In open-loop mode, performs linear
+     scaling: duty = speed * DUTY_MAX_TICKS / SPEED_FULL_MM_S
 
  Author
      Tianyu, 03/01/26
@@ -446,16 +455,26 @@ void DCMotor_SetSpeed_mm_s(uint16_t speedLeft_mm_s,
                            uint8_t  dirLeft,
                            uint8_t  dirRight)
 {
+  // Store mm/s targets for the PI controller
+  TargetSpeed_mm_s[LEFT_MOTOR]  = (float)speedLeft_mm_s;
+  TargetSpeed_mm_s[RIGHT_MOTOR] = (float)speedRight_mm_s;
+  DesiredDirection[LEFT_MOTOR]  = dirLeft;
+  DesiredDirection[RIGHT_MOTOR] = dirRight;
+  // Reset the filter when a new speed command is issued to avoid old speed affecting the new command
+  FilteredSpeed[LEFT_MOTOR] = 0.0f;
+  FilteredSpeed[RIGHT_MOTOR] = 0.0f;
+
+  // In closed-loop mode, PI controller handles duty cycle — nothing else to do here.
+  // In open-loop mode (USE_OPEN_LOOP_CONTROL true), fall through to MotorCommandWrapper.
+#if USE_OPEN_LOOP_CONTROL
   uint32_t dutyLeft  = ((uint32_t)speedLeft_mm_s  * (uint32_t)DUTY_MAX_TICKS)
                        / (uint32_t)SPEED_FULL_MM_S;
   uint32_t dutyRight = ((uint32_t)speedRight_mm_s * (uint32_t)DUTY_MAX_TICKS)
                        / (uint32_t)SPEED_FULL_MM_S;
-
   if (dutyLeft  > DUTY_MAX_TICKS) { dutyLeft  = DUTY_MAX_TICKS; }
   if (dutyRight > DUTY_MAX_TICKS) { dutyRight = DUTY_MAX_TICKS; }
-
-  MotorCommandWrapper((uint16_t)dutyLeft, (uint16_t)dutyRight,
-                      dirLeft, dirRight);
+  MotorCommandWrapper((uint16_t)dutyLeft, (uint16_t)dutyRight, dirLeft, dirRight);
+#endif
 }
 
 
@@ -929,28 +948,36 @@ void __ISR(_TIMER_4_VECTOR, IPL5SOFT) ControlTimerISR(void)
   // Process control for LEFT motor
   {
     // Read target speed for left motor
-    float targetSpeed = TargetSpeed[LEFT_MOTOR];
+    float targetSpeed = TargetSpeed_mm_s[LEFT_MOTOR];
 
     // This is avoiding stale period measurements when the motor has slowed or stalled since the last encoder edge.
     uint32_t edgePeriod    = EdgeTimeDifference[LEFT_MOTOR];
     uint32_t elapsedSince  = GetElapsedTicksSinceLastEdge(LEFT_MOTOR);
 
-    // If elapsed time since last capture is more than 2x the last measured period,
+    // If elapsed time since last capture is more than 4x the last measured period,
     // the motor has slowed below that speed or stalled.
     // Use elapsed time as the effective period instead — this makes measured
     // speed decay toward zero naturally rather than freezing at the last value.
-    uint32_t effectivePeriod = (elapsedSince > edgePeriod) ? elapsedSince : edgePeriod;
-
-    float measuredSpeed = PeriodToSpeed_mm_s(effectivePeriod);
-    uint32_t measuredPeriod = effectivePeriod;
-
-    // Print debug info for control loop (convert float to hundredths for printing)
-    uint32_t measuredSpeed_hundredths = (uint32_t)(measuredSpeed * 100);
-    DB_printf("Period: %u, measuredSpeed: %u.%u RPM\r\n",
-           EdgeTimeDifference[LEFT_MOTOR], 
-           measuredSpeed_hundredths / 100,
-           measuredSpeed_hundredths % 100);
+    uint32_t effectivePeriod;
     
+    if (edgePeriod == 0u)
+      {
+        // First IC capture only — no valid period yet, report as stopped
+        effectivePeriod = elapsedSince;
+      }
+      else
+      {
+        effectivePeriod = (elapsedSince > edgePeriod * 4u) ? elapsedSince : edgePeriod;
+      }
+
+    float rawSpeed = PeriodToSpeed_mm_s(effectivePeriod);
+
+    // Exponential moving average — smooths spikes without adding much lag
+    FilteredSpeed[LEFT_MOTOR] = MEAS_SPEED_ALPHA * rawSpeed
+                              + (1.0f - MEAS_SPEED_ALPHA) * FilteredSpeed[LEFT_MOTOR];
+
+    float measuredSpeed = FilteredSpeed[LEFT_MOTOR];
+
     // Update monitoring variables
     CurrentDesiredSpeed[LEFT_MOTOR] = targetSpeed;
     CurrentMeasuredSpeed[LEFT_MOTOR] = measuredSpeed;
@@ -960,11 +987,14 @@ void __ISR(_TIMER_4_VECTOR, IPL5SOFT) ControlTimerISR(void)
     
     // PI control law
     float proportional = KP * currentError;
-    
-    // Tentatively accumulate error
+
     AccumulatedError[LEFT_MOTOR] += currentError * TS;
     
     float integral = KI * AccumulatedError[LEFT_MOTOR];
+
+    if (integral > INTEGRAL_CLAMP_TICKS)  { integral = INTEGRAL_CLAMP_TICKS; }
+    if (integral < -INTEGRAL_CLAMP_TICKS) { integral = -INTEGRAL_CLAMP_TICKS; }
+
     float u_unsat = proportional + integral;
     
     // Clamp output to duty cycle limits
@@ -1000,20 +1030,35 @@ void __ISR(_TIMER_4_VECTOR, IPL5SOFT) ControlTimerISR(void)
   // Process control for RIGHT motor
   {
     // Read target speed for right motor
-    float targetSpeed = TargetSpeed[RIGHT_MOTOR];
+    float targetSpeed = TargetSpeed_mm_s[RIGHT_MOTOR];
     
     // This is avoiding stale period measurements when the motor has slowed or stalled since the last encoder edge.
     uint32_t edgePeriod    = EdgeTimeDifference[RIGHT_MOTOR];
     uint32_t elapsedSince  = GetElapsedTicksSinceLastEdge(RIGHT_MOTOR);
 
-    // If elapsed time since last capture is more than 2x the last measured period,
+    // If elapsed time since last capture is more than 4x the last measured period,
     // the motor has slowed below that speed or stalled.
     // Use elapsed time as the effective period instead — this makes measured
     // speed decay toward zero naturally rather than freezing at the last value.
-    uint32_t effectivePeriod = (elapsedSince > edgePeriod) ? elapsedSince : edgePeriod;
+    uint32_t effectivePeriod;
+    
+    if (edgePeriod == 0u)
+      {
+        // First IC capture only — no valid period yet, report as stopped
+        effectivePeriod = elapsedSince;
+      }
+      else
+      {
+        effectivePeriod = (elapsedSince > edgePeriod * 4u) ? elapsedSince : edgePeriod;
+      }
 
-    float measuredSpeed = PeriodToSpeed_mm_s(effectivePeriod);
-    uint32_t measuredPeriod = effectivePeriod;
+    float rawSpeed = PeriodToSpeed_mm_s(effectivePeriod);
+
+    // Exponential moving average — smooths spikes without adding much lag
+    FilteredSpeed[RIGHT_MOTOR] = MEAS_SPEED_ALPHA * rawSpeed
+                              + (1.0f - MEAS_SPEED_ALPHA) * FilteredSpeed[RIGHT_MOTOR];
+
+    float measuredSpeed = FilteredSpeed[RIGHT_MOTOR];
 
     // Update monitoring variables
     CurrentDesiredSpeed[RIGHT_MOTOR] = targetSpeed;
@@ -1024,11 +1069,14 @@ void __ISR(_TIMER_4_VECTOR, IPL5SOFT) ControlTimerISR(void)
     
     // PI control law
     float proportional = KP * currentError;
-    
-    // Tentatively accumulate error
+
     AccumulatedError[RIGHT_MOTOR] += currentError * TS;
     
     float integral = KI * AccumulatedError[RIGHT_MOTOR];
+
+    if (integral > INTEGRAL_CLAMP_TICKS)  { integral = INTEGRAL_CLAMP_TICKS; }
+    if (integral < -INTEGRAL_CLAMP_TICKS) { integral = -INTEGRAL_CLAMP_TICKS; }
+
     float u_unsat = proportional + integral;
     
     // Clamp output to duty cycle limits
@@ -1066,8 +1114,24 @@ void __ISR(_TIMER_4_VECTOR, IPL5SOFT) ControlTimerISR(void)
   ControlEvent.EventType = ES_MOTOR_ACTION_CHANGE;
   ControlEvent.EventParam = 0;
   PostDCMotorService(ControlEvent);
+
+  // Print monitoring info every 500ms (250 calls * 2ms period)
+  static uint16_t printCount = 0;
+  if (++printCount >= 25) {   // print every 250 calls = every 50ms
+    uint32_t lFilteredSpeed_hundredths = (uint32_t)(FilteredSpeed[LEFT_MOTOR] * 100);
+    uint32_t rFilteredSpeed_hundredths = (uint32_t)(FilteredSpeed[RIGHT_MOTOR] * 100);
+    DB_printf("L tgt=%u meas=%u.%u mm/s duty=%d | R tgt=%u meas=%u.%u mm/s duty=%d\r\n",
+              (unsigned int)CurrentDesiredSpeed[LEFT_MOTOR],
+              lFilteredSpeed_hundredths / 100,
+              lFilteredSpeed_hundredths % 100,
+              (int)CurrentDutyCycleTicks[LEFT_MOTOR],
+              (unsigned int)CurrentDesiredSpeed[RIGHT_MOTOR],
+              rFilteredSpeed_hundredths / 100,
+              rFilteredSpeed_hundredths % 100,
+              (int)CurrentDutyCycleTicks[RIGHT_MOTOR]);
+    printCount = 0;
+  }
   
-  TIMING_PIN_LAT = 0;
 }
 
 /***************************************************************************

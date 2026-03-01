@@ -147,10 +147,13 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
       {
         // On startup, automatically start searching for beacon
         DB_printf("Startup: Auto-initiating beacon search\r\n");
-        ES_Event_t BeaconCommand;
-        BeaconCommand.EventType = ES_COMMAND_RETRIEVED;
-        BeaconCommand.EventParam = CMD_ALIGN_BEACON;
-        PostMainLogicFSM(BeaconCommand);
+        // ES_Event_t BeaconCommand;
+        // BeaconCommand.EventType = ES_COMMAND_RETRIEVED;
+        // BeaconCommand.EventParam = CMD_ALIGN_BEACON;
+        // PostMainLogicFSM(BeaconCommand);
+
+        // TEMPORARY: command a fixed speed for PI tuning — remove before match
+        DCMotor_SetSpeed_mm_s(200, 200, FORWARD, FORWARD);
         break;
       }
       if (ThisEvent.EventType == ES_COMMAND_RETRIEVED)

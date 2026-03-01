@@ -141,10 +141,10 @@ ES_Event_t RunEncoderTestService(ES_Event_t ThisEvent)
 
         // Print: raw ticks, computed mm/s, and cumulative distance
         // All values are unsigned integers — no floats used
-        DB_printf("L: ticks=%u  spd=%u mm/s  dist=%u mm  |  "
-                  "R: ticks=%u  spd=%u mm/s  dist=%u mm\r\n",
-                  (unsigned int)leftPeriod,  (unsigned int)leftSpeed,  (unsigned int)leftDist,
-                  (unsigned int)rightPeriod, (unsigned int)rightSpeed, (unsigned int)rightDist);
+//        DB_printf("L: ticks=%u  spd=%u mm/s  dist=%u mm  |  "
+//                  "R: ticks=%u  spd=%u mm/s  dist=%u mm\r\n",
+//                  (unsigned int)leftPeriod,  (unsigned int)leftSpeed,  (unsigned int)leftDist,
+//                  (unsigned int)rightPeriod, (unsigned int)rightSpeed, (unsigned int)rightDist);
 
         ES_Timer_InitTimer(ENCODER_PRINT_TIMER, 200u);
       }
