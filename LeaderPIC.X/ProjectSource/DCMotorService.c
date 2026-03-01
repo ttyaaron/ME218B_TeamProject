@@ -103,6 +103,7 @@ static uint16_t MapSpeedToDutyCycle(uint16_t desiredSpeed);
 // Encoder functions
 static void ConfigureEncoderTimer(void);
 static void ConfigureInputCapture(void);
+static float PeriodToRPM(uint32_t period);  // Local float version for PI controller only
 
 // Speed control functions
 static void ConfigureControlTimer(void);
@@ -129,6 +130,9 @@ static uint32_t LastCapturedTime[2] = {INVALID_TIME, INVALID_TIME}; // Previous 
 // Note: SharedTimer3RolloverCounter is defined in CommonDefinitions.c
 // and shared by BeaconDetectFSM, DCMotorService IC3 and IC2
 static uint32_t EdgeTimeDifference[2] = {0, 0};             // Time between edges for each wheel
+
+// Cumulative IC capture event counters (incremented in ISR)
+static volatile uint32_t ICEventCount[2] = {0u, 0u};
 
 // PI Controller variables (for left and right wheels)
 static float AccumulatedError[2] = {0.0f, 0.0f};
@@ -414,6 +418,44 @@ void MotorCommandWrapper(uint16_t speedLeft, uint16_t speedRight,
           , DesiredDirection[0], DesiredDirection[1]);
 }
 
+/****************************************************************************
+ Function
+     DCMotor_SetSpeed_mm_s
+
+ Parameters
+     uint16_t speedLeft_mm_s  - desired left wheel surface speed in mm/s
+     uint16_t speedRight_mm_s - desired right wheel surface speed in mm/s
+     uint8_t  dirLeft         - FORWARD or REVERSE
+     uint8_t  dirRight        - FORWARD or REVERSE
+
+ Returns
+     None
+
+ Description
+     Converts mm/s targets to open-loop duty cycle ticks and commands
+     both motors. Linear scaling: duty = speed * DUTY_MAX_TICKS / SPEED_FULL_MM_S
+     Clamps output to [DUTY_MIN_TICKS, DUTY_MAX_TICKS].
+     Phase 3 will replace the linear mapping with PI closed-loop control.
+
+ Author
+     Tianyu, 03/01/26
+****************************************************************************/
+void DCMotor_SetSpeed_mm_s(uint16_t speedLeft_mm_s,
+                           uint16_t speedRight_mm_s,
+                           uint8_t  dirLeft,
+                           uint8_t  dirRight)
+{
+  uint32_t dutyLeft  = ((uint32_t)speedLeft_mm_s  * (uint32_t)DUTY_MAX_TICKS)
+                       / (uint32_t)SPEED_FULL_MM_S;
+  uint32_t dutyRight = ((uint32_t)speedRight_mm_s * (uint32_t)DUTY_MAX_TICKS)
+                       / (uint32_t)SPEED_FULL_MM_S;
+
+  if (dutyLeft  > DUTY_MAX_TICKS) { dutyLeft  = DUTY_MAX_TICKS; }
+  if (dutyRight > DUTY_MAX_TICKS) { dutyRight = DUTY_MAX_TICKS; }
+
+  MotorCommandWrapper((uint16_t)dutyLeft, (uint16_t)dutyRight,
+                      dirLeft, dirRight);
+}
 
 
 /****************************************************************************
@@ -611,6 +653,57 @@ uint32_t DCMotor_GetEncoderPeriod(uint8_t motorIndex)
   return 0;
 }
 
+/****************************************************************************
+ Function
+     DCMotor_GetICEventCount
+
+ Parameters
+     uint8_t motorIndex - LEFT_MOTOR (0) or RIGHT_MOTOR (1)
+
+ Returns
+     uint32_t - cumulative IC event count for the specified motor since last reset
+
+ Description
+     Returns cumulative IC event count for the specified motor since last reset.
+     Used for distance tracking.
+
+ Author
+     Tianyu, 03/01/26
+****************************************************************************/
+uint32_t DCMotor_GetICEventCount(uint8_t motorIndex)
+{
+  if (motorIndex < 2u)
+  {
+    return ICEventCount[motorIndex];
+  }
+  return 0u;
+}
+
+/****************************************************************************
+ Function
+     DCMotor_ResetICEventCount
+
+ Parameters
+     uint8_t motorIndex - LEFT_MOTOR (0) or RIGHT_MOTOR (1)
+
+ Returns
+     None
+
+ Description
+     Resets the IC event counter for the specified motor to zero.
+     Call before a distance-controlled move begins.
+
+ Author
+     Tianyu, 03/01/26
+****************************************************************************/
+void DCMotor_ResetICEventCount(uint8_t motorIndex)
+{
+  if (motorIndex < 2u)
+  {
+    ICEventCount[motorIndex] = 0u;
+  }
+}
+
 /***************************************************************************
  Interrupt Service Routines
  ****************************************************************************/
@@ -634,6 +727,9 @@ uint32_t DCMotor_GetEncoderPeriod(uint8_t motorIndex)
 ****************************************************************************/
 void __ISR(_INPUT_CAPTURE_3_VECTOR, IPL7SOFT) InputCaptureISR_IC3(void)
 {
+  // Increment IC event counter for distance tracking
+  ICEventCount[LEFT_MOTOR]++;
+  
   // Read the captured timer value from IC3 buffer
   uint16_t capturedTimer16 = IC3BUF;
       
@@ -689,6 +785,9 @@ void __ISR(_INPUT_CAPTURE_3_VECTOR, IPL7SOFT) InputCaptureISR_IC3(void)
 ****************************************************************************/
 void __ISR(_INPUT_CAPTURE_2_VECTOR, IPL7SOFT) InputCaptureISR_IC2(void)
 {
+  // Increment IC event counter for distance tracking
+  ICEventCount[RIGHT_MOTOR]++;
+  
   // Read the captured timer value from IC2 buffer
   uint16_t capturedTimer16 = IC2BUF;
       
@@ -916,6 +1015,42 @@ void __ISR(_TIMER_4_VECTOR, IPL5SOFT) ControlTimerISR(void)
 /***************************************************************************
  Private Functions
  ***************************************************************************/
+
+/****************************************************************************
+ Function
+     PeriodToRPM
+
+ Parameters
+     uint32_t period - time between encoder edges in timer ticks
+
+ Returns
+     float - measured RPM
+
+ Description
+     LOCAL version for PI controller use only. Converts encoder period
+     measurement to RPM. Uses hardware-verified constants from CommonDefinitions.h.
+
+ Author
+     Tianyu, 03/01/26
+****************************************************************************/
+static float PeriodToRPM(uint32_t period)
+{
+  // Prevent division by zero
+  if (period == 0u)
+  {
+    return 0.0f;
+  }
+  
+  // Timer3 clock is TIMER3_CLOCK_HZ = 78125 Hz
+  // Each IC capture represents IC_EVENTS_PER_REV per revolution
+  // Convert to rev/s: (TIMER3_CLOCK_HZ / IC_EVENTS_PER_REV) / period
+  // Convert to RPM: rev/s * 60
+  
+  float rev_per_sec = (float)TIMER3_CLOCK_HZ / ((float)IC_EVENTS_PER_REV * (float)period);
+  float rpm = rev_per_sec * 60.0f;
+  
+  return rpm;
+}
 
 /****************************************************************************
  Function

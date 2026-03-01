@@ -65,22 +65,57 @@ extern const uint8_t PrescaleLookup[];
 
 extern const uint8_t validCommandBytes[21];
 
-// System clock configuration
-#define PBCLK_FREQ 20000000         // 20 MHz peripheral bus clock
+// ----------------------------------------------------------------
+// Layer 1: Raw measured hardware facts (update these if hardware changes)
+// Verified on hardware 03/01/26
+// ----------------------------------------------------------------
 
-// Motor specifications
-#define MAX_RPM 32                 // Maximum motor RPM
+// Timer3 runs at PBCLK / ENCODER_TIMER_PRESCALE = 20000000 / 256 = 78125 Hz
+#define PBCLK_FREQ              20000000u   // 20 MHz peripheral bus clock
+#define ENCODER_TIMER_PRESCALE  256u        // Timer3 prescale
+#define TIMER3_CLOCK_HZ         (PBCLK_FREQ / ENCODER_TIMER_PRESCALE)  // 78125 Hz
 
-// ADC configuration
-#define ADC_MAX_VALUE 1023          // 10-bit ADC maximum value
+// IC fires on every 16th encoder edge
+#define IC_PRESCALE             16u
 
-// Encoder configuration
-#define IC_PRESCALE 16              // Input Capture prescale (captures every 16th edge)
-#define IC_ENCODER_EDGES_PER_REV (3048 / IC_PRESCALE) // Encoder edges per revolution after prescale
-#define ENCODER_TIMER_PRESCALE 256  // Timer3 prescale for encoder timing
+// Measured: ~150 IC capture events per full wheel revolution
+// (hand count ~146/rev, motor test 195 Hz / 1.295 rev/s = 150.6/rev)
+// Raw encoder CPR = IC_EVENTS_PER_REV * IC_PRESCALE = 150 * 16 = 2400
+#define IC_EVENTS_PER_REV       150u
+#define ENCODER_CPR             (IC_EVENTS_PER_REV * IC_PRESCALE)  // 2400
 
-// Time constants
-#define SECONDS_PER_MINUTE 60       // Conversion factor for RPM calculations
+// Wheel geometry: diameter measured with calipers
+#define WHEEL_DIAMETER_MM       100u
+#define WHEEL_CIRCUMFERENCE_MM  314u        // diameter * pi, rounded to nearest mm
+
+// ----------------------------------------------------------------
+// Layer 2: Derived conversion constants (do not edit — change Layer 1)
+//
+// Speed:
+//   rev/s  = TIMER3_CLOCK_HZ / (IC_EVENTS_PER_REV * period_ticks)
+//   mm/s   = rev/s * WHEEL_CIRCUMFERENCE_MM
+//          = (TIMER3_CLOCK_HZ * WHEEL_CIRCUMFERENCE_MM * IC_PRESCALE)
+//            / (IC_EVENTS_PER_REV * period_ticks)
+//
+//   speed_mm_s = SPEED_CONV_NUM / (SPEED_CONV_DEN * period_ticks)
+// ----------------------------------------------------------------
+#define SPEED_CONV_NUM  (TIMER3_CLOCK_HZ * WHEEL_CIRCUMFERENCE_MM * IC_PRESCALE)  // 24531250
+#define SPEED_CONV_DEN  (IC_EVENTS_PER_REV)                         // 150
+
+// Distance:
+//   Each IC event advances the wheel by WHEEL_CIRCUMFERENCE_MM / IC_EVENTS_PER_REV mm
+//   distance_mm = (ic_event_count * DIST_CONV_NUM * IC_PRESCALE) / DIST_CONV_DEN
+#define DIST_CONV_NUM   WHEEL_CIRCUMFERENCE_MM * IC_PRESCALE   // 314
+#define DIST_CONV_DEN   IC_EVENTS_PER_REV        // 150
+
+// ----------------------------------------------------------------
+// Layer 3: Named speed levels in mm/s for strategy layer use
+// Initial values estimated; tune by running motor and measuring.
+// ----------------------------------------------------------------
+#define SPEED_STOP_MM_S         0u
+#define SPEED_QUARTER_MM_S      80u
+#define SPEED_HALF_MM_S         160u
+#define SPEED_FULL_MM_S         300u
 
 // PWM configuration (shared between DCMotorService and SpeedControlService)
 #define DUTY_MAX_TICKS 2000        // Maximum duty cycle ticks (100%)
@@ -137,7 +172,7 @@ extern volatile uint16_t SharedTimer3RolloverCounter;
      Converts encoder period measurement to RPM. Shared by EncoderService
      and SpeedControlService.
 ****************************************************************************/
-float PeriodToRPM(uint32_t period);
+//float PeriodToRPM(uint32_t period);
 
 /****************************************************************************
  Function

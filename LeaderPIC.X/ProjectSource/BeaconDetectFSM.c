@@ -82,8 +82,6 @@
 
 // Timestamp and frequency constants
 #define INVALID_TIME     0xFFFFFFFF  // Sentinel for uninitialized LastCapturedTime
-#define IC_PRESCALE      16          // IC fires on every 16th rising edge
-#define PBCLK_FREQ       20000000    // 20 MHz peripheral bus clock
 
 // Beacon detection window
 #define BEACON_G_FREQ    3333   // Hz

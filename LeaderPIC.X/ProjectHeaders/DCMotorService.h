@@ -38,10 +38,16 @@ ES_Event_t RunDCMotorService(ES_Event_t ThisEvent);
 // Motor control wrapper
 void MotorCommandWrapper(uint16_t speedLeft, uint16_t speedRight,
                          uint8_t dirLeft, uint8_t dirRight);
+void DCMotor_SetSpeed_mm_s(uint16_t speedLeft_mm_s,
+                           uint16_t speedRight_mm_s,
+                           uint8_t  dirLeft,
+                           uint8_t  dirRight);
 
 // Encoder query function
 uint32_t Encoder_GetLatestPeriod(uint8_t motorIndex);
 uint32_t DCMotor_GetEncoderPeriod(uint8_t motorIndex);
+uint32_t DCMotor_GetICEventCount(uint8_t motorIndex);
+void     DCMotor_ResetICEventCount(uint8_t motorIndex);
 
 // Tape sensor public functions
 void TapeSensor_Read(void);           // Read all tape sensors

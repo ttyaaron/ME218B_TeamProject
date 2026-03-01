@@ -100,72 +100,57 @@ const uint8_t validCommandBytes[21] = {
 
 /****************************************************************************
  Function
-     PeriodToRPM
+     PeriodToSpeed_mm_s
 
  Parameters
-     uint32_t period - time between encoder edges in timer ticks
+     uint32_t period_ticks - Timer3 ticks between consecutive IC captures
+                             for one wheel (from DCMotor_GetEncoderPeriod)
 
  Returns
-     float - measured RPM
+     uint32_t - wheel surface speed in mm/s, 0 if period_ticks is 0
 
  Description
-     Converts encoder period measurement to RPM. Uses the encoder timer
-     prescale and edges per revolution to calculate actual motor speed.
+     Converts raw IC period ticks to mm/s using integer arithmetic only.
+     speed_mm_s = SPEED_CONV_NUM / (SPEED_CONV_DEN * period_ticks)
+
+     At 300 mm/s: period ~ 78125*314 / (150*300) = 544 ticks
+     At  50 mm/s: period ~ 78125*314 / (150*50)  = 3271 ticks
 
  Author
-     Tianyu, 01/28/26
+     Tianyu, 03/01/26
 ****************************************************************************/
-float PeriodToRPM(uint32_t period)
+uint32_t PeriodToSpeed_mm_s(uint32_t period_ticks)
 {
-  // Prevent division by zero
-  if (period == 0)
+  if (period_ticks == 0u)
   {
-    return 0.0f;
+    return 0u;
   }
-  
-  // Calculate timer clock frequency
-  uint32_t timerClock = PBCLK_FREQ / ENCODER_TIMER_PRESCALE;
-  
-//  DB_printf("timerClock: %d\r\n", timerClock);
-  
-//  DB_printf("period: %d\r\n", period);
-  
-  // DEBUG: Print all values used in calculation
-  
-//  DB_printf("SECONDS_PER_MINUTE: %d\r\n", SECONDS_PER_MINUTE);
-//  DB_printf("IC_ENCODER_EDGES_PER_REV: %d\r\n", IC_ENCODER_EDGES_PER_REV);
-  
-  // Calculate RPM from period
-  // RPM = (timerClock * 60) / (period * edges_per_rev)
-  float rpm = ((float)timerClock * SECONDS_PER_MINUTE) / 
-              ((float)period * IC_ENCODER_EDGES_PER_REV);
-  
-//  DB_printf("RPM: %d\r\n", rpm);
-  
-  return rpm;
+  return (uint32_t)(SPEED_CONV_NUM / ((uint32_t)SPEED_CONV_DEN * period_ticks));
 }
 
 /****************************************************************************
  Function
-     ADToRPM
+     ICCountToDistance_mm
 
  Parameters
-     uint16_t adcValue - ADC reading (0-1023)
+     uint32_t ic_event_count - cumulative IC capture event count for one wheel
 
  Returns
-     float - desired RPM
+     uint32_t - distance traveled in mm using integer arithmetic only
 
  Description
-     Converts ADC value to desired RPM setpoint. Maps the full ADC range
-     linearly to the motor's RPM range.
+     Converts a count of IC events to mm traveled.
+     distance_mm = (count * WHEEL_CIRCUMFERENCE_MM) / IC_EVENTS_PER_REV
+                 = (count * DIST_CONV_NUM) / DIST_CONV_DEN
+
+     Resolution: 314/150 = 2.09 mm per IC event.
 
  Author
-     Tianyu, 01/28/26
+     Tianyu, 03/01/26
 ****************************************************************************/
-float ADToRPM(uint16_t adcValue)
+uint32_t ICCountToDistance_mm(uint32_t ic_event_count)
 {
-  // Map ADC range [0, 1023] to RPM range [0, MAX_RPM]
-  return ((float)adcValue * MAX_RPM) / ADC_MAX_VALUE;
+  return (ic_event_count * (uint32_t)DIST_CONV_NUM) / (uint32_t)DIST_CONV_DEN;
 }
 
 /*------------------------------- Footnotes -------------------------------*/

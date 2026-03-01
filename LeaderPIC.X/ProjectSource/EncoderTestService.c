@@ -130,17 +130,23 @@ ES_Event_t RunEncoderTestService(ES_Event_t ThisEvent)
       // Check if this is the encoder print timer
       if (ThisEvent.EventParam == ENCODER_PRINT_TIMER)
       {
-        // Read raw encoder periods from DCMotorService
-        uint32_t leftPeriod = DCMotor_GetEncoderPeriod(LEFT_MOTOR);
+        uint32_t leftPeriod  = DCMotor_GetEncoderPeriod(LEFT_MOTOR);
         uint32_t rightPeriod = DCMotor_GetEncoderPeriod(RIGHT_MOTOR);
-        
-        // Print raw tick counts only (no float math, no RPM)
-        DB_printf("ENC L ticks:%u  R ticks:%u\r\n",
-                  (unsigned int)leftPeriod,
-                  (unsigned int)rightPeriod);
-        
-        // Restart the print timer
-        ES_Timer_InitTimer(ENCODER_PRINT_TIMER, ENCODER_PRINT_INTERVAL);
+
+        uint32_t leftSpeed   = PeriodToSpeed_mm_s(leftPeriod);
+        uint32_t rightSpeed  = PeriodToSpeed_mm_s(rightPeriod);
+
+        uint32_t leftDist    = ICCountToDistance_mm(DCMotor_GetICEventCount(LEFT_MOTOR));
+        uint32_t rightDist   = ICCountToDistance_mm(DCMotor_GetICEventCount(RIGHT_MOTOR));
+
+        // Print: raw ticks, computed mm/s, and cumulative distance
+        // All values are unsigned integers — no floats used
+        DB_printf("L: ticks=%u  spd=%u mm/s  dist=%u mm  |  "
+                  "R: ticks=%u  spd=%u mm/s  dist=%u mm\r\n",
+                  (unsigned int)leftPeriod,  (unsigned int)leftSpeed,  (unsigned int)leftDist,
+                  (unsigned int)rightPeriod, (unsigned int)rightSpeed, (unsigned int)rightDist);
+
+        ES_Timer_InitTimer(ENCODER_PRINT_TIMER, 200u);
       }
       break;
       
