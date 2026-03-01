@@ -75,19 +75,16 @@ bool InitMainStrategyHSM(uint8_t Priority)
   ES_Event_t ThisEvent;
 
   MyPriority = Priority;
-  CurrentState = InitStrategyState;
   CurrentStrategy = STRATEGY_NONE;
   StrategyStep = 0;
 
   DB_printf("MainStrategyHSM Init\r\n");
 
-  // Post the initial transition event
-  ThisEvent.EventType = ES_INIT;
-  if (ES_PostToService(MyPriority, ThisEvent) == true)
-  {
-    return true;
-  }
-  return false;
+  ThisEvent.EventType = ES_ENTRY;
+  // Start the Main Strategy State machine
+  StartMainStrategyHSM(ThisEvent);
+
+  return true;
 }
 
 /****************************************************************************
@@ -133,21 +130,10 @@ ES_Event_t RunMainStrategyHSM(ES_Event_t CurrentEvent)
   bool MakeTransition = false;
   StrategyState_t NextState = CurrentState;
   ES_Event_t EntryEventKind = { ES_ENTRY, 0 };
-  ES_Event_t ReturnEvent = CurrentEvent;
+  ES_Event_t ReturnEvent = { ES_NO_EVENT, 0 }; // assume no error
 
   switch (CurrentState)
   {
-    case InitStrategyState:
-    {
-      if (CurrentEvent.EventType == ES_INIT)
-      {
-        NextState = IdleStrategy;
-        MakeTransition = true;
-        DB_printf("MainStrategyHSM: Init -> Idle\r\n");
-      }
-    }
-    break;
-
     case IdleStrategy:
     {
       ReturnEvent = CurrentEvent = DuringIdleStrategy(CurrentEvent);
@@ -345,6 +331,8 @@ ES_Event_t RunMainStrategyHSM(ES_Event_t CurrentEvent)
     RunMainStrategyHSM(EntryEventKind);
   }
 
+  // In the absence of an error the top level state machine should
+  // always return ES_NO_EVENT, which we initialized at the top of func
   return ReturnEvent;
 }
 
@@ -366,7 +354,9 @@ ES_Event_t RunMainStrategyHSM(ES_Event_t CurrentEvent)
 ****************************************************************************/
 void StartMainStrategyHSM(ES_Event_t CurrentEvent)
 {
+  // Set the initial state
   CurrentState = IdleStrategy;
+  // Let the Run function initialize the lower level state machines
   RunMainStrategyHSM(CurrentEvent);
 }
 

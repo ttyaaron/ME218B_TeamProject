@@ -88,17 +88,14 @@ bool InitAtomBehaviorFSM(uint8_t Priority)
   // - Debug pin: initialized below (AtomBehavior-specific debugging)
   InitDebugOutputPin();
 
-  CurrentState = Stopped;
-
   // Stop motors on startup
   MotorCommandWrapper(0, 0, FORWARD, FORWARD);
 
-  ThisEvent.EventType = ES_INIT;
-  if (ES_PostToService(MyPriority, ThisEvent) == true)
-  {
-    return true;
-  }
-  return false;
+  ThisEvent.EventType = ES_ENTRY;
+  // Start the Atom Behavior State machine
+  StartAtomBehaviorFSM(ThisEvent);
+
+  return true;
 }
 
 /****************************************************************************
@@ -148,16 +145,6 @@ ES_Event_t RunAtomBehaviorFSM(ES_Event_t ThisEvent)
   switch (CurrentState)
   {
     case Stopped:
-      if (ThisEvent.EventType == ES_INIT)
-      {
-        // On startup, automatically start searching for beacon
-        DB_printf("Startup: Auto-initiating beacon search\r\n");
-        ES_Event_t BeaconCommand;
-        BeaconCommand.EventType = ES_COMMAND_RETRIEVED;
-        BeaconCommand.EventParam = CMD_ALIGN_BEACON;
-        PostAtomBehaviorFSM(BeaconCommand);
-        break;
-      }
       if (ThisEvent.EventType == ES_COMMAND_RETRIEVED)
       {
         switch (ThisEvent.EventParam)
@@ -375,11 +362,10 @@ AtomBehaviorState_t QueryAtomBehaviorFSM(void)
 ****************************************************************************/
 void StartAtomBehaviorFSM(ES_Event_t CurrentEvent)
 {
-  // For now, we maintain current state on Start
-  // (allows history restoration)
-  // Can be enhanced to reset to Stopped if needed
+  // Set the initial state to Stopped
+  CurrentState = Stopped;
   
-  // Call Run to process the entry event
+  // Call Run to initialize the state machine
   RunAtomBehaviorFSM(CurrentEvent);
 }
 

@@ -55,7 +55,6 @@ typedef enum
 // State machine states
 typedef enum
 {
-  InitStrategyState,      // Initial pseudo-state
   IdleStrategy,           // Idle, waiting for commands
   ExecutingStrategy,      // Executing a strategy sequence
   PreemptedMode           // Temporarily preempted

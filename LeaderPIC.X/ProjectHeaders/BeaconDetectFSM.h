@@ -31,7 +31,6 @@
 // State definitions for use with the query function
 typedef enum
 {
-  InitPState,     // Initial pseudo-state; transitions to NoSignal on ES_INIT
   NoSignal,       // No signal present; frequency reported as 0 Hz
   SignalDetected, // Signal present; frequency actively computed
   BeaconLocked,   // Beacon of certain frequency is detected
@@ -41,6 +40,7 @@ typedef enum
 bool InitBeaconDetectFSM(uint8_t Priority);
 bool PostBeaconDetectFSM(ES_Event_t ThisEvent);
 ES_Event_t RunBeaconDetectFSM(ES_Event_t ThisEvent);
+void StartBeaconDetectFSM(ES_Event_t CurrentEvent);
 BeaconState_t QueryBeaconDetectFSM(void);
 char QueryLockedBeaconId(void);
 

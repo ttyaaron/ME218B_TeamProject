@@ -28,7 +28,6 @@
 // Typedefs for state machine states
 typedef enum
 {
-  InitSPILeaderState,
   WaitingToSend,
   SendingCommand
 } SPILeaderState_t;
@@ -37,6 +36,7 @@ typedef enum
 bool InitSPILeaderFSM(uint8_t Priority);
 bool PostSPILeaderFSM(ES_Event_t ThisEvent);
 ES_Event_t RunSPILeaderFSM(ES_Event_t ThisEvent);
+void StartSPILeaderFSM(ES_Event_t CurrentEvent);
 SPILeaderState_t QuerySPILeaderFSM(void);
 
 #endif /* SPILeaderFSM_H */

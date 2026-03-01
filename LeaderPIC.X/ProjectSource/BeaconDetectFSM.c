@@ -164,7 +164,6 @@ bool InitBeaconDetectFSM(uint8_t Priority)
   ES_Event_t ThisEvent;
 
   MyPriority   = Priority;
-  CurrentState = InitPState;
 
   // Configure the Input Capture pin as a digital input
   IC_PIN_TRIS  = 1;   // input direction
@@ -184,16 +183,11 @@ bool InitBeaconDetectFSM(uint8_t Priority)
   // Start the periodic frequency-print timer
   ES_Timer_InitTimer(PRINT_FREQUENCY_TIMER, PRINT_FREQUENCY_INTERVAL);
 
-  // Post the initial transition event to kick the FSM
-  ThisEvent.EventType = ES_INIT;
-  if (ES_PostToService(MyPriority, ThisEvent) == true)
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
+  ThisEvent.EventType = ES_ENTRY;
+  // Start the Beacon Detect State machine
+  StartBeaconDetectFSM(ThisEvent);
+
+  return true;
 }
 
 /****************************************************************************
@@ -255,20 +249,6 @@ ES_Event_t RunBeaconDetectFSM(ES_Event_t ThisEvent)
 
   switch (CurrentState)
   {
-    /*--------------------------------------------------------------------
-      InitPState: initial pseudo-state, only responds to ES_INIT
-    --------------------------------------------------------------------*/
-    case InitPState:
-    {
-      if (ThisEvent.EventType == ES_INIT)
-      {
-        // Transition into the actual initial state
-        CurrentState = NoSignal;
-        DB_printf("BeaconDetectFSM Initialized -> NoSignal\r\n");
-      }
-    }
-    break;
-
     /*--------------------------------------------------------------------
       NoSignal: no valid edges received; frequency is 0 Hz
     --------------------------------------------------------------------*/
@@ -445,6 +425,32 @@ ES_Event_t RunBeaconDetectFSM(ES_Event_t ThisEvent)
   } // end switch on CurrentState
 
   return ReturnEvent;
+}
+
+/****************************************************************************
+ Function
+     StartBeaconDetectFSM
+
+ Parameters
+     ES_Event_t CurrentEvent
+
+ Returns
+     None
+
+ Description
+     Starts the Beacon Detect FSM, initializes to NoSignal state.
+
+ Author
+     Tianyu, 02/28/26
+****************************************************************************/
+void StartBeaconDetectFSM(ES_Event_t CurrentEvent)
+{
+  // Set the initial state to NoSignal
+  CurrentState = NoSignal;
+  DB_printf("BeaconDetectFSM Started -> NoSignal\r\n");
+  
+  // Call Run to initialize the state machine
+  RunBeaconDetectFSM(CurrentEvent);
 }
 
 /****************************************************************************

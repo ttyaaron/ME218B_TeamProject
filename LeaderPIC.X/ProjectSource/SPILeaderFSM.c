@@ -131,13 +131,11 @@ bool InitSPILeaderFSM(uint8_t Priority)
   
   DB_printf("SPI Leader configured\\n");
 
-  // Post the initial transition event
-  ThisEvent.EventType = ES_INIT;
-  if (ES_PostToService(MyPriority, ThisEvent) == true)
-  {
-    return true;
-  }
-  return false;
+  ThisEvent.EventType = ES_ENTRY;
+  // Start the SPI Leader State machine
+  StartSPILeaderFSM(ThisEvent);
+
+  return true;
 }
 
 /****************************************************************************
@@ -184,16 +182,6 @@ ES_Event_t RunSPILeaderFSM(ES_Event_t ThisEvent)
 
   switch (CurrentState)
   {
-    case InitSPILeaderState:
-    {
-      if (ThisEvent.EventType == ES_INIT)
-      {
-        CurrentState = WaitingToSend;
-        DB_printf("SPILeader: Ready\\n");
-      }
-    }
-    break;
-
     case WaitingToSend:
     {
       // Handle new command to send to Follower
@@ -260,6 +248,32 @@ ES_Event_t RunSPILeaderFSM(ES_Event_t ThisEvent)
   }
 
   return ReturnEvent;
+}
+
+/****************************************************************************
+ Function
+     StartSPILeaderFSM
+
+ Parameters
+     ES_Event_t CurrentEvent
+
+ Returns
+     None
+
+ Description
+     Starts the SPI Leader FSM, initializes to WaitingToSend state.
+
+ Author
+     Tianyu, 02/28/26
+****************************************************************************/
+void StartSPILeaderFSM(ES_Event_t CurrentEvent)
+{
+  // Set the initial state to WaitingToSend
+  CurrentState = WaitingToSend;
+  DB_printf("SPILeader: Ready\\n");
+  
+  // Call Run to initialize the state machine
+  RunSPILeaderFSM(CurrentEvent);
 }
 
 /****************************************************************************
