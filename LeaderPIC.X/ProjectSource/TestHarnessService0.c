@@ -289,6 +289,27 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
           DB_printf("Posted CMD_SHOOT to SPILeaderFSM\r\n");
           break;
           
+        case 'g':  // Indicate green field
+          CommandEvent.EventType = ES_NEW_COMMAND;
+          CommandEvent.EventParam = CMD_SIDE_GREEN;
+          PostSPILeaderFSM(CommandEvent);
+          DB_printf("Posted CMD_SIDE_GREEN to SPILeaderFSM\r\n");
+          break;
+        
+        case 'b':  // Indicate green field
+          CommandEvent.EventType = ES_NEW_COMMAND;
+          CommandEvent.EventParam = CMD_SIDE_BLUE;
+          PostSPILeaderFSM(CommandEvent);
+          DB_printf("Posted CMD_SIDE_BLUE to SPILeaderFSM\r\n");
+          break;
+          
+        case 'm':  // Indicate green field
+          CommandEvent.EventType = ES_NEW_COMMAND;
+          CommandEvent.EventParam = CMD_SIDE_MIDDLE;
+          PostSPILeaderFSM(CommandEvent);
+          DB_printf("Posted CMD_SIDE_MIDDLE to SPILeaderFSM\r\n");
+          break;
+          
         case 'i':  // Initialize all servos
           CommandEvent.EventType = ES_NEW_COMMAND;
           CommandEvent.EventParam = CMD_INIT_SERVOS;

@@ -50,7 +50,7 @@
 #define SCOOP_SERVO_PIN PWM_RPB5
 #define RELEASE_SERVO_PIN  PWM_RPB9
 #define SHOOT_SERVO_PIN PWM_RPA2
-#define SIDE_SERVO_PIN PWM_RPB6
+#define SIDE_SERVO_PIN PWM_RPA4
 
 // Servo pulse widths in timer ticks (TICS_PER_MS = 2500 from PWM library)
 // These are example values - adjust based on your specific servos
@@ -71,8 +71,8 @@
 #define SHOOT_ACTION_PW     (2.5 * 2500)  // 2.0ms - shoot/release position
 
 #define SIDE_MIDDLE_PW      (1.5 * 2500)  // 1.5ms - middle/neutral position
-#define SIDE_BLUE_PW        (1.0 * 2500)  // 1.0ms - blue field indicator position
-#define SIDE_GREEN_PW       (2.0 * 2500)  // 2.0ms - green field indicator position
+#define SIDE_BLUE_PW        (0.5 * 2500)  // 1.0ms - blue field indicator position
+#define SIDE_GREEN_PW       (2.5 * 2500)  // 2.0ms - green field indicator position
 
 // Action durations in milliseconds
 #define SWEEP_ACTION_TIME   500   // Time to complete sweep action

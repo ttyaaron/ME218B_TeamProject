@@ -63,7 +63,7 @@ typedef enum
 // Prescale lookup table (maps enum to hardware register bits)
 extern const uint8_t PrescaleLookup[];
 
-extern const uint8_t validCommandBytes[18];
+extern const uint8_t validCommandBytes[21];
 
 // System clock configuration
 #define PBCLK_FREQ 20000000         // 20 MHz peripheral bus clock

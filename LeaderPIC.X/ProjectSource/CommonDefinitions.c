@@ -68,7 +68,7 @@ const uint8_t PrescaleLookup[] = {
 };
 
 // Lookup table for Commands
-const uint8_t validCommandBytes[18] = {
+const uint8_t validCommandBytes[21] = {
   0x00, // Stop
   0x01, // Initialize servos
   0x02, // Rotate Clockwise 90 degrees
@@ -86,7 +86,10 @@ const uint8_t validCommandBytes[18] = {
   0x52, // Release servo action
   0x53, // Shoot servo action
   0x54, // Retract sweep servo
-  0x55  // Retract release servo
+  0x55,  // Retract release servo
+  0x60, // Side servo to blue field position
+  0x61, // Side servo to green field position
+  0x62  // Side servo to middle position
 };
 
 /*------------------------------ Module Code ------------------------------*/
