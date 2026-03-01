@@ -120,7 +120,8 @@ static void CheckIntersections(void);
 static uint8_t MyPriority;
 
 // Motor control variables
-static uint16_t DesiredSpeed[2];
+static float TargetSpeed[2];          // Target speed in RPM (set by wrapper, read by PI controller)
+static uint16_t DesiredSpeed[2];      // Duty cycle ticks (output from PI controller)
 static uint8_t DesiredDirection[2];
 
 // Encoder variables (for left and right wheels)
@@ -192,6 +193,8 @@ bool InitDCMotorService(uint8_t Priority)
   MyPriority = Priority;
   
   // Initialize motor control variables
+  TargetSpeed[LEFT_MOTOR] = 0.0f;
+  TargetSpeed[RIGHT_MOTOR] = 0.0f;
   DesiredSpeed[LEFT_MOTOR] = 0;
   DesiredSpeed[RIGHT_MOTOR] = 0;
   DesiredDirection[LEFT_MOTOR] = FORWARD;
@@ -389,16 +392,25 @@ void MotorCommandWrapper(uint16_t speedLeft, uint16_t speedRight,
 {
   ES_Event_t ThisEvent;
 
-  DesiredSpeed[LEFT_MOTOR] = speedLeft;
-  DesiredSpeed[RIGHT_MOTOR] = speedRight;
+  // Set target speeds (in RPM) - these will be used by PI controller
+  TargetSpeed[LEFT_MOTOR] = (float)speedLeft;
+  TargetSpeed[RIGHT_MOTOR] = (float)speedRight;
   DesiredDirection[LEFT_MOTOR] = dirLeft;
   DesiredDirection[RIGHT_MOTOR] = dirRight;
 
-  ThisEvent.EventType = ES_MOTOR_ACTION_CHANGE;
-  ThisEvent.EventParam = 0;
-  PostDCMotorService(ThisEvent);
+  #if USE_OPEN_LOOP_CONTROL
+    // In open-loop mode, set duty cycles directly
+    DesiredSpeed[LEFT_MOTOR] = speedLeft;
+    DesiredSpeed[RIGHT_MOTOR] = speedRight;
+    
+    ThisEvent.EventType = ES_MOTOR_ACTION_CHANGE;
+    ThisEvent.EventParam = 0;
+    PostDCMotorService(ThisEvent);
+  #endif
+  // In closed-loop mode, PI controller will update DesiredSpeed (duty cycles)
+  // and post the motor action change event
 
-  DB_printf("DesiredSpeed:%u %u, DesiredDirection: %u %u\r\n", DesiredSpeed[0], DesiredSpeed[1], DesiredDirection[0], DesiredDirection[1]);
+  DB_printf("TargetSpeed:%.1f %.1f, DesiredDirection: %u %u\r\n", TargetSpeed[0], TargetSpeed[1], DesiredDirection[0], DesiredDirection[1]);
 }
 
 /****************************************************************************
@@ -774,20 +786,20 @@ void __ISR(_TIMER_4_VECTOR, IPL5SOFT) ControlTimerISR(void)
     return;
   #endif
   
-  // Read desired speed
-  float desiredSpeed = 
-  
   // Process control for LEFT motor
   {
+    // Read target speed for left motor
+    float targetSpeed = TargetSpeed[LEFT_MOTOR];
+    
     uint32_t measuredPeriod = EdgeTimeDifference[LEFT_MOTOR];
     float measuredSpeed = PeriodToRPM(measuredPeriod);
     
     // Update monitoring variables
-    CurrentDesiredSpeed[LEFT_MOTOR] = desiredSpeed;
+    CurrentDesiredSpeed[LEFT_MOTOR] = targetSpeed;
     CurrentMeasuredSpeed[LEFT_MOTOR] = measuredSpeed;
     
     // Compute control error
-    float currentError = desiredSpeed - measuredSpeed;
+    float currentError = targetSpeed - measuredSpeed;
     
     // PI control law
     float proportional = KP * currentError;
@@ -830,15 +842,18 @@ void __ISR(_TIMER_4_VECTOR, IPL5SOFT) ControlTimerISR(void)
   
   // Process control for RIGHT motor
   {
+    // Read target speed for right motor
+    float targetSpeed = TargetSpeed[RIGHT_MOTOR];
+    
     uint32_t measuredPeriod = EdgeTimeDifference[RIGHT_MOTOR];
     float measuredSpeed = PeriodToRPM(measuredPeriod);
     
     // Update monitoring variables
-    CurrentDesiredSpeed[RIGHT_MOTOR] = desiredSpeed;
+    CurrentDesiredSpeed[RIGHT_MOTOR] = targetSpeed;
     CurrentMeasuredSpeed[RIGHT_MOTOR] = measuredSpeed;
     
     // Compute control error
-    float currentError = desiredSpeed - measuredSpeed;
+    float currentError = targetSpeed - measuredSpeed;
     
     // PI control law
     float proportional = KP * currentError;
