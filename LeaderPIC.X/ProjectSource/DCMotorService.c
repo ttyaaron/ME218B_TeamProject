@@ -104,6 +104,7 @@ static uint16_t MapSpeedToDutyCycle(uint16_t desiredSpeed);
 static void ConfigureEncoderTimer(void);
 static void ConfigureInputCapture(void);
 static float PeriodToRPM(uint32_t period);  // Local float version for PI controller only
+uint32_t GetElapsedTicksSinceLastEdge(uint8_t motorIndex);
 
 // Speed control functions
 static void ConfigureControlTimer(void);
@@ -646,11 +647,11 @@ bool TapeSensor_GetRightDigital(void)
 ****************************************************************************/
 uint32_t DCMotor_GetEncoderPeriod(uint8_t motorIndex)
 {
-  if (motorIndex < 2)
-  {
-    return EdgeTimeDifference[motorIndex];
-  }
-  return 0;
+  if (motorIndex >= 2) return 0;
+
+  uint32_t edgePeriod   = EdgeTimeDifference[motorIndex];
+  uint32_t elapsedSince = GetElapsedTicksSinceLastEdge(motorIndex);
+  return (elapsedSince > edgePeriod) ? elapsedSince : edgePeriod;
 }
 
 /****************************************************************************
@@ -863,6 +864,43 @@ void __ISR(_TIMER_3_VECTOR, IPL6SOFT) Timer3ISR(void)
 
 /****************************************************************************
  Function
+     GetElapsedTicksSinceLastEdge
+
+ Parameters
+     uint8_t motorIndex
+
+ Returns
+     uint32_t - ticks elapsed since the last IC capture for that motor.
+                If this exceeds EdgeTimeDifference significantly, the 
+                motor has slowed or stalled since the last capture.
+
+ Description
+     Reads the current Timer3 32-bit virtual timestamp and subtracts
+     LastCapturedTime. Called from the PI ISR to detect stale periods.
+****************************************************************************/
+uint32_t GetElapsedTicksSinceLastEdge(uint8_t motorIndex)
+{
+  // Snapshot current timer with rollover
+  uint16_t tmr = TMR3;
+  uint32_t currentTime = ((uint32_t)SharedTimer3RolloverCounter << 16) | tmr;
+  
+  if (LastCapturedTime[motorIndex] == INVALID_TIME)
+  {
+    return 0xFFFFFFFF; // never had a capture
+  }
+  
+  if (currentTime >= LastCapturedTime[motorIndex])
+  {
+    return currentTime - LastCapturedTime[motorIndex];
+  }
+  else
+  {
+    return (0xFFFFFFFF - LastCapturedTime[motorIndex]) + currentTime + 1;
+  }
+}
+
+/****************************************************************************
+ Function
      ControlTimerISR
 
  Parameters
@@ -892,9 +930,19 @@ void __ISR(_TIMER_4_VECTOR, IPL5SOFT) ControlTimerISR(void)
   {
     // Read target speed for left motor
     float targetSpeed = TargetSpeed[LEFT_MOTOR];
-    
-    uint32_t measuredPeriod = EdgeTimeDifference[LEFT_MOTOR];
-    float measuredSpeed = PeriodToRPM(measuredPeriod);
+
+    // This is avoiding stale period measurements when the motor has slowed or stalled since the last encoder edge.
+    uint32_t edgePeriod    = EdgeTimeDifference[LEFT_MOTOR];
+    uint32_t elapsedSince  = GetElapsedTicksSinceLastEdge(LEFT_MOTOR);
+
+    // If elapsed time since last capture is more than 2x the last measured period,
+    // the motor has slowed below that speed or stalled.
+    // Use elapsed time as the effective period instead — this makes measured
+    // speed decay toward zero naturally rather than freezing at the last value.
+    uint32_t effectivePeriod = (elapsedSince > edgePeriod) ? elapsedSince : edgePeriod;
+
+    float measuredSpeed = PeriodToSpeed_mm_s(effectivePeriod);
+    uint32_t measuredPeriod = effectivePeriod;
 
     // Print debug info for control loop (convert float to hundredths for printing)
     uint32_t measuredSpeed_hundredths = (uint32_t)(measuredSpeed * 100);
@@ -954,9 +1002,19 @@ void __ISR(_TIMER_4_VECTOR, IPL5SOFT) ControlTimerISR(void)
     // Read target speed for right motor
     float targetSpeed = TargetSpeed[RIGHT_MOTOR];
     
-    uint32_t measuredPeriod = EdgeTimeDifference[RIGHT_MOTOR];
-    float measuredSpeed = PeriodToRPM(measuredPeriod);
-    
+    // This is avoiding stale period measurements when the motor has slowed or stalled since the last encoder edge.
+    uint32_t edgePeriod    = EdgeTimeDifference[RIGHT_MOTOR];
+    uint32_t elapsedSince  = GetElapsedTicksSinceLastEdge(RIGHT_MOTOR);
+
+    // If elapsed time since last capture is more than 2x the last measured period,
+    // the motor has slowed below that speed or stalled.
+    // Use elapsed time as the effective period instead — this makes measured
+    // speed decay toward zero naturally rather than freezing at the last value.
+    uint32_t effectivePeriod = (elapsedSince > edgePeriod) ? elapsedSince : edgePeriod;
+
+    float measuredSpeed = PeriodToSpeed_mm_s(effectivePeriod);
+    uint32_t measuredPeriod = effectivePeriod;
+
     // Update monitoring variables
     CurrentDesiredSpeed[RIGHT_MOTOR] = targetSpeed;
     CurrentMeasuredSpeed[RIGHT_MOTOR] = measuredSpeed;

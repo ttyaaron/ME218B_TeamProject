@@ -137,7 +137,7 @@ extern const uint8_t validCommandBytes[21];
  
 #define QUARTER_SPEED 500 // 25% duty cycle
 #define HALF_SPEED 1000   // 50% duty cycle
-#define FULL_SPEED 1500   // 100% duty cycle
+#define FULL_SPEED 2000   // 100% duty cycle
 
 // Timer Durations (ms)
 #define SIMPLE_MOVE_90_MS 1500
@@ -158,36 +158,7 @@ extern volatile uint16_t SharedTimer3RolloverCounter;
 
 /*---------------------------- Public Functions ---------------------------*/
 
-/****************************************************************************
- Function
-     PeriodToRPM
-
- Parameters
-     uint32_t period - time between encoder edges in timer ticks
-
- Returns
-     float - measured RPM
-
- Description
-     Converts encoder period measurement to RPM. Shared by EncoderService
-     and SpeedControlService.
-****************************************************************************/
-//float PeriodToRPM(uint32_t period);
-
-/****************************************************************************
- Function
-     ADToRPM
-
- Parameters
-     uint16_t adcValue - ADC reading (0-1023)
-
- Returns
-     float - desired RPM
-
- Description
-     Converts ADC value to desired RPM setpoint. Shared by ADService
-     and SpeedControlService.
-****************************************************************************/
-float ADToRPM(uint16_t adcValue);
+uint32_t PeriodToSpeed_mm_s(uint32_t period_ticks);
+uint32_t ICCountToDistance_mm(uint32_t ic_event_count);
 
 #endif /* COMMON_DEFINITIONS_H */
