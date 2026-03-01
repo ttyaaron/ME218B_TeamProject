@@ -79,7 +79,7 @@
 // Tuning procedure: increase KP until output tracks setpoint without
 // oscillation, then increase KI to eliminate steady-state error.
 // Use EncoderTestService serial output to observe measured vs target mm/s.
-#define KP 2.3f                      // Proportional gain - start conservative
+#define KP 2.25f                      // Proportional gain - start conservative
 #define KI 3.5f                     // Integral gain - start small
 #define TS 0.002f                    // Sampling time in seconds (2 ms)
 #define INTEGRAL_CLAMP_TICKS  (DUTY_MAX_TICKS * 2 / 3)
@@ -972,6 +972,9 @@ void __ISR(_TIMER_4_VECTOR, IPL5SOFT) ControlTimerISR(void)
 
     float rawSpeed = PeriodToSpeed_mm_s(effectivePeriod);
 
+    // Clamp to physical maximum — any reading above this is a measurement artifact
+    if (rawSpeed > SPEED_FULL_MM_S) { rawSpeed = SPEED_FULL_MM_S; }
+
     // Exponential moving average — smooths spikes without adding much lag
     FilteredSpeed[LEFT_MOTOR] = MEAS_SPEED_ALPHA * rawSpeed
                               + (1.0f - MEAS_SPEED_ALPHA) * FilteredSpeed[LEFT_MOTOR];
@@ -1053,6 +1056,9 @@ void __ISR(_TIMER_4_VECTOR, IPL5SOFT) ControlTimerISR(void)
       }
 
     float rawSpeed = PeriodToSpeed_mm_s(effectivePeriod);
+
+    // Clamp to physical maximum — any reading above this is a measurement artifact
+    if (rawSpeed > SPEED_FULL_MM_S) { rawSpeed = SPEED_FULL_MM_S; }
 
     // Exponential moving average — smooths spikes without adding much lag
     FilteredSpeed[RIGHT_MOTOR] = MEAS_SPEED_ALPHA * rawSpeed

@@ -153,7 +153,7 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
         // PostMainLogicFSM(BeaconCommand);
 
         // TEMPORARY: command a fixed speed for PI tuning — remove before match
-        DCMotor_SetSpeed_mm_s(200, 200, FORWARD, FORWARD);
+        DCMotor_SetSpeed_mm_s(370, 370, FORWARD, FORWARD);
         break;
       }
       if (ThisEvent.EventType == ES_COMMAND_RETRIEVED)

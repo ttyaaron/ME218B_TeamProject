@@ -113,9 +113,9 @@ extern const uint8_t validCommandBytes[21];
 // Initial values estimated; tune by running motor and measuring.
 // ----------------------------------------------------------------
 #define SPEED_STOP_MM_S         0u
-#define SPEED_QUARTER_MM_S      80u
-#define SPEED_HALF_MM_S         160u
-#define SPEED_FULL_MM_S         300u
+#define SPEED_QUARTER_MM_S      185u
+#define SPEED_HALF_MM_S         370u
+#define SPEED_FULL_MM_S         740u
 
 // PWM configuration (shared between DCMotorService and SpeedControlService)
 #define DUTY_MAX_TICKS 2000        // Maximum duty cycle ticks (100%)
