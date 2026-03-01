@@ -126,7 +126,8 @@ static uint8_t DesiredDirection[2];
 // Encoder variables (for left and right wheels)
 static volatile uint32_t CapturedTime[2] = {0, 0};          // Latest captured time for each wheel
 static uint32_t LastCapturedTime[2] = {INVALID_TIME, INVALID_TIME}; // Previous capture for period calculation
-static volatile uint16_t RolloverCounter = 0;               // Shared Timer3 rollover counter
+// Note: SharedTimer3RolloverCounter is defined in CommonDefinitions.c
+// and shared by BeaconDetectFSM, DCMotorService IC3 and IC2
 static uint32_t EdgeTimeDifference[2] = {0, 0};             // Time between edges for each wheel
 
 // PI Controller variables (for left and right wheels)
@@ -204,7 +205,7 @@ bool InitDCMotorService(uint8_t Priority)
   CapturedTime[RIGHT_MOTOR] = 0;
   LastCapturedTime[LEFT_MOTOR] = INVALID_TIME;
   LastCapturedTime[RIGHT_MOTOR] = INVALID_TIME;
-  RolloverCounter = 0;
+  SharedTimer3RolloverCounter = 0;
   EdgeTimeDifference[LEFT_MOTOR] = 0;
   EdgeTimeDifference[RIGHT_MOTOR] = 0;
   
@@ -230,7 +231,7 @@ bool InitDCMotorService(uint8_t Priority)
   
   // Configure encoder Input Capture pins as digital inputs
   IC_PIN_L_TRIS = 1;   // Set as input
-  IC1R = 0b0011;       // Map IC3 to RB11 (left encoder)
+  IC3R = 0b0011;       // Map IC3 to RB11 (left encoder)
   
   IC_PIN_R_TRIS = 1;   // Set as input
   IC2R = 0b0000;       // Map IC2 to RA3 (right encoder)
@@ -413,31 +414,7 @@ void MotorCommandWrapper(uint16_t speedLeft, uint16_t speedRight,
           , DesiredDirection[0], DesiredDirection[1]);
 }
 
-/****************************************************************************
- Function
-     Encoder_GetLatestPeriod
 
- Parameters
-     uint8_t motorIndex - LEFT_MOTOR or RIGHT_MOTOR
-
- Returns
-     uint32_t - the latest measured period in timer ticks
-
- Description
-     Query function that returns the time period between encoder edges for
-     the specified motor. Used by speed control or monitoring.
-
- Author
-     Tianyu, 02/25/26
-****************************************************************************/
-uint32_t Encoder_GetLatestPeriod(uint8_t motorIndex)
-{
-  if (motorIndex < 2)
-  {
-    return EdgeTimeDifference[motorIndex];
-  }
-  return 0;
-}
 
 /****************************************************************************
  Function
@@ -607,13 +584,40 @@ bool TapeSensor_GetRightDigital(void)
   return rightTState;
 }
 
+/****************************************************************************
+ Function
+     DCMotor_GetEncoderPeriod
+
+ Parameters
+     uint8_t motorIndex - LEFT_MOTOR (0) or RIGHT_MOTOR (1)
+
+ Returns
+     uint32_t - most recent EdgeTimeDifference in Timer3 ticks for that motor,
+                or 0 if motorIndex is out of range
+
+ Description
+     Public query function for EncoderTestService and future SpeedControlService
+     to read raw encoder period without accessing module internals directly.
+
+ Author
+     Tianyu, 03/01/26
+****************************************************************************/
+uint32_t DCMotor_GetEncoderPeriod(uint8_t motorIndex)
+{
+  if (motorIndex < 2)
+  {
+    return EdgeTimeDifference[motorIndex];
+  }
+  return 0;
+}
+
 /***************************************************************************
  Interrupt Service Routines
- ***************************************************************************/
+ ****************************************************************************/
 
 /****************************************************************************
  Function
-     InputCaptureISR_IC1
+     InputCaptureISR_IC3
 
  Parameters
      None
@@ -622,31 +626,31 @@ bool TapeSensor_GetRightDigital(void)
      None
 
  Description
-     Input Capture 1 interrupt for LEFT encoder. Reads captured time,
+     Input Capture 3 interrupt for LEFT encoder. Reads captured time,
      calculates period, and updates module variables.
 
  Author
      Tianyu, 02/25/26
 ****************************************************************************/
-void __ISR(_INPUT_CAPTURE_3_VECTOR, IPL7SOFT) InputCaptureISR_IC1(void)
+void __ISR(_INPUT_CAPTURE_3_VECTOR, IPL7SOFT) InputCaptureISR_IC3(void)
 {
-  // Read the captured timer value from IC1 buffer
-  uint16_t capturedTimer16 = IC1BUF;
+  // Read the captured timer value from IC3 buffer
+  uint16_t capturedTimer16 = IC3BUF;
       
   // Clear the input capture interrupt flag
-  IFS0CLR = _IFS0_IC1IF_MASK;
+  IFS0CLR = _IFS0_IC3IF_MASK;
 
   // If T3IF is pending and captured value is after rollover (in lower half of timer range)
   if (IFS0bits.T3IF && (capturedTimer16 < 0x8000))
   {
     // Increment the roll-over counter
-    RolloverCounter++;
+    SharedTimer3RolloverCounter++;
     // Clear the roll-over interrupt flag
     IFS0CLR = _IFS0_T3IF_MASK;
   }
 
   // Combine roll-over counter with captured timer value to create a full 32-bit time
-  CapturedTime[LEFT_MOTOR] = ((uint32_t)RolloverCounter << 16) | capturedTimer16;
+  CapturedTime[LEFT_MOTOR] = ((uint32_t)SharedTimer3RolloverCounter << 16) | capturedTimer16;
   
   // Calculate period if we have a valid previous capture
   if (LastCapturedTime[LEFT_MOTOR] != INVALID_TIME)
@@ -695,13 +699,13 @@ void __ISR(_INPUT_CAPTURE_2_VECTOR, IPL7SOFT) InputCaptureISR_IC2(void)
   if (IFS0bits.T3IF && (capturedTimer16 < 0x8000))
   {
     // Increment the roll-over counter
-    RolloverCounter++;
+    SharedTimer3RolloverCounter++;
     // Clear the roll-over interrupt flag
     IFS0CLR = _IFS0_T3IF_MASK;
   }
 
   // Combine roll-over counter with captured timer value to create a full 32-bit time
-  CapturedTime[RIGHT_MOTOR] = ((uint32_t)RolloverCounter << 16) | capturedTimer16;
+  CapturedTime[RIGHT_MOTOR] = ((uint32_t)SharedTimer3RolloverCounter << 16) | capturedTimer16;
   
   // Calculate period if we have a valid previous capture
   if (LastCapturedTime[RIGHT_MOTOR] != INVALID_TIME)
@@ -732,8 +736,10 @@ void __ISR(_INPUT_CAPTURE_2_VECTOR, IPL7SOFT) InputCaptureISR_IC2(void)
      None
 
  Description
-     Timer3 interrupt for encoder rollover tracking. Increments rollover
-     counter to extend timing range beyond 16-bit timer.
+     Timer3 interrupt for encoder rollover tracking. Increments the shared
+     rollover counter to extend timing range beyond 16-bit timer.
+     This ISR is shared by BeaconDetectFSM (IC1), left encoder (IC3),
+     and right encoder (IC2).
 
  Author
      Tianyu, 02/25/26
@@ -747,7 +753,7 @@ void __ISR(_TIMER_3_VECTOR, IPL6SOFT) Timer3ISR(void)
   if (IFS0bits.T3IF)
   {
     // Increment the roll-over counter to track timer wraparounds
-    RolloverCounter++;
+    SharedTimer3RolloverCounter++;
     // Clear the roll-over interrupt flag
     IFS0CLR = _IFS0_T3IF_MASK;
   }
@@ -791,9 +797,12 @@ void __ISR(_TIMER_4_VECTOR, IPL5SOFT) ControlTimerISR(void)
     uint32_t measuredPeriod = EdgeTimeDifference[LEFT_MOTOR];
     float measuredSpeed = PeriodToRPM(measuredPeriod);
 
-    // Print debug info for control loop
-    DB_printf("Period: %u, measuredPeriod: %u\r\n",
-           EdgeTimeDifference[LEFT_MOTOR], measuredSpeed);
+    // Print debug info for control loop (convert float to hundredths for printing)
+    uint32_t measuredSpeed_hundredths = (uint32_t)(measuredSpeed * 100);
+    DB_printf("Period: %u, measuredSpeed: %u.%u RPM\r\n",
+           EdgeTimeDifference[LEFT_MOTOR], 
+           measuredSpeed_hundredths / 100,
+           measuredSpeed_hundredths % 100);
     
     // Update monitoring variables
     CurrentDesiredSpeed[LEFT_MOTOR] = targetSpeed;
@@ -1125,22 +1134,22 @@ static void ConfigureInputCapture(void)
   // Disable base timer during configuration
   T3CONbits.ON = 0;
 
-  // Configure Input Capture 1 (LEFT encoder)
-  IC1CONbits.ON = 0;
-  IC1CONbits.ICTMR = 0;          // Use Timer3
-  IC1CONbits.ICM = 0b101;        // Capture every 16th rising edge
-  IFS0CLR = _IFS0_IC1IF_MASK;    // Clear interrupt flag
+  // Configure Input Capture 3 (LEFT encoder)
+  IC3CONbits.ON = 0;
+  IC3CONbits.ICTMR = 0;          // Use Timer3
+  IC3CONbits.ICM = 0b101;        // Capture every 16th rising edge
+  IFS0CLR = _IFS0_IC3IF_MASK;    // Clear interrupt flag
   
-  // Clear IC1 buffer
+  // Clear IC3 buffer
   volatile uint32_t dummy;
-  while (IC1CONbits.ICBNE) {
-    dummy = IC1BUF;
+  while (IC3CONbits.ICBNE) {
+    dummy = IC3BUF;
   }
   
-  IPC1bits.IC1IP = 7;            // Priority 7
-  IPC1bits.IC1IS = 0;            // Subpriority 0
-  IEC0bits.IC1IE = 1;            // Enable interrupt
-  IC1CONbits.ON = 1;             // Enable module
+  IPC3bits.IC3IP = 7;            // Priority 7
+  IPC3bits.IC3IS = 0;            // Subpriority 0
+  IEC0bits.IC3IE = 1;            // Enable interrupt
+  IC3CONbits.ON = 1;             // Enable module
   
   // Configure Input Capture 2 (RIGHT encoder)
   IC2CONbits.ON = 0;

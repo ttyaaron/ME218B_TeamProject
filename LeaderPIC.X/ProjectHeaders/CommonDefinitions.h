@@ -116,6 +116,10 @@ extern const uint8_t validCommandBytes[21];
 #define DEBUG_OUTPUT_PIN_TRIS TRISBbits.TRISB15
 #define DEBUG_OUTPUT_PIN_ANSEL ANSELBbits.ANSB15
 
+/*---------------------------- Module Variables ---------------------------*/
+// Shared Timer3 rollover counter used by BeaconDetectFSM (IC1),
+// DCMotorService IC3 (left encoder) and IC2 (right encoder).
+extern volatile uint16_t SharedTimer3RolloverCounter;
 
 /*---------------------------- Public Functions ---------------------------*/
 

@@ -55,6 +55,10 @@
 
 /*---------------------------- Module Variables ---------------------------*/
 
+// Shared Timer3 rollover counter used by BeaconDetectFSM (IC1),
+// DCMotorService IC3 (left encoder) and IC2 (right encoder).
+volatile uint16_t SharedTimer3RolloverCounter = 0;
+
 // Lookup table for prescale settings based on desired prescale
 const uint8_t PrescaleLookup[] = {
   0b000, // 1:1 prescale

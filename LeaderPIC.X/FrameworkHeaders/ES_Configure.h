@@ -33,7 +33,7 @@
 /****************************************************************************/
 // This macro determines that nuber of services that are *actually* used in
 // a particular application. It will vary in value from 1 to MAX_NUM_SERVICES
-#define NUM_SERVICES 5
+#define NUM_SERVICES 6
 
 /****************************************************************************/
 // These are the definitions for Service 0, the lowest priority service.
@@ -109,11 +109,11 @@
 // These are the definitions for Service 5
 #if NUM_SERVICES > 5
 // the header file with the public function prototypes
-#define SERV_5_HEADER "TestHarnessService5.h"
+#define SERV_5_HEADER "EncoderTestService.h"
 // the name of the Init function
-#define SERV_5_INIT InitTestHarnessService5
+#define SERV_5_INIT InitEncoderTestService
 // the name of the run function
-#define SERV_5_RUN RunTestHarnessService5
+#define SERV_5_RUN RunEncoderTestService
 // How big should this services Queue be?
 #define SERV_5_QUEUE_SIZE 3
 #endif
@@ -320,7 +320,7 @@ typedef enum
 #define TIMER5_RESP_FUNC TIMER_UNUSED
 #define TIMER6_RESP_FUNC PostBeaconDetectFSM
 #define TIMER7_RESP_FUNC PostMainLogicFSM
-#define TIMER8_RESP_FUNC TIMER_UNUSED
+#define TIMER8_RESP_FUNC PostEncoderTestService
 #define TIMER9_RESP_FUNC TIMER_UNUSED
 #define TIMER10_RESP_FUNC TIMER_UNUSED
 #define TIMER11_RESP_FUNC TIMER_UNUSED
@@ -345,6 +345,7 @@ typedef enum
 #define AD_TIMER 5
 #define SIGNAL_WATCHDOG_TIMER 6
 #define DRIVE_TO_BEACON_TIMER 7
+#define ENCODER_PRINT_TIMER 8
 
 
 #endif /* ES_CONFIGURE_H */

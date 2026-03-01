@@ -103,7 +103,7 @@ static const BeaconDef_t BeaconTable[] = {
     { BEACON_L_FREQ, 'l' },
 };
 #define NUM_BEACONS (sizeof(BeaconTable) / sizeof(BeaconTable[0]))
-#define BEACON_FREQ_TOLERANCE 100     // �50 Hz
+#define BEACON_FREQ_TOLERANCE 100     // �50 Hz
 
 // Debouncing: require this many consecutive detections of the same beacon
 // before locking onto it (prevents false positives from noise/bouncing)
@@ -125,7 +125,8 @@ static uint8_t       MyPriority;
 
 // Shared between ISRs and the FSM (must be volatile)
 static volatile uint32_t CapturedTime    = 0;
-static volatile uint16_t RolloverCounter = 0;
+// Note: SharedTimer3RolloverCounter is defined in CommonDefinitions.c
+// and shared by BeaconDetectFSM, DCMotorService IC3 and IC2
 
 // Timing history (only touched in task context, not in ISRs)
 static uint32_t LastCapturedTime  = INVALID_TIME;
@@ -531,12 +532,12 @@ void __ISR(_INPUT_CAPTURE_1_VECTOR, IPL7SOFT) InputCaptureISR(void)
   // handle the rollover here before the Timer3 ISR gets a chance to
   if (IFS0bits.T3IF && (capturedTimer16 < 0x8000))
   {
-    RolloverCounter++;
+    SharedTimer3RolloverCounter++;
     IFS0CLR = _IFS0_T3IF_MASK;
   }
 
   // Assemble the 32-bit virtual timestamp
-  CapturedTime = ((uint32_t)RolloverCounter << 16) | capturedTimer16;
+  CapturedTime = ((uint32_t)SharedTimer3RolloverCounter << 16) | capturedTimer16;
 
   // Notify the FSM that a new edge has been captured
   ES_Event_t NewEvent;
@@ -555,16 +556,14 @@ void __ISR(_INPUT_CAPTURE_1_VECTOR, IPL7SOFT) InputCaptureISR(void)
      None
 
  Description
-     Timer3 overflow interrupt response routine (priority 6, lower than
-     IC ISR). Increments RolloverCounter to extend the 16-bit Timer3 into
-     a 32-bit virtual timestamp used by the IC ISR.
-
-     Interrupts are disabled briefly to prevent a race where both ISRs
-     would increment RolloverCounter for the same rollover event.
+     Timer3 ISR is defined in DCMotorService.c — do not define it here.
+     The shared ISR increments SharedTimer3RolloverCounter which is used
+     by both BeaconDetectFSM (IC1) and DCMotorService (IC2, IC3).
 
  Author
      Tianyu, 02/03/26
 ****************************************************************************/
+// Timer3ISR is defined in DCMotorService.c — do not define it here
 //void __ISR(_TIMER_3_VECTOR, IPL6SOFT) Timer3ISR(void)
 //{
 //
@@ -575,7 +574,7 @@ void __ISR(_INPUT_CAPTURE_1_VECTOR, IPL7SOFT) InputCaptureISR(void)
 //    if (IFS0bits.T3IF)
 //    {
 //        // Increment the roll-over counter to track timer wraparounds
-//        RolloverCounter++;
+//        SharedTimer3RolloverCounter++;
 //
 //        // Clear the roll-over interrupt flag
 //        IFS0CLR = _IFS0_T3IF_MASK;

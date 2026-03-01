@@ -41,6 +41,7 @@ void MotorCommandWrapper(uint16_t speedLeft, uint16_t speedRight,
 
 // Encoder query function
 uint32_t Encoder_GetLatestPeriod(uint8_t motorIndex);
+uint32_t DCMotor_GetEncoderPeriod(uint8_t motorIndex);
 
 // Tape sensor public functions
 void TapeSensor_Read(void);           // Read all tape sensors

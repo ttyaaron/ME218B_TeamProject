@@ -52,6 +52,7 @@
       <itemPath>ProjectHeaders/Ports.h</itemPath>
       <itemPath>ProjectHeaders/BeaconDetectFSM.h</itemPath>
       <itemPath>ProjectHeaders/MainLogicFSM.h</itemPath>
+      <itemPath>ProjectHeaders/EncoderTestService.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -76,6 +77,7 @@
       <itemPath>ProjectSource/CommonDefinitions.c</itemPath>
       <itemPath>ProjectSource/BeaconDetectFSM.c</itemPath>
       <itemPath>ProjectSource/MainLogicFSM.c</itemPath>
+      <itemPath>ProjectSource/EncoderTestService.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
@@ -95,7 +97,7 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>snap</platformTool>
         <languageToolchain>XC32</languageToolchain>
-        <languageToolchainVersion>5.00</languageToolchainVersion>
+        <languageToolchainVersion>4.30</languageToolchainVersion>
         <platform>3</platform>
       </toolsSet>
       <packs>
@@ -295,7 +297,7 @@
         <property key="omit-pack-options" value="1"/>
         <property key="preserve-all" value="false"/>
         <property key="preserve-file" value=""/>
-        <property key="relaxed-math" value="true"/>
+        <property key="relaxed-math" value="false"/>
         <property key="save-temps" value="false"/>
         <property key="stack-smashing" value=""/>
         <property key="wpo-lto" value="false"/>

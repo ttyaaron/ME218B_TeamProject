@@ -228,10 +228,9 @@ ES_Event_t RunSpeedControlService(ES_Event_t ThisEvent)
 ****************************************************************************/
 void __ISR(_TIMER_4_VECTOR, IPL5SOFT) ControlTimerISR(void)
 {
-  TIMING_PIN_LAT = 1;
-  // Read inputs with minimal work
-  uint16_t adcValue = GetDesiredSpeed();
-  float desiredSpeed = ADToRPM(adcValue);
+  // Get target speed from DCMotorService (from 0 to 1023, representing 0 to max RPM)
+  uint16_t speedValue = GetDesiredSpeed(); // TODO: need to write for both motors
+  float desiredSpeed = ADToRPM(speedValue);
   // Debug print
 //  uint32_t desiredSpeed_hundreds = (uint32_t)(desiredSpeed * 100);
 //  DB_printf("         /%d.%d\r", desiredSpeed_hundreds / 100, desiredSpeed_hundreds % 100);
@@ -288,24 +287,51 @@ void __ISR(_TIMER_4_VECTOR, IPL5SOFT) ControlTimerISR(void)
   }
   
   // Store controlled duty cycle
-  CurrentDutyCycleTicks = u_sat;
-  LastDutyCycleTicks = u_sat;
+  CurrentDutyCycleTicks[LEFT_MOTOR] = u_sat;
+  CurrentDutyCycleTicks[RIGHT_MOTOR] = u_sat;
+  LastDutyCycleTicks[LEFT_MOTOR] = u_sat;
+  LastDutyCycleTicks[RIGHT_MOTOR] = u_sat;
   
   // Post ES_DUTY_CYCLE_CHANGE event
   ES_Event_t ControlEvent;
-  ControlEvent.EventType = ES_DUTY_CYCLE_CHANGE;
+  ControlEvent.EventType = ES_MOTOR_ACTION_CHANGE;
   ControlEvent.EventParam = (uint16_t)u_sat;
   PostDCMotorService(ControlEvent);
   
   // Clear control timer interrupt flag
   IFS0CLR = _IFS0_T4IF_MASK;
-  
-  TIMING_PIN_LAT =0;
 }
 
 /***************************************************************************
  Private Functions
  ***************************************************************************/
+
+
+/****************************************************************************
+ Function
+     Encoder_GetLatestPeriod
+
+ Parameters
+     uint8_t motorIndex - LEFT_MOTOR or RIGHT_MOTOR
+
+ Returns
+     uint32_t - the latest measured period in timer ticks
+
+ Description
+     Query function that returns the time period between encoder edges for
+     the specified motor. Used by speed control or monitoring.
+
+ Author
+     Tianyu, 02/25/26
+****************************************************************************/
+uint32_t Encoder_GetLatestPeriod(uint8_t motorIndex)
+{
+  if (motorIndex < 2)
+  {
+    return EdgeTimeDifference[motorIndex];
+  }
+  return 0;
+}
 
 /****************************************************************************
  Function
