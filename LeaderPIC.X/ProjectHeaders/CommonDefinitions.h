@@ -35,6 +35,7 @@ typedef enum {
   PRESCALE_256
 } Prescale_t;
 
+// External SPI Commands (for Follower PIC control)
 typedef enum
 {
     CMD_STOP = 0x00,
@@ -59,6 +60,27 @@ typedef enum
     CMD_SIDE_GREEN = 0x61,        // Set side servo to green field position
     CMD_SIDE_MIDDLE = 0x62        // Set side servo to middle/neutral position
 } Command_t;
+
+// Internal Atomic Behaviors (for AtomBehaviorFSM execution)
+typedef enum
+{
+    ATOM_IDLE = 0,                // Idle/stopped state
+    ATOM_ROTATE_CW_90,            // Rotate clockwise 90 degrees
+    ATOM_ROTATE_CW_45,            // Rotate clockwise 45 degrees
+    ATOM_ROTATE_CCW_90,           // Rotate counter-clockwise 90 degrees
+    ATOM_ROTATE_CCW_45,           // Rotate counter-clockwise 45 degrees
+    ATOM_DRIVE_FWD_HALF,          // Drive forward at half speed
+    ATOM_DRIVE_FWD_FULL,          // Drive forward at full speed
+    ATOM_DRIVE_REV_HALF,          // Drive reverse at half speed
+    ATOM_DRIVE_REV_FULL,          // Drive reverse at full speed
+    ATOM_BEACON_ALIGN,            // Align with beacon
+    ATOM_TAPE_SEARCH,             // Search for tape
+    ATOM_LINE_FOLLOW,             // Follow line (future implementation)
+    ATOM_T_INTERSECTION_FIND,     // Find T-intersection (future)
+    ATOM_BALL_COLLECT,            // Collect ball (future)
+    ATOM_BALL_SHOOT,              // Shoot ball (future)
+    ATOM_SIDE_INDICATION          // Side indication (future)
+} AtomBehavior_t;
 
 // Prescale lookup table (maps enum to hardware register bits)
 extern const uint8_t PrescaleLookup[];
@@ -110,11 +132,8 @@ extern const uint8_t validCommandBytes[14];
 #define BEACON_ALIGN_MS 5000
 #define TAPE_SEARCH_MS 10000
 #define DRIVE_TO_BEACON_MS 3000
-
-// Debug Pin
-#define DEBUG_OUTPUT_PIN_LAT LATBbits.LATB15
-#define DEBUG_OUTPUT_PIN_TRIS TRISBbits.TRISB15
-#define DEBUG_OUTPUT_PIN_ANSEL ANSELBbits.ANSB15
+#define LINE_FOLLOW_UPDATE_MS 50   // Update line following control every 50ms
+#define T_INTERSECTION_CHECK_MS 100 // Check for T-intersection every 100ms
 
 
 /*---------------------------- Public Functions ---------------------------*/

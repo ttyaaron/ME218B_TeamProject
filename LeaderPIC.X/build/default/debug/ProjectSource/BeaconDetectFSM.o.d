@@ -7,7 +7,7 @@ build/default/debug/ProjectSource/BeaconDetectFSM.o: \
  FrameworkHeaders/ES_PostList.h FrameworkHeaders/ES_General.h \
  FrameworkHeaders/ES_Timers.h FrameworkHeaders/ES_Timers.h \
  ProjectHeaders/BeaconDetectFSM.h FrameworkHeaders/ES_Types.h \
- ProjectHeaders/MainLogicFSM.h FrameworkHeaders/dbprintf.h \
+ ProjectHeaders/AtomBehaviorFSM.h FrameworkHeaders/dbprintf.h \
  ProjectHeaders/CommonDefinitions.h
 
 FrameworkHeaders/ES_Configure.h:
@@ -40,7 +40,7 @@ ProjectHeaders/BeaconDetectFSM.h:
 
 FrameworkHeaders/ES_Types.h:
 
-ProjectHeaders/MainLogicFSM.h:
+ProjectHeaders/AtomBehaviorFSM.h:
 
 FrameworkHeaders/dbprintf.h:
 

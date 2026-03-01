@@ -10,9 +10,9 @@ build/default/debug/ProjectSource/TestHarnessService0.o: \
  FrameworkHeaders/ES_General.h FrameworkHeaders/ES_Timers.h \
  FrameworkHeaders/ES_DeferRecall.h FrameworkHeaders/ES_Queue.h \
  FrameworkHeaders/terminal.h FrameworkHeaders/dbprintf.h \
- ProjectHeaders/MainLogicFSM.h FrameworkHeaders/ES_Types.h \
- ProjectHeaders/DCMotorService.h ProjectHeaders/SPILeaderFSM.h \
- ProjectHeaders/CommonDefinitions.h
+ ProjectHeaders/MainStrategyHSM.h FrameworkHeaders/ES_Types.h \
+ ProjectHeaders/AtomBehaviorFSM.h ProjectHeaders/DCMotorService.h \
+ ProjectHeaders/SPILeaderFSM.h ProjectHeaders/CommonDefinitions.h
 
 ProjectSource/../ProjectHeaders/TestHarnessService0.h:
 
@@ -52,9 +52,11 @@ FrameworkHeaders/terminal.h:
 
 FrameworkHeaders/dbprintf.h:
 
-ProjectHeaders/MainLogicFSM.h:
+ProjectHeaders/MainStrategyHSM.h:
 
 FrameworkHeaders/ES_Types.h:
+
+ProjectHeaders/AtomBehaviorFSM.h:
 
 ProjectHeaders/DCMotorService.h:
 

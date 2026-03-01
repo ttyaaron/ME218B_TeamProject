@@ -56,7 +56,7 @@
 #include "ES_Framework.h"
 #include "ES_Timers.h"
 #include "BeaconDetectFSM.h"
-#include "MainLogicFSM.h"
+#include "AtomBehaviorFSM.h"
 #include "dbprintf.h"
 #include "CommonDefinitions.h"
 #include <xc.h>
@@ -103,7 +103,7 @@ static const BeaconDef_t BeaconTable[] = {
     { BEACON_L_FREQ, 'l' },
 };
 #define NUM_BEACONS (sizeof(BeaconTable) / sizeof(BeaconTable[0]))
-#define BEACON_FREQ_TOLERANCE 100     // ±50 Hz
+#define BEACON_FREQ_TOLERANCE 100     // ï¿½50 Hz
 
 // Debouncing: require this many consecutive detections of the same beacon
 // before locking onto it (prevents false positives from noise/bouncing)
@@ -355,7 +355,7 @@ ES_Event_t RunBeaconDetectFSM(ES_Event_t ThisEvent)
                   ES_Event_t BeaconEvent;
                   BeaconEvent.EventType  = ES_BEACON_DETECTED;
                   BeaconEvent.EventParam = LockedBeaconId;
-                  PostMainLogicFSM(BeaconEvent);
+                  PostAtomBehaviorFSM(BeaconEvent);
                   CurrentState = BeaconLocked;
                   DB_printf("SignalDetected -> BeaconLocked ('%c') after %d confirmations\r\n", 
                       LockedBeaconId, BeaconMatchCount);
@@ -420,7 +420,7 @@ ES_Event_t RunBeaconDetectFSM(ES_Event_t ThisEvent)
                 ES_Event_t BeaconEvent;
                 BeaconEvent.EventType  = ES_BEACON_DETECTED;
                 BeaconEvent.EventParam = LockedBeaconId;
-                PostMainLogicFSM(BeaconEvent);
+                PostAtomBehaviorFSM(BeaconEvent);
                 DB_printf("BeaconLocked: re-locked to '%c'\r\n", LockedBeaconId);
               }
               // else: same beacon â€” watchdog already kicked, nothing else to do

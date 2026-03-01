@@ -90,7 +90,7 @@ bool Check4TapeDetected(void)
     ES_Event_t ThisEvent;
     ThisEvent.EventType = ES_TAPE_DETECTED;
     ThisEvent.EventParam = 0;
-    PostMainLogicFSM(ThisEvent);
+    PostAtomBehaviorFSM(ThisEvent);
     LastTapeState = CurrentTapeState;
     return true;
   }

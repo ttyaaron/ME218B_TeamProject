@@ -140,30 +140,6 @@ void InitCommandSPIPins(void)
 
 /****************************************************************************
  Function
-     InitDebugOutputPin
-
- Parameters
-     None
-
- Returns
-     None
-
- Description
-     Initializes the pin used for debugging
-
- Author
-     Tianyu, 02/04/26
-****************************************************************************/
-void InitDebugOutputPin(void)
-{
-  // 
-  DEBUG_OUTPUT_PIN_TRIS = 0; // Output
-  DEBUG_OUTPUT_PIN_LAT = 0;  // Initialize low
-  DEBUG_OUTPUT_PIN_ANSEL = 0; // Disable analog functionw
-}
-
-/****************************************************************************
- Function
      InitLeftTapeInputPin
 
  Parameters

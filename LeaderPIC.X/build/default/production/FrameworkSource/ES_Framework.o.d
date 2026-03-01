@@ -21,9 +21,9 @@ build/default/production/FrameworkSource/ES_Framework.o: \
  ProjectHeaders/TestHarnessService0.h FrameworkHeaders/ES_Events.h \
  FrameworkHeaders/ES_Port.h ProjectHeaders/SPILeaderFSM.h \
  FrameworkHeaders/ES_Configure.h FrameworkHeaders/ES_Types.h \
- ProjectHeaders/MainLogicFSM.h ProjectHeaders/DCMotorService.h \
- ProjectHeaders/BeaconDetectFSM.h ProjectHeaders/EventCheckWrapper.h \
- ProjectHeaders/EventCheckers.h
+ ProjectHeaders/MainStrategyHSM.h ProjectHeaders/AtomBehaviorFSM.h \
+ ProjectHeaders/DCMotorService.h ProjectHeaders/BeaconDetectFSM.h \
+ ProjectHeaders/EventCheckWrapper.h ProjectHeaders/EventCheckers.h
 
 FrameworkSource/../FrameworkHeaders/ES_Configure.h:
 
@@ -75,7 +75,9 @@ FrameworkHeaders/ES_Configure.h:
 
 FrameworkHeaders/ES_Types.h:
 
-ProjectHeaders/MainLogicFSM.h:
+ProjectHeaders/MainStrategyHSM.h:
+
+ProjectHeaders/AtomBehaviorFSM.h:
 
 ProjectHeaders/DCMotorService.h:
 

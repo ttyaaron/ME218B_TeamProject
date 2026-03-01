@@ -5,7 +5,6 @@
         <group>
             <file>file:/U:/ttyaaron/ME218B_TeamProject/LeaderPIC.X/ProjectHeaders/CommonDefinitions.h</file>
             <file>file:/U:/ttyaaron/ME218B_TeamProject/LeaderPIC.X/ProjectSource/DCMotorService.c</file>
-            <file>file:/U:/ttyaaron/ME218B_TeamProject/LeaderPIC.X/ProjectSource/MainLogicFSM.c</file>
             <file>file:/U:/ttyaaron/ME218B_TeamProject/LeaderPIC.X/FrameworkHeaders/ES_Configure.h</file>
             <file>file:/U:/ttyaaron/ME218B_TeamProject/LeaderPIC.X/ProjectSource/CommonDefinitions.c</file>
         </group>

@@ -34,7 +34,7 @@
 #include "SPILeaderFSM.h"
 #include "CommonDefinitions.h"
 #include "PIC32_SPI_HAL.h"
-#include "MainLogicFSM.h"
+#include "AtomBehaviorFSM.h"
 #include "dbprintf.h"
 #include <xc.h>
 #include <sys/attribs.h>
