@@ -4,14 +4,24 @@
     <memory name="program">                 
       <units>bytes</units>                 
       <length>263312</length>                 
+<<<<<<< HEAD
       <used>51512</used>                     
       <free>211800</free>                     
+=======
+      <used>50268</used>                     
+      <free>213044</free>                     
+>>>>>>> Servo-function-on-follower
     </memory>                              
     <memory name="data">              
       <units>bytes</units>                 
       <length>65536</length>                 
+<<<<<<< HEAD
       <used>1580</used>                     
       <free>63956</free>                     
+=======
+      <used>1576</used>                     
+      <free>63960</free>                     
+>>>>>>> Servo-function-on-follower
     </memory>                              
   </executable>                            
 </project>                                 
