@@ -203,11 +203,11 @@ ES_Event_t RunSPILeaderFSM(ES_Event_t ThisEvent)
         if (IsValidCommandByte(newCommand))
         {
           CurrentCommand = newCommand;
-          DB_printf("New command to send: 0x%x\\n", CurrentCommand);
+          DB_printf("New command to send: 0x%d\n", CurrentCommand);
         }
         else
         {
-          DB_printf("Invalid command: 0x%x\\n", newCommand);
+          DB_printf("Invalid command: 0x%d\n", newCommand);
         }
       }
       
