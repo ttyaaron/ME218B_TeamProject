@@ -790,6 +790,10 @@ void __ISR(_TIMER_4_VECTOR, IPL5SOFT) ControlTimerISR(void)
     
     uint32_t measuredPeriod = EdgeTimeDifference[LEFT_MOTOR];
     float measuredSpeed = PeriodToRPM(measuredPeriod);
+
+    // Print debug info for control loop
+    DB_printf("Period: %u, measuredPeriod: %u\r\n",
+           EdgeTimeDifference[LEFT_MOTOR], measuredSpeed);
     
     // Update monitoring variables
     CurrentDesiredSpeed[LEFT_MOTOR] = targetSpeed;
