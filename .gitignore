@@ -1,0 +1,98 @@
+# MPLAB X IDE - Build outputs
+build/
+dist/
+debug/
+.generated_files/
+*.d
+*.pre
+*.p1
+*.lst
+*.sym
+*.obj
+*.o
+*.sdb
+*.obj.dmp
+disassembly/
+html/
+nbproject/private/
+
+# MPLAB X - User-specific settings
+nbproject/Makefile-local-*.mk
+nbproject/Package-*.bash
+nbproject/private/
+
+# Compiled outputs
+*.elf
+*.hex
+*.bin
+*.cof
+*.hxl
+*.hxh
+*.map
+*.mcs
+*.mum
+
+# Dependency files
+*.d
+
+# Preprocessor outputs
+*.i
+*.ii
+*.pre
+
+# Assembly outputs
+*.s
+*.asm
+*.lst
+
+# Production folder
+production/
+
+# Log files
+*.log
+queuelogs/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+Desktop.ini
+*~
+
+# Backup files
+*.bak
+*.tmp
+*~
+
+# IDE workspace files (user-specific)
+*.workspace
+*.workspace.*
+
+# KiCad auto-generated files
+*-cache.lib
+*-cache.kicad_pcb
+*.kicad_pcb-bak
+*.sch-bak
+*-backups/
+*.bck
+*.kicad_prl
+fp-info-cache
+*.xml
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Editor-specific
+.vscode/
+.vs/
+*.swp
+*.swo
+*~
