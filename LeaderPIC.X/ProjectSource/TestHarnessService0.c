@@ -207,17 +207,17 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
     break;
     case ES_TIMEOUT:   // re-start timer & announce
     {
-      // Read all tape sensors
-      TapeSensor_Read();
+      // // Read all tape sensors
+      // TapeSensor_Read();
       
-      // Get analog sensor values
-      uint32_t leftAnalog = TapeSensor_GetLeftAnalog();
-      uint32_t rightAnalog = TapeSensor_GetRightAnalog();
-      uint32_t centerAnalog = TapeSensor_GetCenterAnalog();
+      // // Get analog sensor values
+      // uint32_t leftAnalog = TapeSensor_GetLeftAnalog();
+      // uint32_t rightAnalog = TapeSensor_GetRightAnalog();
+      // uint32_t centerAnalog = TapeSensor_GetCenterAnalog();
       
-      // Get digital sensor states
-      bool leftDigital = TapeSensor_GetLeftDigital();
-      bool rightDigital = TapeSensor_GetRightDigital();
+      // // Get digital sensor states
+      // bool leftDigital = TapeSensor_GetLeftDigital();
+      // bool rightDigital = TapeSensor_GetRightDigital();
       
 //      // Print tape sensor status
 //      DB_printf("\r\n=== Tape Sensors ===\r\n");

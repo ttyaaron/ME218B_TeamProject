@@ -28,6 +28,7 @@
 #include "MainLogicFSM.h"
 #include "BeaconDetectFSM.h"
 #include "DCMotorService.h"
+#include "TapeFollowFSM.h"
 #include "CommonDefinitions.h"
 #include "dbprintf.h"
 #include "Ports.h"
@@ -152,8 +153,10 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
         // BeaconCommand.EventParam = CMD_ALIGN_BEACON;
         // PostMainLogicFSM(BeaconCommand);
 
-        // TEMPORARY: command a fixed speed for PI tuning — remove before match
-        DCMotor_SetSpeed_mm_s(370, 370, FORWARD, FORWARD);
+        // TEMPORARY: enter tape following
+        ES_Event_t TapeCommand;
+        TapeCommand.EventType = ES_START_LINE_FOLLOW;
+        PostTapeFollowFSM(TapeCommand);
         break;
       }
       if (ThisEvent.EventType == ES_COMMAND_RETRIEVED)

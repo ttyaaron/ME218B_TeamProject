@@ -33,7 +33,7 @@
 /****************************************************************************/
 // This macro determines that nuber of services that are *actually* used in
 // a particular application. It will vary in value from 1 to MAX_NUM_SERVICES
-#define NUM_SERVICES 6
+#define NUM_SERVICES 7
 
 /****************************************************************************/
 // These are the definitions for Service 0, the lowest priority service.
@@ -109,11 +109,11 @@
 // These are the definitions for Service 5
 #if NUM_SERVICES > 5
 // the header file with the public function prototypes
-#define SERV_5_HEADER "EncoderTestService.h"
+#define SERV_5_HEADER "TapeFollowFSM.h"
 // the name of the Init function
-#define SERV_5_INIT InitEncoderTestService
+#define SERV_5_INIT InitTapeFollowFSM
 // the name of the run function
-#define SERV_5_RUN RunEncoderTestService
+#define SERV_5_RUN RunTapeFollowFSM
 // How big should this services Queue be?
 #define SERV_5_QUEUE_SIZE 3
 #endif
@@ -122,11 +122,11 @@
 // These are the definitions for Service 6
 #if NUM_SERVICES > 6
 // the header file with the public function prototypes
-#define SERV_6_HEADER "TestHarnessService6.h"
+#define SERV_6_HEADER "EncoderTestService.h"
 // the name of the Init function
-#define SERV_6_INIT InitTestHarnessService6
+#define SERV_6_INIT InitEncoderTestService
 // the name of the run function
-#define SERV_6_RUN RunTestHarnessService6
+#define SERV_6_RUN RunEncoderTestService
 // How big should this services Queue be?
 #define SERV_6_QUEUE_SIZE 3
 #endif
@@ -266,7 +266,11 @@ typedef enum
   ES_COMMAND_RETRIEVED,     /* signals a new command byte from SPI */
   ES_BEACON_DETECTED,       /* signals a beacon detection */
   ES_TAPE_DETECTED,          /* signals a tape detection */
-  ES_NEW_COMMAND            /* New command received from command generator */
+  ES_NEW_COMMAND,            /* New command received from command generator */
+  ES_START_LINE_FOLLOW,      /* Command to start line following */
+  ES_STOP_LINE_FOLLOW,       /* Command to stop line following */
+  ES_LINE_LOST,              /* Tape line has been lost */
+  ES_INTERSECTION_DETECTED   /* T-intersection detected */
 }ES_EventType_t;
 
 /****************************************************************************/
@@ -321,7 +325,7 @@ typedef enum
 #define TIMER6_RESP_FUNC PostBeaconDetectFSM
 #define TIMER7_RESP_FUNC PostMainLogicFSM
 #define TIMER8_RESP_FUNC PostEncoderTestService
-#define TIMER9_RESP_FUNC TIMER_UNUSED
+#define TIMER9_RESP_FUNC PostTapeFollowFSM
 #define TIMER10_RESP_FUNC TIMER_UNUSED
 #define TIMER11_RESP_FUNC TIMER_UNUSED
 #define TIMER12_RESP_FUNC TIMER_UNUSED
@@ -346,6 +350,7 @@ typedef enum
 #define SIGNAL_WATCHDOG_TIMER 6
 #define DRIVE_TO_BEACON_TIMER 7
 #define ENCODER_PRINT_TIMER 8
+#define TAPE_FOLLOW_TIMER 9
 
 
 #endif /* ES_CONFIGURE_H */
