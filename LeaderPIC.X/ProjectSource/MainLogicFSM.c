@@ -12,13 +12,26 @@
    States:
      - Stopped
      - SimpleMoving
+     - CalibrationRotating
+     - TapeSearchingRotate
+     - FollowingForward
      - SearchingForTape
      - AligningWithBeacon
+     - DrivingToBeacon
+
+   Field Test Sequence (STAGE1_SENSOR_TEST_ONLY = 0):
+     Step 1: Calibration rotation (2s CW spin)
+     Step 2: Rotate search for tape
+     Step 3: Forward line follow
+     Step 4: T-intersection → rotate CW 90°
+     Step 5: Forward line follow again
+     Step 6: Line lost → stop
 
  History
  When           Who     What/Why
  -------------- ---     --------
  02/03/26       Tianyu  Initial creation for Lab 8 main logic
+ 03/01/26       Team    Added calibration and deterministic test sequence
 ****************************************************************************/
 
 /*----------------------------- Include Files -----------------------------*/
@@ -35,6 +48,9 @@
 #include "dbprintf.h"
 
 /*----------------------------- Module Defines ----------------------------*/
+// Set to 1 to run workstation sensor-only test (motors will not move, only print)
+// Set to 0 for field test with full sequence
+#define STAGE1_SENSOR_TEST_ONLY 0
 
 /*---------------------------- Module Functions ---------------------------*/
 static void RotateCW90(void);
@@ -52,7 +68,52 @@ static void AlignWithBeacon(void);
 static MainLogicState_t CurrentState;
 static uint8_t MyPriority;
 
+// Odometer-based rotation tracking
+static uint32_t RotateStartDistLeft_mm  = 0u;
+static uint32_t RotateStartDistRight_mm = 0u;
+static uint32_t RotateTargetArc_mm      = 0u;
+
 /*------------------------------ Module Code ------------------------------*/
+/****************************************************************************
+ Function
+     StartRotation
+
+ Parameters
+     uint8_t leftDir, uint8_t rightDir - FORWARD or REVERSE for each wheel
+     uint32_t targetArc_mm - arc distance each wheel must travel
+
+ Returns
+     None
+
+ Description
+     Starts a point turn at ROTATE_SPEED_MM_S and records odometer start values.
+
+ Author
+     Team, 03/01/26
+****************************************************************************/
+static void StartRotation(uint8_t leftDir, uint8_t rightDir, uint32_t targetArc_mm)
+{
+  // Record odometer baseline before motion begins
+  RotateStartDistLeft_mm  = ICCountToDistance_mm(DCMotor_GetICEventCount(LEFT_MOTOR));
+  RotateStartDistRight_mm = ICCountToDistance_mm(DCMotor_GetICEventCount(RIGHT_MOTOR));
+  RotateTargetArc_mm      = targetArc_mm;
+
+  // Start motors
+  DCMotor_SetSpeed_mm_s(ROTATE_SPEED_MM_S, ROTATE_SPEED_MM_S, leftDir, rightDir);
+
+  // Start short polling timer to check odometer
+  ES_Timer_InitTimer(SIMPLE_MOVE_TIMER, ROTATE_POLL_INTERVAL_MS);
+
+  // Start safety timeout in case encoders fail
+  ES_Timer_InitTimer(ROTATE_SAFETY_TIMER, ROTATE_SAFETY_TIMEOUT_MS);
+
+  uint32_t arc_h = targetArc_mm;  // already integer mm, no float needed
+  DB_printf("StartRotation: target=%u mm L=%u R=%u\r\n",
+            (unsigned)arc_h,
+            (unsigned)RotateStartDistLeft_mm,
+            (unsigned)RotateStartDistRight_mm);
+}
+
 /****************************************************************************
  Function
      InitMainLogicFSM
@@ -143,20 +204,28 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
 
   switch (CurrentState)
   {
+    case CalibrationRotating:
+      if (ThisEvent.EventType == ES_CALIB_DONE)
+      {
+        DB_printf("MainLogic: Step 2 - Rotate search for tape\r\n");
+        TapeFollow_StartRotateSearch(true);
+        CurrentState = TapeSearchingRotate;
+      }
+      break;
+
     case Stopped:
       if (ThisEvent.EventType == ES_INIT)
       {
-        // On startup, automatically start searching for beacon
-        DB_printf("Startup: Auto-initiating beacon search\r\n");
-        // ES_Event_t BeaconCommand;
-        // BeaconCommand.EventType = ES_COMMAND_RETRIEVED;
-        // BeaconCommand.EventParam = CMD_ALIGN_BEACON;
-        // PostMainLogicFSM(BeaconCommand);
-
-        // TEMPORARY: enter tape following
-        ES_Event_t TapeCommand;
-        TapeCommand.EventType = ES_START_LINE_FOLLOW;
-        PostTapeFollowFSM(TapeCommand);
+#if STAGE1_SENSOR_TEST_ONLY
+        DB_printf("MainLogic: STAGE 1 sensor test — motors zeroed\r\n");
+        TapeFollow_StartCalibrationRotate();
+        DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);  // override: no motion
+        CurrentState = CalibrationRotating;
+#else
+        DB_printf("MainLogic: Step 1 - Calibration rotation\r\n");
+        TapeFollow_StartCalibrationRotate();
+        CurrentState = CalibrationRotating;
+#endif
         break;
       }
       if (ThisEvent.EventType == ES_COMMAND_RETRIEVED)
@@ -247,18 +316,90 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
       break;
 
     case SimpleMoving:
+    {
       if (ThisEvent.EventType == ES_TIMEOUT &&
-          ThisEvent.EventParam == SIMPLE_MOVE_TIMER) // movement timer expired after a set amount of time
+          ThisEvent.EventParam == SIMPLE_MOVE_TIMER)
       {
-          DB_printf("Motor Timeout Received while moving\r\n");
-        MotorCommandWrapper(0, 0, FORWARD, FORWARD);
-        CurrentState = Stopped;
+        // Odometer poll: check how far each wheel has traveled since rotation start
+        uint32_t currentLeft  = ICCountToDistance_mm(DCMotor_GetICEventCount(LEFT_MOTOR));
+        uint32_t currentRight = ICCountToDistance_mm(DCMotor_GetICEventCount(RIGHT_MOTOR));
+
+        uint32_t deltaLeft  = currentLeft  - RotateStartDistLeft_mm;
+        uint32_t deltaRight = currentRight - RotateStartDistRight_mm;
+        uint32_t avgDelta   = (deltaLeft + deltaRight) / 2u;
+
+        DB_printf("Rot poll: L=%u R=%u avg=%u target=%u\r\n",
+                  (unsigned)deltaLeft, (unsigned)deltaRight,
+                  (unsigned)avgDelta, (unsigned)RotateTargetArc_mm);
+
+        if (avgDelta >= RotateTargetArc_mm)
+        {
+          // Target arc reached — stop rotation
+          DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
+          ES_Timer_StopTimer(ROTATE_SAFETY_TIMER);
+          DB_printf("MainLogic: Rotation done (odometer), starting forward line follow\r\n");
+          ES_Event_t ev;
+          ev.EventType  = ES_START_LINE_FOLLOW;
+          ev.EventParam = 0;
+          PostTapeFollowFSM(ev);
+          CurrentState = FollowingForward;
+        }
+        else
+        {
+          // Not done yet — poll again
+          ES_Timer_InitTimer(SIMPLE_MOVE_TIMER, ROTATE_POLL_INTERVAL_MS);
+        }
       }
-      else if (ThisEvent.EventType == ES_COMMAND_RETRIEVED) // while simple moving, new command received
+      else if (ThisEvent.EventType == ES_TIMEOUT &&
+               ThisEvent.EventParam == ROTATE_SAFETY_TIMER)
       {
-        DB_printf("New command received while moving\r\n");
+        // Safety fallback: encoder may have failed, stop anyway
+        DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
+        DB_printf("MainLogic: Rotation safety timeout fired — stopping\r\n");
+        ES_Event_t ev;
+        ev.EventType  = ES_START_LINE_FOLLOW;
+        ev.EventParam = 0;
+        PostTapeFollowFSM(ev);
+        CurrentState = FollowingForward;
+      }
+    }
+    break;
+
+    case TapeSearchingRotate:
+      if (ThisEvent.EventType == ES_TAPE_FOUND)
+      {
+        DB_printf("MainLogic: Step 3 - Forward line follow\r\n");
+        ES_Event_t ev;
+        ev.EventType  = ES_START_LINE_FOLLOW;
+        ev.EventParam = 0;
+        PostTapeFollowFSM(ev);
+        CurrentState = FollowingForward;
+      }
+      break;
+
+    case FollowingForward:
+      if (ThisEvent.EventType == ES_INTERSECTION_DETECTED)
+      {
+        if (ThisEvent.EventParam == 0)  // T-intersection only
+        {
+          DB_printf("MainLogic: Step 4 - T-intersection, rotating CW 90\r\n");
+          ES_Event_t stopEv;
+          stopEv.EventType  = ES_STOP_LINE_FOLLOW;
+          stopEv.EventParam = 0;
+          PostTapeFollowFSM(stopEv);
+          RotateCCW90();
+          CurrentState = SimpleMoving;
+        }
+        // Left (param=1) or right (param=2) intersections: ignore, keep following
+      }
+      else if (ThisEvent.EventType == ES_LINE_LOST)
+      {
+        DB_printf("MainLogic: Step 6 - Line lost, stopping\r\n");
+        ES_Event_t stopEv;
+        stopEv.EventType  = ES_STOP_LINE_FOLLOW;
+        stopEv.EventParam = 0;
+        PostTapeFollowFSM(stopEv);
         CurrentState = Stopped;
-        PostMainLogicFSM(ThisEvent); //go back to stopped list to take action on new command
       }
       break;
 
@@ -376,11 +517,8 @@ MainLogicState_t QueryMainLogicFSM(void)
 ****************************************************************************/
 static void RotateCW90(void)
 {
-  // Pseudocode:
-  // MotorCommandWrapper(FULL_SPEED, FULL_SPEED, FORWARD, REVERSE)
-  // Initialize SIMPLE_MOVE_TIMER to 6000 ms
-  MotorCommandWrapper(FULL_SPEED, FULL_SPEED, FORWARD, REVERSE);
-  ES_Timer_InitTimer(SIMPLE_MOVE_TIMER, SIMPLE_MOVE_90_MS);
+  DB_printf("RotateCW90: arc=%u mm\r\n", (unsigned)ROTATE_ARC_MM(90u));
+  StartRotation(FORWARD, REVERSE, ROTATE_ARC_MM(90u));
 }
 
 /****************************************************************************
@@ -401,11 +539,8 @@ static void RotateCW90(void)
 ****************************************************************************/
 static void RotateCW45(void)
 {
-  // Pseudocode:
-  // MotorCommandWrapper(FULL_SPEED, FULL_SPEED, FORWARD, REVERSE)
-  // Initialize SIMPLE_MOVE_TIMER to 3000 ms
-  MotorCommandWrapper(FULL_SPEED, FULL_SPEED, FORWARD, REVERSE);
-  ES_Timer_InitTimer(SIMPLE_MOVE_TIMER, SIMPLE_MOVE_45_MS);
+  DB_printf("RotateCW45: arc=%u mm\r\n", (unsigned)ROTATE_ARC_MM(45u));
+  StartRotation(FORWARD, REVERSE, ROTATE_ARC_MM(45u));
 }
 
 /****************************************************************************
@@ -426,11 +561,8 @@ static void RotateCW45(void)
 ****************************************************************************/
 static void RotateCCW90(void)
 {
-  // Pseudocode:
-  // MotorCommandWrapper(FULL_SPEED, FULL_SPEED, REVERSE, FORWARD)
-  // Initialize SIMPLE_MOVE_TIMER to 6000 ms
-  MotorCommandWrapper(FULL_SPEED, FULL_SPEED, REVERSE, FORWARD);
-  ES_Timer_InitTimer(SIMPLE_MOVE_TIMER, SIMPLE_MOVE_90_MS);
+  DB_printf("RotateCCW90: arc=%u mm\r\n", (unsigned)ROTATE_ARC_MM(90u));
+  StartRotation(REVERSE, FORWARD, ROTATE_ARC_MM(90u));
 }
 
 /****************************************************************************
@@ -451,11 +583,8 @@ static void RotateCCW90(void)
 ****************************************************************************/
 static void RotateCCW45(void)
 {
-  // Pseudocode:
-  // MotorCommandWrapper(FULL_SPEED, FULL_SPEED, REVERSE, FORWARD)
-  // Initialize SIMPLE_MOVE_TIMER to 3000 ms
-  MotorCommandWrapper(FULL_SPEED, FULL_SPEED, REVERSE, FORWARD); 
-  ES_Timer_InitTimer(SIMPLE_MOVE_TIMER, SIMPLE_MOVE_45_MS);
+  DB_printf("RotateCCW45: arc=%u mm\r\n", (unsigned)ROTATE_ARC_MM(45u));
+  StartRotation(REVERSE, FORWARD, ROTATE_ARC_MM(45u));
 }
 
 /****************************************************************************

@@ -37,10 +37,21 @@
 #define TAPE_ANALOG_PINS          (BIT12HI | BIT11HI | BIT5HI)  // AN12,11,5
 #define THRESH_DIV                2       // Threshold divisor for tape detection
 
+// Fixed threshold: analog value > 600 = black tape detected
+#define TAPE_THRESHOLD            600u
+
+#define SEARCH_ROTATE_SPEED_MM_S  150u   // slow rotation during search
+
+// Duration of startup calibration rotation in milliseconds.
+// Robot sweeps sensors over floor (and hopefully tape) to build min/max range.
+// At SEARCH_ROTATE_SPEED_MM_S, this gives roughly 200-270 degrees of rotation.
+#define CALIB_ROTATION_MS         2000u
+
 /*---------------------------- Module Functions ---------------------------*/
 /* prototypes for private functions for this machine */
 static void ReadTapeSensors(void);
 static void CheckFollowConditions(void);
+static bool IsOnTape(uint32_t val, uint32_t minC, uint32_t maxC);
 
 /*---------------------------- Module Variables ---------------------------*/
 // State variable
@@ -57,13 +68,15 @@ static uint32_t centerVal = 0;    // AN5
 static bool leftTState = false;
 static bool rightTState = false;
 
-// Min/Max tracking for analog sensors
-static uint32_t MinLeftC = 1023;
-static uint32_t MaxLeftC = 0;
-static uint32_t MinRightC = 1023;
-static uint32_t MaxRightC = 0;
-static uint32_t MinCenterC = 1023;
-static uint32_t MaxCenterC = 0;
+// Calibration values
+static uint32_t MinLeftC = 1023u, MaxLeftC = 0u;
+static uint32_t MinRightC = 1023u, MaxRightC = 0u;
+static uint32_t MinCenterC = 1023u, MaxCenterC = 0u;
+
+// Boolean tape detection states
+static bool centerOnTape = false;
+static bool leftOnTape   = false;
+static bool rightOnTape  = false;
 
 // Line following control variables
 static int32_t lastError = 0;
@@ -71,7 +84,9 @@ static int32_t lastError = 0;
 // Intersection detection flags
 static bool lastLeftTState = false;
 static bool lastRightTState = false;
-static bool intersectionPublished = false;
+static bool tIntersectionPublished    = false;
+static bool leftTurnPublished         = false;
+static bool rightTurnPublished        = false;
 
 // Line lost counter
 static uint8_t lineLostCount = 0;
@@ -130,14 +145,10 @@ bool InitTapeFollowFSM(uint8_t Priority)
   // Read initial digital sensor states
   leftTState = ReadLeftTapeInputPin();
   rightTState = ReadRightTapeInputPin();
-  
-  // Initialize min/max values
-  MinLeftC = leftVal;
-  MaxLeftC = leftVal;
-  MinRightC = rightVal;
-  MaxRightC = rightVal;
-  MinCenterC = centerVal;
-  MaxCenterC = centerVal;
+
+  MinLeftC = 1023u;   MaxLeftC = 0u;
+  MinRightC = 1023u;  MaxRightC = 0u;
+  MinCenterC = 1023u; MaxCenterC = 0u;
   
   DB_printf("TapeFollowFSM: Tape Sensors Initialized\r\n");
   
@@ -217,13 +228,15 @@ ES_Event_t RunTapeFollowFSM(ES_Event_t ThisEvent)
           // Reset control variables
           lastError = 0;
           lineLostCount = 0;
-          intersectionPublished = false;
+          tIntersectionPublished = false;
+          leftTurnPublished = false;
+          rightTurnPublished = false;
           
           // Start the tape follow timer
           ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, TAPE_FOLLOW_INTERVAL_MS);
           
-          // Transition to TapeFollowing state
-          CurrentState = TapeFollowing;
+          // Transition to TapeFollowingF state
+          CurrentState = TapeFollowingF;
         }
         break;
         
@@ -233,7 +246,7 @@ ES_Event_t RunTapeFollowFSM(ES_Event_t ThisEvent)
     }
     break;
 
-    case TapeFollowing:
+    case TapeFollowingF:
     {
       switch (ThisEvent.EventType)
       {
@@ -255,6 +268,15 @@ ES_Event_t RunTapeFollowFSM(ES_Event_t ThisEvent)
           {
             // 1. Read all sensors
             ReadTapeSensors();
+
+            // Debug print: raw analog values, boolean states, digital sensors, and error
+            DB_printf("L=%u(%d) R=%u(%d) C=%u(%d) LT=%d RT=%d err=%d\r\n",
+                      (unsigned)leftVal,   leftOnTape   ? 1 : 0,
+                      (unsigned)rightVal,  rightOnTape  ? 1 : 0,
+                      (unsigned)centerVal, centerOnTape ? 1 : 0,
+                      leftTState  ? 1 : 0,
+                      rightTState ? 1 : 0,
+                      (int)lastError);
             
             // 2. Compute signed error from analog sensors
             // Positive error = robot drifted left, steer right (slow left, speed up right)
@@ -304,6 +326,143 @@ ES_Event_t RunTapeFollowFSM(ES_Event_t ThisEvent)
     }
     break;
 
+    case TapeCalibrating:
+    {
+      switch (ThisEvent.EventType)
+      {
+        case ES_TIMEOUT:
+          if (ThisEvent.EventParam == TAPE_FOLLOW_TIMER)
+          {
+            // Poll sensors to build min/max — do not act on tape detection
+            ReadTapeSensors();
+
+            // Debug: show current min/max ranges building up
+            DB_printf("CALIB C=%u[%u,%u] L=%u[%u,%u] R=%u[%u,%u]\r\n",
+                      (unsigned)centerVal, (unsigned)MinCenterC, (unsigned)MaxCenterC,
+                      (unsigned)leftVal,   (unsigned)MinLeftC,   (unsigned)MaxLeftC,
+                      (unsigned)rightVal,  (unsigned)MinRightC,  (unsigned)MaxRightC);
+
+            // Restart sensor poll timer
+            ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, TAPE_FOLLOW_INTERVAL_MS);
+          }
+          else if (ThisEvent.EventParam == CALIB_TIMER)
+          {
+            // Calibration rotation complete — stop motors and notify MainLogicFSM
+            DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
+
+            DB_printf("TapeFollow: Calibration done. C[%u,%u] L[%u,%u] R[%u,%u]\r\n",
+                      (unsigned)MinCenterC, (unsigned)MaxCenterC,
+                      (unsigned)MinLeftC,   (unsigned)MaxLeftC,
+                      (unsigned)MinRightC,  (unsigned)MaxRightC);
+
+            ES_Event_t ev;
+            ev.EventType  = ES_CALIB_DONE;
+            ev.EventParam = 0;
+            PostMainLogicFSM(ev);
+
+            CurrentState = TapeIdle;
+          }
+          break;
+
+        case ES_STOP_LINE_FOLLOW:
+          DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
+          ES_Timer_StopTimer(CALIB_TIMER);
+          CurrentState = TapeIdle;
+          break;
+
+        default:
+          break;
+      }
+    }
+    break;
+
+    case TapeSearching:
+    {
+      switch (ThisEvent.EventType)
+      {
+        case ES_TIMEOUT:
+          if (ThisEvent.EventParam == TAPE_FOLLOW_TIMER)
+          {
+            ReadTapeSensors();  // updates min/max and centerOnTape during rotation
+            
+            if (centerOnTape)
+            {
+              // Tape found — stop and notify MainLogicFSM
+              DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
+              DB_printf("TapeFollow: Tape found during search\r\n");
+              ES_Event_t ev;
+              ev.EventType  = ES_TAPE_FOUND;
+              ev.EventParam = 0;
+              PostMainLogicFSM(ev);
+              CurrentState = TapeIdle;
+            }
+            else
+            {
+              ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, TAPE_FOLLOW_INTERVAL_MS);
+            }
+          }
+          break;
+          
+        case ES_STOP_LINE_FOLLOW:
+          DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
+          CurrentState = TapeIdle;
+          break;
+          
+        default:
+          break;
+      }
+    }
+    break;
+
+    case TapeFollowingR:
+    {
+      switch (ThisEvent.EventType)
+      {
+        case ES_TIMEOUT:
+          if (ThisEvent.EventParam == TAPE_FOLLOW_TIMER)
+          {
+            ReadTapeSensors();
+            
+            int32_t error = (int32_t)rightVal - (int32_t)leftVal;
+            float correction = LINE_KP * (float)error + LINE_KD * (float)(error - lastError);
+            lastError = error;
+            
+            // For reverse: left wheel = base + correction, right = base - correction
+            // Both commanded in REVERSE direction
+            float leftSpeed_f  = (float)BASE_FOLLOW_SPEED_MM_S + correction;
+            float rightSpeed_f = (float)BASE_FOLLOW_SPEED_MM_S - correction;
+            
+            if (leftSpeed_f  < 0.0f) leftSpeed_f  = 0.0f;
+            if (rightSpeed_f < 0.0f) rightSpeed_f = 0.0f;
+            if (leftSpeed_f  > (float)SPEED_FULL_MM_S) leftSpeed_f  = (float)SPEED_FULL_MM_S;
+            if (rightSpeed_f > (float)SPEED_FULL_MM_S) rightSpeed_f = (float)SPEED_FULL_MM_S;
+            
+            DCMotor_SetSpeed_mm_s((uint16_t)leftSpeed_f, (uint16_t)rightSpeed_f,
+                                  REVERSE, REVERSE);
+            
+            uint32_t lSpd_h = (uint32_t)(leftSpeed_f  * 100.0f);
+            uint32_t rSpd_h = (uint32_t)(rightSpeed_f * 100.0f);
+            DB_printf("REV err=%d L=%u.%u R=%u.%u mm/s\r\n",
+                      (int)error,
+                      (unsigned)(lSpd_h / 100), (unsigned)(lSpd_h % 100),
+                      (unsigned)(rSpd_h / 100), (unsigned)(rSpd_h % 100));
+            
+            CheckFollowConditions();
+            ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, TAPE_FOLLOW_INTERVAL_MS);
+          }
+          break;
+          
+        case ES_STOP_LINE_FOLLOW:
+          DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
+          CurrentState = TapeIdle;
+          break;
+          
+        default:
+          break;
+      }
+    }
+    break;
+
     default:
       ;
   }
@@ -338,6 +497,29 @@ TapeFollowState_t QueryTapeFollowFSM(void)
 
 /****************************************************************************
  Function
+     IsOnTape
+
+ Parameters
+     uint32_t val - current analog sensor reading
+
+ Returns
+     bool - true if sensor detects black tape, false if white floor
+
+ Description
+     Returns true if the given analog reading indicates black tape using
+     a fixed threshold of 600.
+
+ Author
+     Team, 03/01/26
+****************************************************************************/
+static bool IsOnTape(uint32_t val, uint32_t minC, uint32_t maxC)
+{
+  uint32_t threshold = minC + (maxC - minC) / THRESH_DIV;
+  return (val > threshold);
+}
+
+/****************************************************************************
+ Function
      ReadTapeSensors
 
  Parameters
@@ -347,7 +529,8 @@ TapeFollowState_t QueryTapeFollowFSM(void)
      None
 
  Description
-     Reads all tape sensors and updates min/max tracking
+     Reads all tape sensors (analog ADC and digital pins) and updates
+     boolean tape detection states using fixed threshold.
 
  Author
      Tianyu, 02/25/26 (moved from DCMotorService)
@@ -359,40 +542,24 @@ static void ReadTapeSensors(void)
   centerVal = ADValues[0];   // AN5 (RB3)
   rightVal = ADValues[1];    // AN11 (RB13)
   leftVal = ADValues[2];     // AN12 (RB12)
-  
-  // Update min/max for center analog sensor
-  if (centerVal < MinCenterC)
-  {
-    MinCenterC = centerVal;
-  }
-  if (centerVal > MaxCenterC)
-  {
-    MaxCenterC = centerVal;
-  }
-  
-  // Update min/max for left analog sensor
-  if (leftVal < MinLeftC)
-  {
-    MinLeftC = leftVal;
-  }
-  if (leftVal > MaxLeftC)
-  {
-    MaxLeftC = leftVal;
-  }
-  
-  // Update min/max for right analog sensor
-  if (rightVal < MinRightC)
-  {
-    MinRightC = rightVal;
-  }
-  if (rightVal > MaxRightC)
-  {
-    MaxRightC = rightVal;
-  }
+
+  if (centerVal > 0u && centerVal < MinCenterC) MinCenterC = centerVal;
+  if (centerVal > MaxCenterC)                   MaxCenterC = centerVal;
+
+  if (leftVal > 0u && leftVal < MinLeftC)   MinLeftC = leftVal;
+  if (leftVal > MaxLeftC)                   MaxLeftC = leftVal;
+
+  if (rightVal > 0u && rightVal < MinRightC) MinRightC = rightVal;
+  if (rightVal > MaxRightC)                  MaxRightC = rightVal;
   
   // Read digital sensors
   leftTState = ReadLeftTapeInputPin();
   rightTState = ReadRightTapeInputPin();
+  
+  // Compute boolean tape states using fixed threshold
+  centerOnTape = IsOnTape(centerVal, MinCenterC, MaxCenterC);
+  leftOnTape   = IsOnTape(leftVal, MinLeftC, MaxLeftC);
+  rightOnTape  = IsOnTape(rightVal, MinRightC, MaxRightC);
 }
 
 /****************************************************************************
@@ -414,29 +581,65 @@ static void ReadTapeSensors(void)
 ****************************************************************************/
 static void CheckFollowConditions(void)
 {
-  uint32_t LeftThreshC  = (MaxLeftC  - MinLeftC)  / THRESH_DIV + MinLeftC;
-  uint32_t RightThreshC = (MaxRightC - MinRightC) / THRESH_DIV + MinRightC;
+  // Priority order: T > left > right
+  // Mutually exclusive — only the highest-priority match fires
 
-  // T-intersection: both outer analog sensors see tape
-  if (leftVal > LeftThreshC && rightVal > RightThreshC)
+  if (leftTState && rightTState)
   {
-    if (!intersectionPublished)
+    // T-intersection: both digital sensors on tape
+    if (!tIntersectionPublished)
     {
       DB_printf("TapeFollow: T-Intersection detected\r\n");
       ES_Event_t ev;
       ev.EventType  = ES_INTERSECTION_DETECTED;
       ev.EventParam = 0;
       PostMainLogicFSM(ev);
-      intersectionPublished = true;
+      tIntersectionPublished = true;
     }
+    // Reset lower-priority flags so they re-arm after T clears
+    leftTurnPublished  = false;
+    rightTurnPublished = false;
+  }
+  else if (leftTState && centerOnTape)
+  {
+    // Left turn intersection
+    if (!leftTurnPublished)
+    {
+      DB_printf("TapeFollow: Left turn intersection detected\r\n");
+      ES_Event_t ev;
+      ev.EventType  = ES_INTERSECTION_DETECTED;
+      ev.EventParam = 1;
+      PostMainLogicFSM(ev);
+      leftTurnPublished = true;
+    }
+    tIntersectionPublished = false;
+    rightTurnPublished     = false;
+  }
+  else if (rightTState && centerOnTape)
+  {
+    // Right turn intersection
+    if (!rightTurnPublished)
+    {
+      DB_printf("TapeFollow: Right turn intersection detected\r\n");
+      ES_Event_t ev;
+      ev.EventType  = ES_INTERSECTION_DETECTED;
+      ev.EventParam = 2;
+      PostMainLogicFSM(ev);
+      rightTurnPublished = true;
+    }
+    tIntersectionPublished = false;
+    leftTurnPublished      = false;
   }
   else
   {
-    intersectionPublished = false;
+    // No intersection — reset all flags so next detection fires fresh
+    tIntersectionPublished = false;
+    leftTurnPublished      = false;
+    rightTurnPublished     = false;
   }
 
-  // Line lost: center sensor below threshold for N consecutive cycles
-  if (centerVal < (MinCenterC + (MaxCenterC - MinCenterC) / THRESH_DIV))
+  // Line lost: center off tape for N consecutive cycles
+  if (!centerOnTape)
   {
     lineLostCount++;
     if (lineLostCount >= LINE_LOST_THRESHOLD)
@@ -453,6 +656,150 @@ static void CheckFollowConditions(void)
   {
     lineLostCount = 0;
   }
+}
+
+/***************************************************************************
+ Public helper functions
+ ***************************************************************************/
+
+/****************************************************************************
+ Function
+     TapeFollow_StartRotateSearch
+
+ Parameters
+     bool clockwise - true for CW rotation, false for CCW
+
+ Returns
+     None
+
+ Description
+     Begins rotating CW or CCW at low speed until center sensor detects tape.
+     When tape is found, posts ES_TAPE_FOUND to MainLogicFSM and stops rotation.
+     Caller should transition their state to wait for ES_TAPE_FOUND.
+
+ Author
+     Team, 03/01/26
+****************************************************************************/
+void TapeFollow_StartRotateSearch(bool clockwise)
+{
+  lastError     = 0;
+  lineLostCount = 0;
+  
+  // Set rotation direction: CW = left forward, right reverse
+  uint8_t leftDir  = clockwise ? FORWARD : REVERSE;
+  uint8_t rightDir = clockwise ? REVERSE : FORWARD;
+  DCMotor_SetSpeed_mm_s(SEARCH_ROTATE_SPEED_MM_S, SEARCH_ROTATE_SPEED_MM_S,
+                        leftDir, rightDir);
+  
+  ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, TAPE_FOLLOW_INTERVAL_MS);
+  CurrentState = TapeSearching;
+  
+  DB_printf("TapeFollow: Rotate search started clockwise=%d\r\n", clockwise ? 1 : 0);
+}
+
+/****************************************************************************
+ Function
+     TapeFollow_StartCalibrationRotate
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Begins a timed CW calibration rotation to build sensor min/max ranges.
+     Does NOT check for tape — purely for ADC range calibration.
+     After CALIB_ROTATION_MS, posts ES_CALIB_DONE to MainLogicFSM and stops.
+
+ Author
+     Team, 03/01/26
+****************************************************************************/
+void TapeFollow_StartCalibrationRotate(void)
+{
+  lastError              = 0;
+  lineLostCount          = 0;
+  tIntersectionPublished = false;
+  leftTurnPublished      = false;
+  rightTurnPublished     = false;
+
+  // Rotate CW: left forward, right reverse
+  DCMotor_SetSpeed_mm_s(SEARCH_ROTATE_SPEED_MM_S, SEARCH_ROTATE_SPEED_MM_S,
+                        FORWARD, REVERSE);
+
+  // Use a one-shot timer for total calibration duration
+  ES_Timer_InitTimer(CALIB_TIMER, CALIB_ROTATION_MS);
+
+  // Also start tape follow timer for sensor polling during rotation
+  ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, TAPE_FOLLOW_INTERVAL_MS);
+
+  CurrentState = TapeCalibrating;
+
+  DB_printf("TapeFollow: Calibration rotation started (%u ms)\r\n",
+            (unsigned)CALIB_ROTATION_MS);
+}
+
+/****************************************************************************
+ Function
+     TapeFollow_StartDriveSearch
+
+ Parameters
+     bool forward - true for forward drive, false for backward
+
+ Returns
+     None
+
+ Description
+     Drives forward (or backward) at a fixed speed until center sensor
+     detects tape, then posts ES_TAPE_FOUND to MainLogicFSM and stops.
+
+ Author
+     Team, 03/01/26
+****************************************************************************/
+void TapeFollow_StartDriveSearch(bool forward)
+{
+  lastError     = 0;
+  lineLostCount = 0;
+  
+  uint8_t dir = forward ? FORWARD : REVERSE;
+  DCMotor_SetSpeed_mm_s(SEARCH_ROTATE_SPEED_MM_S, SEARCH_ROTATE_SPEED_MM_S,
+                        dir, dir);
+  
+  ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, TAPE_FOLLOW_INTERVAL_MS);
+  CurrentState = TapeSearching;
+  
+  DB_printf("TapeFollow: Drive search started forward=%d\r\n", forward ? 1 : 0);
+}
+
+/****************************************************************************
+ Function
+     TapeFollow_StartReverse
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Starts reverse line following using the same PD control as forward
+     following but with both motors in REVERSE direction.
+
+ Author
+     Team, 03/01/26
+****************************************************************************/
+void TapeFollow_StartReverse(void)
+{
+  lastError     = 0;
+  lineLostCount = 0;
+  tIntersectionPublished = false;
+  leftTurnPublished      = false;
+  rightTurnPublished     = false;
+  
+  ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, TAPE_FOLLOW_INTERVAL_MS);
+  CurrentState = TapeFollowingR;
+  
+  DB_printf("TapeFollow: Reverse line following started\r\n");
 }
 
 /*------------------------------- Footnotes -------------------------------*/

@@ -47,6 +47,7 @@
 #include "MainLogicFSM.h"
 #include "DCMotorService.h"
 #include "SPILeaderFSM.h"
+#include "TapeFollowFSM.h"
 #include "CommonDefinitions.h"
 
 /*----------------------------- Module Defines ----------------------------*/
@@ -122,6 +123,17 @@ bool InitTestHarnessService0(uint8_t Priority)
   DB_printf( "i - Initialize all servos\r\n");
   DB_printf( "h - Display help\r\n");
   DB_printf( "================================================\r\n\n");
+  DB_printf("\r\n=== Field Test Event Injection Keys ===\r\n");
+  DB_printf("c - Inject ES_CALIB_DONE -> MainLogicFSM\r\n");
+  DB_printf("t - Inject ES_TAPE_FOUND -> MainLogicFSM\r\n");
+  DB_printf("0 - Inject T-intersection -> MainLogicFSM\r\n");
+  DB_printf("1 - Inject left intersection -> MainLogicFSM\r\n");
+  DB_printf("2 - Inject right intersection -> MainLogicFSM\r\n");
+  DB_printf("x - Inject ES_LINE_LOST -> MainLogicFSM\r\n");
+  DB_printf("q - Emergency stop -> TapeFollowFSM\r\n");
+  DB_printf("F - Start forward line follow -> TapeFollowFSM\r\n");
+  DB_printf("p - Print current MainLogicFSM state number\r\n");
+  DB_printf("========================================\r\n\n");
 
   /********************************************
    in here you write your initialization code
@@ -328,7 +340,105 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
           DB_printf("i - Initialize all servos\r\n");
           DB_printf("h - Display this help\r\n");
           DB_printf("================================================\r\n\n");
+          DB_printf("\r\n=== Field Test Event Injection Keys ===\r\n");
+          DB_printf("c - Inject ES_CALIB_DONE -> MainLogicFSM\r\n");
+          DB_printf("t - Inject ES_TAPE_FOUND -> MainLogicFSM\r\n");
+          DB_printf("0 - Inject T-intersection -> MainLogicFSM\r\n");
+          DB_printf("1 - Inject left intersection -> MainLogicFSM\r\n");
+          DB_printf("2 - Inject right intersection -> MainLogicFSM\r\n");
+          DB_printf("x - Inject ES_LINE_LOST -> MainLogicFSM\r\n");
+          DB_printf("q - Emergency stop -> TapeFollowFSM\r\n");
+          DB_printf("F - Start forward line follow -> TapeFollowFSM\r\n");
+          DB_printf("p - Print current MainLogicFSM state number\r\n");
+          DB_printf("========================================\r\n\n");
           break;
+
+        case 'c':  // Inject ES_CALIB_DONE -> MainLogicFSM
+        {
+          ES_Event_t ev;
+          ev.EventType  = ES_CALIB_DONE;
+          ev.EventParam = 0;
+          PostMainLogicFSM(ev);
+          DB_printf("Injected ES_CALIB_DONE -> MainLogicFSM\r\n");
+        }
+        break;
+
+        case 't':  // Inject ES_TAPE_FOUND -> MainLogicFSM
+        {
+          ES_Event_t ev;
+          ev.EventType  = ES_TAPE_FOUND;
+          ev.EventParam = 0;
+          PostMainLogicFSM(ev);
+          DB_printf("Injected ES_TAPE_FOUND -> MainLogicFSM\r\n");
+        }
+        break;
+
+        case '0':  // Inject T-intersection -> MainLogicFSM
+        {
+          ES_Event_t ev;
+          ev.EventType  = ES_INTERSECTION_DETECTED;
+          ev.EventParam = 0;
+          PostMainLogicFSM(ev);
+          DB_printf("Injected ES_INTERSECTION_DETECTED param=0 (T) -> MainLogicFSM\r\n");
+        }
+        break;
+
+        case '1':  // Inject left turn intersection -> MainLogicFSM
+        {
+          ES_Event_t ev;
+          ev.EventType  = ES_INTERSECTION_DETECTED;
+          ev.EventParam = 1;
+          PostMainLogicFSM(ev);
+          DB_printf("Injected ES_INTERSECTION_DETECTED param=1 (left) -> MainLogicFSM\r\n");
+        }
+        break;
+
+        case '2':  // Inject right turn intersection -> MainLogicFSM
+        {
+          ES_Event_t ev;
+          ev.EventType  = ES_INTERSECTION_DETECTED;
+          ev.EventParam = 2;
+          PostMainLogicFSM(ev);
+          DB_printf("Injected ES_INTERSECTION_DETECTED param=2 (right) -> MainLogicFSM\r\n");
+        }
+        break;
+
+        case 'x':  // Inject ES_LINE_LOST -> MainLogicFSM
+        {
+          ES_Event_t ev;
+          ev.EventType  = ES_LINE_LOST;
+          ev.EventParam = 0;
+          PostMainLogicFSM(ev);
+          DB_printf("Injected ES_LINE_LOST -> MainLogicFSM\r\n");
+        }
+        break;
+
+        case 'q':  // Emergency stop -> TapeFollowFSM
+        {
+          ES_Event_t ev;
+          ev.EventType  = ES_STOP_LINE_FOLLOW;
+          ev.EventParam = 0;
+          PostTapeFollowFSM(ev);
+          DB_printf("Injected ES_STOP_LINE_FOLLOW -> TapeFollowFSM (emergency stop)\r\n");
+        }
+        break;
+
+        case 'F':  // Manually start forward line follow
+        {
+          ES_Event_t ev;
+          ev.EventType  = ES_START_LINE_FOLLOW;
+          ev.EventParam = 0;
+          PostTapeFollowFSM(ev);
+          DB_printf("Injected ES_START_LINE_FOLLOW -> TapeFollowFSM\r\n");
+        }
+        break;
+
+        case 'p':  // Print current MainLogicFSM state for debugging
+        {
+          DB_printf("MainLogicFSM state = %d\r\n",
+                    (int)QueryMainLogicFSM());
+        }
+        break;
       }
 
       // If the key is 'b''g''r''l', post an ES_BEACON_DETECTED event with the key as a parameter

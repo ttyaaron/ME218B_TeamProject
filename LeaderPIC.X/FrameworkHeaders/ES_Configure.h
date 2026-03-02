@@ -270,7 +270,9 @@ typedef enum
   ES_START_LINE_FOLLOW,      /* Command to start line following */
   ES_STOP_LINE_FOLLOW,       /* Command to stop line following */
   ES_LINE_LOST,              /* Tape line has been lost */
-  ES_INTERSECTION_DETECTED   /* T-intersection detected */
+  ES_INTERSECTION_DETECTED,  /* T-intersection detected */
+  ES_TAPE_FOUND,             /* Tape found during search */
+  ES_CALIB_DONE              /* Calibration rotation complete */
 }ES_EventType_t;
 
 /****************************************************************************/
@@ -326,8 +328,8 @@ typedef enum
 #define TIMER7_RESP_FUNC PostMainLogicFSM
 #define TIMER8_RESP_FUNC PostEncoderTestService
 #define TIMER9_RESP_FUNC PostTapeFollowFSM
-#define TIMER10_RESP_FUNC TIMER_UNUSED
-#define TIMER11_RESP_FUNC TIMER_UNUSED
+#define TIMER10_RESP_FUNC PostTapeFollowFSM
+#define TIMER11_RESP_FUNC PostMainLogicFSM
 #define TIMER12_RESP_FUNC TIMER_UNUSED
 #define TIMER13_RESP_FUNC TIMER_UNUSED
 #define TIMER14_RESP_FUNC TIMER_UNUSED
@@ -351,6 +353,8 @@ typedef enum
 #define DRIVE_TO_BEACON_TIMER 7
 #define ENCODER_PRINT_TIMER 8
 #define TAPE_FOLLOW_TIMER 9
+#define CALIB_TIMER 10
+#define ROTATE_SAFETY_TIMER 11
 
 
 #endif /* ES_CONFIGURE_H */

@@ -26,6 +26,9 @@ typedef enum
 {
   Stopped,
   SimpleMoving,
+  CalibrationRotating,
+  TapeSearchingRotate,
+  FollowingForward,
   SearchingForTape,
   AligningWithBeacon,
   DrivingToBeacon

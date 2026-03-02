@@ -88,6 +88,40 @@ extern const uint8_t validCommandBytes[21];
 #define WHEEL_DIAMETER_MM       100u
 #define WHEEL_CIRCUMFERENCE_MM  314u        // diameter * pi, rounded to nearest mm
 
+// Robot turning geometry
+// Track width = distance between left and right wheel contact points
+#define TRACK_WIDTH_MM          250u
+
+// Turning circumference = pi * TRACK_WIDTH_MM
+// Each wheel travels this arc for a full 360-degree point turn
+// Using integer approximation: 314/100 * 250 = 785mm for full circle
+#define TURN_CIRC_MM            785u    // pi * TRACK_WIDTH_MM, integer mm
+
+// Speed used for all open-loop rotation maneuvers
+// Lower = more accurate (less overshoot from motor inertia)
+// Must match what DCMotor_SetSpeed_mm_s can reliably track
+#define ROTATE_SPEED_MM_S       150u
+
+// Arc distance each wheel must travel for a point turn at given angle.
+// arc_mm = (angle_deg / 360) * TURN_CIRC_MM
+// TURN_CIRC_MM = pi * TRACK_WIDTH_MM = 785mm
+// 90 deg: 90 * 785 / 360 = 196mm
+// 45 deg: 45 * 785 / 360 =  98mm
+#define ROTATE_ARC_MM(angle_deg)  ((uint32_t)(angle_deg) * TURN_CIRC_MM / 360u)
+
+// Odometer polling interval during rotation (ms)
+// Short enough to stop promptly, long enough not to flood the event queue
+#define ROTATE_POLL_INTERVAL_MS   10u
+
+// Safety timeout: if odometer never reaches target (encoder failure),
+// stop after this many ms. Set generously above worst-case travel time.
+// At 150 mm/s, 196mm takes ~1308ms. Safety margin = 2x.
+#define ROTATE_SAFETY_TIMEOUT_MS  3000u
+
+// Old time-based rotation macro - replaced by odometer-based approach
+// #define ROTATE_TIME_MS(angle_deg) \
+//   ((uint32_t)(angle_deg) * TURN_CIRC_MM * 1000u / (360u * ROTATE_SPEED_MM_S))
+
 // ----------------------------------------------------------------
 // Layer 2: Derived conversion constants (do not edit — change Layer 1)
 //
@@ -140,8 +174,9 @@ extern const uint8_t validCommandBytes[21];
 #define FULL_SPEED 2000   // 100% duty cycle
 
 // Timer Durations (ms)
-#define SIMPLE_MOVE_90_MS 1500
-#define SIMPLE_MOVE_45_MS 750
+// Old hardcoded rotation times - replaced by geometry-based ROTATE_TIME_MS macro
+// #define SIMPLE_MOVE_90_MS 1500
+// #define SIMPLE_MOVE_45_MS 750
 #define BEACON_ALIGN_MS 5000
 #define TAPE_SEARCH_MS 10000
 #define DRIVE_TO_BEACON_MS 3000
