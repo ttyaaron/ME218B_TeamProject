@@ -30,10 +30,10 @@
 
 /*----------------------------- Module Defines ----------------------------*/
 #define TAPE_FOLLOW_INTERVAL_MS   20u     // sensor poll rate: 50 Hz
-#define BASE_FOLLOW_SPEED_MM_S    200u    // straight-line speed target in mm/s
-#define LINE_KP                   0.08f   // proportional gain, tune upward from here
+#define BASE_FOLLOW_SPEED_MM_S    100u    // straight-line speed target in mm/s
+#define LINE_KP                   5.0f   // proportional gain, tune upward from here
 #define LINE_KD                   0.15f   // derivative gain, tune after KP settled
-#define LINE_LOST_THRESHOLD       5u      // consecutive no-tape cycles before ES_LINE_LOST
+#define LINE_LOST_THRESHOLD       50u      // consecutive no-tape cycles before ES_LINE_LOST
 #define TAPE_ANALOG_PINS          (BIT12HI | BIT11HI | BIT5HI)  // AN12,11,5
 #define THRESH_DIV                2       // Threshold divisor for tape detection
 
@@ -45,7 +45,7 @@
 // Duration of startup calibration rotation in milliseconds.
 // Robot sweeps sensors over floor (and hopefully tape) to build min/max range.
 // At SEARCH_ROTATE_SPEED_MM_S, this gives roughly 200-270 degrees of rotation.
-#define CALIB_ROTATION_MS         2000u
+#define CALIB_ROTATION_MS         5000u
 
 /*---------------------------- Module Functions ---------------------------*/
 /* prototypes for private functions for this machine */

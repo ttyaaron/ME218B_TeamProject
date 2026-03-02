@@ -387,8 +387,13 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
           stopEv.EventType  = ES_STOP_LINE_FOLLOW;
           stopEv.EventParam = 0;
           PostTapeFollowFSM(stopEv);
-          RotateCCW90();
-          CurrentState = SimpleMoving;
+          // Post the rotating event to the same state so the robot will not be stopped by 
+          // TapeFollowFSM until the rotation is done. 
+          ES_Event_t rotateEv;
+          rotateEv.EventType  = ES_COMMAND_RETRIEVED;
+          rotateEv.EventParam = CMD_ROTATE_CW_90;
+          PostMainLogicFSM(rotateEv);
+          CurrentState = Stopped;
         }
         // Left (param=1) or right (param=2) intersections: ignore, keep following
       }
