@@ -48,21 +48,30 @@
 #include "dbprintf.h"
 
 /*----------------------------- Module Defines ----------------------------*/
-// Set to 1 to run workstation sensor-only test (motors will not move, only print)
-// Set to 0 for field test with full sequence
-#define STAGE1_SENSOR_TEST_ONLY 1
 
 /*---------------------------- Module Functions ---------------------------*/
-static void RotateCW90(void);
-static void RotateCW45(void);
-static void RotateCCW90(void);
-static void RotateCCW45(void);
-static void DriveForwardHalf(void);
-static void DriveForwardFull(void);
-static void DriveReverseHalf(void);
-static void DriveReverseFull(void);
-static void SearchForTape(void);
+// Top-level behaviors
+static void Behavior_Calibrate(void);
+static void Behavior_SearchTapeCCW(void);
+static void Behavior_SearchBeacon(void);
+static void Behavior_IndicateSide(void);
+static void Behavior_TapeFollowToT(void);
+static void Behavior_MoveForward110mm(void);
+static void Behavior_RotateCW90(void);
+static void Behavior_MoveBackwardToNode(void);
+static void Behavior_BallCollection(void);
+
+// Ball collection sub-behaviors
+static void BallCollection_Dock(void);
+static void BallCollection_PushAndScoop(void);
+static void BallCollection_Retract(void);
+
+// Private helpers
+static void AdvanceMainSequence(void);
+static void AdvanceCollectionSequence(void);
+static void StartRotation(uint8_t leftDir, uint8_t rightDir, uint32_t targetArc_mm);
 static void AlignWithBeacon(void);
+static void SearchForTape(void);
 
 /*---------------------------- Module Variables ---------------------------*/
 static MainLogicState_t CurrentState;
@@ -73,47 +82,42 @@ static uint32_t RotateStartDistLeft_mm  = 0u;
 static uint32_t RotateStartDistRight_mm = 0u;
 static uint32_t RotateTargetArc_mm      = 0u;
 
+// Behavior function pointer type.
+// Each behavior starts one async action and returns immediately.
+// The action must eventually post ES_BEHAVIOR_COMPLETE to MainLogicFSM.
+typedef void (*BehaviorFn_t)(void);
+
+// ---------------------------------------------------------------
+// TOP-LEVEL GAME SEQUENCE
+// To change the game strategy: reorder, add, or comment out entries.
+// ---------------------------------------------------------------
+static const BehaviorFn_t BehaviorSequence[] = {
+  Behavior_Calibrate,
+  Behavior_SearchTapeCCW,
+  Behavior_SearchBeacon,
+  Behavior_IndicateSide,
+  Behavior_TapeFollowToT,
+  Behavior_MoveForward110mm,
+  Behavior_RotateCW90,
+  Behavior_MoveBackwardToNode,
+  Behavior_BallCollection,
+};
+#define NUM_BEHAVIORS (sizeof(BehaviorSequence) / sizeof(BehaviorSequence[0]))
+static uint8_t BehaviorIdx = 0;
+
+// ---------------------------------------------------------------
+// BALL COLLECTION SUB-SEQUENCE
+// Add, remove, or reorder entries to change collection steps.
+// ---------------------------------------------------------------
+static const BehaviorFn_t CollectionSequence[] = {
+  BallCollection_Dock,
+  BallCollection_PushAndScoop,
+  BallCollection_Retract,
+};
+#define NUM_COLLECTION_BEHAVIORS \
+  (sizeof(CollectionSequence) / sizeof(CollectionSequence[0]))
+static uint8_t CollectionIdx = 0;
 /*------------------------------ Module Code ------------------------------*/
-/****************************************************************************
- Function
-     StartRotation
-
- Parameters
-     uint8_t leftDir, uint8_t rightDir - FORWARD or REVERSE for each wheel
-     uint32_t targetArc_mm - arc distance each wheel must travel
-
- Returns
-     None
-
- Description
-     Starts a point turn at ROTATE_SPEED_MM_S and records odometer start values.
-
- Author
-     Team, 03/01/26
-****************************************************************************/
-static void StartRotation(uint8_t leftDir, uint8_t rightDir, uint32_t targetArc_mm)
-{
-  // Record odometer baseline before motion begins
-  RotateStartDistLeft_mm  = ICCountToDistance_mm(DCMotor_GetICEventCount(LEFT_MOTOR));
-  RotateStartDistRight_mm = ICCountToDistance_mm(DCMotor_GetICEventCount(RIGHT_MOTOR));
-  RotateTargetArc_mm      = targetArc_mm;
-
-  // Start motors
-  DCMotor_SetSpeed_mm_s(ROTATE_SPEED_MM_S, ROTATE_SPEED_MM_S, leftDir, rightDir);
-
-  // Start short polling timer to check odometer
-  ES_Timer_InitTimer(SIMPLE_MOVE_TIMER, ROTATE_POLL_INTERVAL_MS);
-
-  // Start safety timeout in case encoders fail
-  ES_Timer_InitTimer(ROTATE_SAFETY_TIMER, ROTATE_SAFETY_TIMEOUT_MS);
-
-  uint32_t arc_h = targetArc_mm;  // already integer mm, no float needed
-  DB_printf("StartRotation: target=%u mm L=%u R=%u\r\n",
-            (unsigned)arc_h,
-            (unsigned)RotateStartDistLeft_mm,
-            (unsigned)RotateStartDistRight_mm);
-}
-
 /****************************************************************************
  Function
      InitMainLogicFSM
@@ -145,7 +149,7 @@ bool InitMainLogicFSM(uint8_t Priority)
   InitCommandSPIPins();
   InitDebugOutputPin();
 
-  CurrentState = Stopped;
+  CurrentState = ML_Running;
 
   // Stop motors on startup
   MotorCommandWrapper(0, 0, FORWARD, FORWARD);
@@ -204,275 +208,57 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
 
   switch (CurrentState)
   {
-    case CalibrationRotating:
-      if (ThisEvent.EventType == ES_CALIB_DONE)
-      {
-        DB_printf("MainLogic: Step 2 - Rotate search for tape\r\n");
-        TapeFollow_StartRotateSearch(true);
-        CurrentState = TapeSearchingRotate;
-      }
-      break;
-
-    case Stopped:
+    case ML_Running:
+    {
       if (ThisEvent.EventType == ES_INIT)
       {
-#if STAGE1_SENSOR_TEST_ONLY
-        DB_printf("MainLogic: STAGE 1 sensor test — motors zeroed\r\n");
-        TapeFollow_StartCalibrationRotate();
-        DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);  // override: no motion
-        CurrentState = Stopped;
-#else
-        DB_printf("MainLogic: Step 1 - Calibration rotation\r\n");
-        TapeFollow_StartCalibrationRotate();
-        CurrentState = CalibrationRotating;
-#endif
-        break;
+        BehaviorIdx = 0;
+        DB_printf("MainLogic: Starting sequence, behavior 0\r\n");
+        BehaviorSequence[0]();
       }
-      if (ThisEvent.EventType == ES_COMMAND_RETRIEVED)
+      else if (ThisEvent.EventType == ES_BEHAVIOR_COMPLETE)
       {
-        switch (ThisEvent.EventParam)
-        {
-          case CMD_STOP:
-            MotorCommandWrapper(0, 0, FORWARD, FORWARD);
-            break;
-          case CMD_ROTATE_CW_90:
-            DB_printf("State: Rotating CW 90 deg\r\n");
-
-            RotateCW90();
-            CurrentState = SimpleMoving;
-            break;
-          case CMD_ROTATE_CW_45:
-            DB_printf("State:  Rotating CW 45 deg\r\n");
-
-            RotateCW45();
-            CurrentState = SimpleMoving;
-            break;
-          case CMD_ROTATE_CCW_90:
-              DB_printf("State: Rotating CCW 90 deg\r\n");
-            RotateCCW90();
-            CurrentState = SimpleMoving;
-            break;
-          case CMD_ROTATE_CCW_45:
-              DB_printf("State: Rotating CCW 45 deg\r\n");
-            RotateCCW45();
-            CurrentState = SimpleMoving;
-            break;
-          case CMD_DRIVE_FWD_HALF:
-              DB_printf("State: drive forwards half speed\r\n");
-            DriveForwardHalf();
-            CurrentState = SimpleMoving;
-            break;
-          case CMD_DRIVE_FWD_FULL:
-              DB_printf("State: drive forwards full speed\r\n");
-            DriveForwardFull();
-            CurrentState = SimpleMoving;
-            break;
-          case CMD_DRIVE_REV_HALF:
-              DB_printf("State: drive reverse half speed\r\n");
-            DriveReverseHalf();
-            CurrentState = SimpleMoving;
-            break;
-          case CMD_DRIVE_REV_FULL:
-              DB_printf("State: drive reverse full speed\r\n");
-            DriveReverseFull();
-            CurrentState = SimpleMoving;
-            break;
-          case CMD_ALIGN_BEACON:
-              DB_printf("State: aligning with beacon\r\n");
-            // Check if a specific beacon is already locked
-            BeaconState_t beaconState = QueryBeaconDetectFSM();
-            if (beaconState == BeaconLocked) {
-              // Beacon already locked - post event immediately with beacon ID
-              ES_Event_t BeaconEvent;
-              BeaconEvent.EventType = ES_BEACON_DETECTED;
-              BeaconEvent.EventParam = QueryLockedBeaconId();
-              PostMainLogicFSM(BeaconEvent);
-            }
-            else {
-              // No beacon locked yet (NoSignal or SignalDetected) - start rotating to search
-              AlignWithBeacon();
-            }
-            CurrentState = AligningWithBeacon;
-            break;
-          case CMD_SEARCH_TAPE:
-              DB_printf("State: searching for tape \r\n");
-            // If already HIGH, the ES_TAPE_DETECTED event will be posted immediately
-            if( ReadTapeSensorPin() == true ) {
-              ES_Event_t TapeEvent;
-              TapeEvent.EventType = ES_TAPE_DETECTED;
-              TapeEvent.EventParam = 0;
-              PostMainLogicFSM(TapeEvent);
-            }
-            else{
-            // If not detected, act to look for line detect signal
-              SearchForTape();
-            }
-            CurrentState = SearchingForTape;
-            break;
-          default:
-            break;
-        }
+        AdvanceMainSequence();
       }
-      break;
-
-    case SimpleMoving:
-    {
-      if (ThisEvent.EventType == ES_TIMEOUT &&
-          ThisEvent.EventParam == SIMPLE_MOVE_TIMER)
+      else if (ThisEvent.EventType == ES_CALIB_DONE)
       {
-        // Odometer poll: check how far each wheel has traveled since rotation start
-        uint32_t currentLeft  = ICCountToDistance_mm(DCMotor_GetICEventCount(LEFT_MOTOR));
-        uint32_t currentRight = ICCountToDistance_mm(DCMotor_GetICEventCount(RIGHT_MOTOR));
-
-        uint32_t deltaLeft  = currentLeft  - RotateStartDistLeft_mm;
-        uint32_t deltaRight = currentRight - RotateStartDistRight_mm;
-        uint32_t avgDelta   = (deltaLeft + deltaRight) / 2u;
-
-        DB_printf("Rot poll: L=%u R=%u avg=%u target=%u\r\n",
-                  (unsigned)deltaLeft, (unsigned)deltaRight,
-                  (unsigned)avgDelta, (unsigned)RotateTargetArc_mm);
-
-        if (avgDelta >= RotateTargetArc_mm)
-        {
-          // Target arc reached — stop rotation
-          DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
-          ES_Timer_StopTimer(ROTATE_SAFETY_TIMER);
-          DB_printf("MainLogic: Rotation done (odometer), starting forward line follow\r\n");
-          ES_Event_t ev;
-          ev.EventType  = ES_START_LINE_FOLLOW;
-          ev.EventParam = 0;
-          PostTapeFollowFSM(ev);
-          CurrentState = FollowingForward;
-        }
-        else
-        {
-          // Not done yet — poll again
-          ES_Timer_InitTimer(SIMPLE_MOVE_TIMER, ROTATE_POLL_INTERVAL_MS);
-        }
+        DB_printf("MainLogic: Calibration done\r\n");
+        AdvanceMainSequence();
       }
-      else if (ThisEvent.EventType == ES_TIMEOUT &&
-               ThisEvent.EventParam == ROTATE_SAFETY_TIMER)
+      else if (ThisEvent.EventType == ES_TAPE_FOUND)
       {
-        // Safety fallback: encoder may have failed, stop anyway
+        DB_printf("MainLogic: Tape found\r\n");
+        AdvanceMainSequence();
+      }
+      else if (ThisEvent.EventType == ES_BEACON_DETECTED)
+      {
+        // Only relevant during Behavior_SearchBeacon.
+        // Record the beacon and complete the behavior.
+        DB_printf("MainLogic: Beacon detected during search, id=%c\r\n",
+                  (char)ThisEvent.EventParam);
+        // Stop navigation rotation
         DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
-        DB_printf("MainLogic: Rotation safety timeout fired — stopping\r\n");
-        ES_Event_t ev;
-        ev.EventType  = ES_START_LINE_FOLLOW;
-        ev.EventParam = 0;
-        PostTapeFollowFSM(ev);
-        CurrentState = FollowingForward;
+        // Advance sequence
+        AdvanceMainSequence();
       }
     }
     break;
 
-    case TapeSearchingRotate:
-      if (ThisEvent.EventType == ES_TAPE_FOUND)
+    case ML_BallCollecting:
+    {
+      if (ThisEvent.EventType == ES_BEHAVIOR_COMPLETE)
       {
-        DB_printf("MainLogic: Step 3 - Forward line follow\r\n");
-        ES_Event_t ev;
-        ev.EventType  = ES_START_LINE_FOLLOW;
-        ev.EventParam = 0;
-        PostTapeFollowFSM(ev);
-        CurrentState = FollowingForward;
+        AdvanceCollectionSequence();
       }
+    }
+    break;
+
+    case ML_Done:
+      // Sequence complete — do nothing
       break;
 
-    case FollowingForward:
-      if (ThisEvent.EventType == ES_INTERSECTION_DETECTED)
-      {
-        if (ThisEvent.EventParam == 0)  // T-intersection only
-        {
-          DB_printf("MainLogic: Step 4 - T-intersection, rotating CW 90\r\n");
-          ES_Event_t stopEv;
-          stopEv.EventType  = ES_STOP_LINE_FOLLOW;
-          stopEv.EventParam = 0;
-          PostTapeFollowFSM(stopEv);
-          // Post the rotating event to the same state so the robot will not be stopped by 
-          // TapeFollowFSM until the rotation is done. 
-          ES_Event_t rotateEv;
-          rotateEv.EventType  = ES_COMMAND_RETRIEVED;
-          rotateEv.EventParam = CMD_ROTATE_CW_90;
-          PostMainLogicFSM(rotateEv);
-          CurrentState = Stopped;
-        }
-        // Left (param=1) or right (param=2) intersections: ignore, keep following
-      }
-      else if (ThisEvent.EventType == ES_LINE_LOST)
-      {
-        DB_printf("MainLogic: Step 6 - Line lost, stopping\r\n");
-        ES_Event_t stopEv;
-        stopEv.EventType  = ES_STOP_LINE_FOLLOW;
-        stopEv.EventParam = 0;
-        PostTapeFollowFSM(stopEv);
-        CurrentState = Stopped;
-      }
-      break;
-
-    case SearchingForTape:
-      if (ThisEvent.EventType == ES_TAPE_DETECTED) // detected tape
-      {
-          DB_printf("Tape detected\r\n");
-        MotorCommandWrapper(0, 0, FORWARD, FORWARD);
-        CurrentState = Stopped;
-      }
-      else if (ThisEvent.EventType == ES_TIMEOUT &&
-               ThisEvent.EventParam == TAPE_SEARCH_TIMER) // stop looking for tape after set time
-      {
-        MotorCommandWrapper(0, 0, FORWARD, FORWARD);
-        DB_printf("Tape Search Failed: Timeout");
-        CurrentState = Stopped;
-      }
-      else if (ThisEvent.EventType == ES_COMMAND_RETRIEVED)    // new command received while searching for tape
-      {
-        DB_printf("New command received while searching for tape\r\n");
-        CurrentState = Stopped;
-        PostMainLogicFSM(ThisEvent);
-      }
-      break;
-
-    case AligningWithBeacon:
-      if (ThisEvent.EventType == ES_BEACON_DETECTED) // found direction of beacon
-      {
-        DB_printf("Found beacon: driving towards it\r\n");
-        MotorCommandWrapper(QUARTER_SPEED, QUARTER_SPEED, FORWARD, FORWARD);
-        ES_Timer_InitTimer(DRIVE_TO_BEACON_TIMER, DRIVE_TO_BEACON_MS);
-        CurrentState = DrivingToBeacon;
-      }
-      /*
-      else if (ThisEvent.EventType == ES_TIMEOUT &&
-               ThisEvent.EventParam == BEACON_ALIGN_TIMER) // set time passed, stop aligning towards beacon
-      {
-        MotorCommandWrapper(0, 0, FORWARD, FORWARD);
-        DB_printf("Beacon Search Failed: Timeout");
-        CurrentState = Stopped;
-      } */
-      else if (ThisEvent.EventType == ES_COMMAND_RETRIEVED) // new command received while aligning for beacon
-      {
-        DB_printf("New command received while aligning with beacon\r\n");
-        CurrentState = Stopped;
-        PostMainLogicFSM(ThisEvent);
-      }
-      break;
-    
-    case DrivingToBeacon:
-      if (ThisEvent.EventType == ES_TIMEOUT &&
-          ThisEvent.EventParam == DRIVE_TO_BEACON_TIMER)
-      {
-        DB_printf("Some time passed. Search for beacon again. \r\n");
-        // Send align with beacon command in the same state
-        ES_Event_t BeaconCommand;
-        BeaconCommand.EventType = ES_COMMAND_RETRIEVED;
-        BeaconCommand.EventParam = CMD_ALIGN_BEACON;
-        PostMainLogicFSM(BeaconCommand);
-      }
-      else if (ThisEvent.EventType == ES_COMMAND_RETRIEVED)
-      {
-        DB_printf("New command received while driving to beacon\r\n");
-        MotorCommandWrapper(0, 0, FORWARD, FORWARD);
-        ES_Timer_StopTimer(DRIVE_TO_BEACON_TIMER);
-        CurrentState = Stopped;
-        PostMainLogicFSM(ThisEvent);
-      }
+    case ML_Stopped:
+      // Manual override or error state — do nothing until reset
       break;
 
     default:
@@ -506,7 +292,7 @@ MainLogicState_t QueryMainLogicFSM(void)
 /*----------------------------- Helper Functions --------------------------*/
 /****************************************************************************
  Function
-     RotateCW90
+     AdvanceMainSequence
 
  Parameters
      None
@@ -515,20 +301,29 @@ MainLogicState_t QueryMainLogicFSM(void)
      None
 
  Description
-     Open-loop 90 degree clockwise rotation.
+     Advances to the next behavior in the main sequence.
 
  Author
-     Tianyu, 02/03/26
+     Team, 03/02/26
 ****************************************************************************/
-static void RotateCW90(void)
+static void AdvanceMainSequence(void)
 {
-  DB_printf("RotateCW90: arc=%u mm\r\n", (unsigned)ROTATE_ARC_MM(90u));
-  StartRotation(FORWARD, REVERSE, ROTATE_ARC_MM(90u));
+  BehaviorIdx++;
+  if (BehaviorIdx < NUM_BEHAVIORS)
+  {
+    DB_printf("MainLogic: behavior %u starting\r\n", (unsigned)BehaviorIdx);
+    BehaviorSequence[BehaviorIdx]();
+  }
+  else
+  {
+    DB_printf("MainLogic: sequence complete\r\n");
+    CurrentState = ML_Done;
+  }
 }
 
 /****************************************************************************
  Function
-     RotateCW45
+     AdvanceCollectionSequence
 
  Parameters
      None
@@ -537,20 +332,32 @@ static void RotateCW90(void)
      None
 
  Description
-     Open-loop 45 degree clockwise rotation.
+     Advances to the next behavior in the ball collection sub-sequence.
 
  Author
-     Tianyu, 02/03/26
+     Team, 03/02/26
 ****************************************************************************/
-static void RotateCW45(void)
+static void AdvanceCollectionSequence(void)
 {
-  DB_printf("RotateCW45: arc=%u mm\r\n", (unsigned)ROTATE_ARC_MM(45u));
-  StartRotation(FORWARD, REVERSE, ROTATE_ARC_MM(45u));
+  CollectionIdx++;
+  if (CollectionIdx < NUM_COLLECTION_BEHAVIORS)
+  {
+    DB_printf("MainLogic: collection step %u starting\r\n",
+              (unsigned)CollectionIdx);
+    CollectionSequence[CollectionIdx]();
+  }
+  else
+  {
+    CollectionIdx = 0;
+    DB_printf("MainLogic: ball collection complete\r\n");
+    CurrentState = ML_Running;
+    AdvanceMainSequence();
+  }
 }
 
 /****************************************************************************
  Function
-     RotateCCW90
+     Behavior_Calibrate
 
  Parameters
      None
@@ -559,20 +366,22 @@ static void RotateCW45(void)
      None
 
  Description
-     Open-loop 90 degree counter-clockwise rotation.
+     Starts calibration rotation. ES_CALIB_DONE will advance the sequence.
 
  Author
-     Tianyu, 02/03/26
+     Team, 03/02/26
 ****************************************************************************/
-static void RotateCCW90(void)
+static void Behavior_Calibrate(void)
 {
-  DB_printf("RotateCCW90: arc=%u mm\r\n", (unsigned)ROTATE_ARC_MM(90u));
-  StartRotation(REVERSE, FORWARD, ROTATE_ARC_MM(90u));
+  DB_printf("Behavior: Calibrate\r\n");
+  TapeFollow_StartCalibrationRotate();
+  // ES_CALIB_DONE will be received by MainLogicFSM.
+  // It is mapped to AdvanceMainSequence() in ML_Running case.
 }
 
 /****************************************************************************
  Function
-     RotateCCW45
+     Behavior_SearchTapeCCW
 
  Parameters
      None
@@ -581,20 +390,21 @@ static void RotateCCW90(void)
      None
 
  Description
-     Open-loop 45 degree counter-clockwise rotation.
+     Starts CCW rotation to search for tape. ES_TAPE_FOUND will advance.
 
  Author
-     Tianyu, 02/03/26
+     Team, 03/02/26
 ****************************************************************************/
-static void RotateCCW45(void)
+static void Behavior_SearchTapeCCW(void)
 {
-  DB_printf("RotateCCW45: arc=%u mm\r\n", (unsigned)ROTATE_ARC_MM(45u));
-  StartRotation(REVERSE, FORWARD, ROTATE_ARC_MM(45u));
+  DB_printf("Behavior: SearchTapeCCW\r\n");
+  TapeFollow_StartRotateSearch(false);  // false = CCW
+  // TapeFollowFSM posts ES_TAPE_FOUND → MainLogicFSM
 }
 
 /****************************************************************************
  Function
-     DriveForwardHalf
+     Behavior_SearchBeacon
 
  Parameters
      None
@@ -603,22 +413,34 @@ static void RotateCCW45(void)
      None
 
  Description
-     Drive forward at half speed (open-loop).
+     Rotates CW to find beacon. ES_BEACON_DETECTED will advance.
 
  Author
-     Tianyu, 02/03/26
+     Team, 03/02/26
 ****************************************************************************/
-static void DriveForwardHalf(void)
+static void Behavior_SearchBeacon(void)
 {
-  // Pseudocode:
-  // MotorCommandWrapper(HALF_SPEED, HALF_SPEED, FORWARD, FORWARD)
-  // Optionally set SIMPLE_MOVE_TIMER
-  MotorCommandWrapper(HALF_SPEED, HALF_SPEED, FORWARD, FORWARD);
+  DB_printf("Behavior: SearchBeacon\r\n");
+  // Check if beacon already locked from calibration rotation
+  if (QueryBeaconDetectFSM() == BeaconLocked)
+  {
+    DB_printf("Behavior: Beacon already locked, id=%c\r\n",
+              QueryLockedBeaconId());
+    // Complete immediately
+    PostMainLogicFSM((ES_Event_t){ES_BEHAVIOR_COMPLETE, 0});
+    return;
+  }
+  // Otherwise start CW rotation and wait for ES_BEACON_DETECTED
+  // BeaconDetectFSM posts ES_BEACON_DETECTED
+  // ML_Running handles ES_BEACON_DETECTED → AdvanceMainSequence
+  DCMotor_SetSpeed_mm_s(ROTATE_SPEED_MM_S, ROTATE_SPEED_MM_S,
+                        FORWARD, REVERSE);
+  DB_printf("Behavior: Rotating CW to find beacon\r\n");
 }
 
 /****************************************************************************
  Function
-     DriveForwardFull
+     Behavior_IndicateSide
 
  Parameters
      None
@@ -627,22 +449,20 @@ static void DriveForwardHalf(void)
      None
 
  Description
-     Drive forward at full speed (open-loop).
+     Stub: indicates field side (blue/green).
 
  Author
-     Tianyu, 02/03/26
+     Team, 03/02/26
 ****************************************************************************/
-static void DriveForwardFull(void)
+static void Behavior_IndicateSide(void)
 {
-  // Pseudocode:
-  // MotorCommandWrapper(FULL_SPEED, FULL_SPEED, FORWARD, FORWARD)
-  // Optionally set SIMPLE_MOVE_TIMER
-  MotorCommandWrapper(FULL_SPEED, FULL_SPEED, FORWARD, FORWARD);
+  DB_printf("Behavior: IndicateSide (stub)\r\n");
+  PostMainLogicFSM((ES_Event_t){ES_BEHAVIOR_COMPLETE, 0});
 }
 
 /****************************************************************************
  Function
-     DriveReverseHalf
+     Behavior_TapeFollowToT
 
  Parameters
      None
@@ -651,22 +471,20 @@ static void DriveForwardFull(void)
      None
 
  Description
-     Drive reverse at half speed (open-loop).
+     Stub: follows tape until T-intersection.
 
  Author
-     Tianyu, 02/03/26
+     Team, 03/02/26
 ****************************************************************************/
-static void DriveReverseHalf(void)
+static void Behavior_TapeFollowToT(void)
 {
-  // Pseudocode:
-  // MotorCommandWrapper(HALF_SPEED, HALF_SPEED, REVERSE, REVERSE)
-  // Optionally set SIMPLE_MOVE_TIMER
-  MotorCommandWrapper(HALF_SPEED, HALF_SPEED, REVERSE, REVERSE);
+  DB_printf("Behavior: TapeFollowToT (stub)\r\n");
+  PostMainLogicFSM((ES_Event_t){ES_BEHAVIOR_COMPLETE, 0});
 }
 
 /****************************************************************************
  Function
-     DriveReverseFull
+     Behavior_MoveForward110mm
 
  Parameters
      None
@@ -675,17 +493,190 @@ static void DriveReverseHalf(void)
      None
 
  Description
-     Drive reverse at full speed (open-loop).
+     Stub: moves forward 110mm past T-intersection.
 
  Author
-     Tianyu, 02/03/26
+     Team, 03/02/26
 ****************************************************************************/
-static void DriveReverseFull(void)
+static void Behavior_MoveForward110mm(void)
 {
-  // Pseudocode:
-  // MotorCommandWrapper(FULL_SPEED, FULL_SPEED, REVERSE, REVERSE)
-  // Optionally set SIMPLE_MOVE_TIMER
-  MotorCommandWrapper(FULL_SPEED, FULL_SPEED, REVERSE, REVERSE);
+  DB_printf("Behavior: MoveForward110mm (stub)\r\n");
+  PostMainLogicFSM((ES_Event_t){ES_BEHAVIOR_COMPLETE, 0});
+}
+
+/****************************************************************************
+ Function
+     Behavior_RotateCW90
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Stub: rotates clockwise 90 degrees.
+
+ Author
+     Team, 03/02/26
+****************************************************************************/
+static void Behavior_RotateCW90(void)
+{
+  DB_printf("Behavior: RotateCW90 (stub)\r\n");
+  PostMainLogicFSM((ES_Event_t){ES_BEHAVIOR_COMPLETE, 0});
+}
+
+/****************************************************************************
+ Function
+     Behavior_MoveBackwardToNode
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Stub: moves backward to collection node.
+
+ Author
+     Team, 03/02/26
+****************************************************************************/
+static void Behavior_MoveBackwardToNode(void)
+{
+  DB_printf("Behavior: MoveBackwardToNode (stub)\r\n");
+  PostMainLogicFSM((ES_Event_t){ES_BEHAVIOR_COMPLETE, 0});
+}
+
+/****************************************************************************
+ Function
+     Behavior_BallCollection
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Starts ball collection sub-sequence.
+
+ Author
+     Team, 03/02/26
+****************************************************************************/
+static void Behavior_BallCollection(void)
+{
+  DB_printf("Behavior: BallCollection starting sub-sequence\r\n");
+  CollectionIdx = 0;
+  CurrentState = ML_BallCollecting;
+  CollectionSequence[0]();
+}
+
+/****************************************************************************
+ Function
+     BallCollection_Dock
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Stub: docks at collection station.
+
+ Author
+     Team, 03/02/26
+****************************************************************************/
+static void BallCollection_Dock(void)
+{
+  DB_printf("BallCollection: Dock (stub)\r\n");
+  PostMainLogicFSM((ES_Event_t){ES_BEHAVIOR_COMPLETE, 0});
+}
+
+/****************************************************************************
+ Function
+     BallCollection_PushAndScoop
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Stub: pushes and scoops balls.
+
+ Author
+     Team, 03/02/26
+****************************************************************************/
+static void BallCollection_PushAndScoop(void)
+{
+  DB_printf("BallCollection: PushAndScoop (stub)\r\n");
+  PostMainLogicFSM((ES_Event_t){ES_BEHAVIOR_COMPLETE, 0});
+}
+
+/****************************************************************************
+ Function
+     BallCollection_Retract
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Stub: retracts from collection station.
+
+ Author
+     Team, 03/02/26
+****************************************************************************/
+static void BallCollection_Retract(void)
+{
+  DB_printf("BallCollection: Retract (stub)\r\n");
+  PostMainLogicFSM((ES_Event_t){ES_BEHAVIOR_COMPLETE, 0});
+}
+
+/****************************************************************************
+ Function
+     StartRotation
+
+ Parameters
+     uint8_t leftDir, uint8_t rightDir - FORWARD or REVERSE for each wheel
+     uint32_t targetArc_mm - arc distance each wheel must travel
+
+ Returns
+     None
+
+ Description
+     Starts a point turn at ROTATE_SPEED_MM_S and records odometer start values.
+     (Preserved helper - may be used by future behavior implementations)
+
+ Author
+     Team, 03/01/26
+****************************************************************************/
+static void StartRotation(uint8_t leftDir, uint8_t rightDir, uint32_t targetArc_mm)
+{
+  // Record odometer baseline before motion begins
+  RotateStartDistLeft_mm  = ICCountToDistance_mm(DCMotor_GetICEventCount(LEFT_MOTOR));
+  RotateStartDistRight_mm = ICCountToDistance_mm(DCMotor_GetICEventCount(RIGHT_MOTOR));
+  RotateTargetArc_mm      = targetArc_mm;
+
+  // Start motors
+  DCMotor_SetSpeed_mm_s(ROTATE_SPEED_MM_S, ROTATE_SPEED_MM_S, leftDir, rightDir);
+
+  // Start short polling timer to check odometer
+  ES_Timer_InitTimer(SIMPLE_MOVE_TIMER, ROTATE_POLL_INTERVAL_MS);
+
+  // Start safety timeout in case encoders fail
+  ES_Timer_InitTimer(ROTATE_SAFETY_TIMER, ROTATE_SAFETY_TIMEOUT_MS);
+
+  uint32_t arc_h = targetArc_mm;  // already integer mm, no float needed
+  DB_printf("StartRotation: target=%u mm L=%u R=%u\r\n",
+            (unsigned)arc_h,
+            (unsigned)RotateStartDistLeft_mm,
+            (unsigned)RotateStartDistRight_mm);
 }
 
 /****************************************************************************
@@ -700,17 +691,14 @@ static void DriveReverseFull(void)
 
  Description
      Drive forward until tape detected or timeout.
+     (Preserved helper - may be used by future behavior implementations)
 
  Author
      Tianyu, 02/03/26
 ****************************************************************************/
 static void SearchForTape(void)
 {
-  // Pseudocode:
-  // MotorCommandWrapper(FULL_SPEED, FULL_SPEED, FORWARD, FORWARD)
-  // Initialize TAPE_SEARCH_TIMER
   MotorCommandWrapper(FULL_SPEED, FULL_SPEED, FORWARD, FORWARD);
-//  ES_Timer_InitTimer(TAPE_SEARCH_TIMER, TAPE_SEARCH_MS);
 }
 
 /****************************************************************************
@@ -725,15 +713,13 @@ static void SearchForTape(void)
 
  Description
      Spin until beacon detected or timeout.
+     (Preserved helper - may be used by future behavior implementations)
 
  Author
      Tianyu, 02/03/26
 ****************************************************************************/
 static void AlignWithBeacon(void)
 {
-  // Pseudocode:
-  // MotorCommandWrapper(FULL_SPEED, FULL_SPEED, FORWARD, REVERSE)
-  // Initialize BEACON_ALIGN_TIMER
   MotorCommandWrapper(HALF_SPEED, HALF_SPEED, FORWARD, REVERSE);
   ES_Timer_InitTimer(BEACON_ALIGN_TIMER, BEACON_ALIGN_MS);
 }

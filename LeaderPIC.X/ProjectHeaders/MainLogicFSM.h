@@ -24,14 +24,10 @@
 
 typedef enum
 {
-  Stopped,
-  SimpleMoving,
-  CalibrationRotating,
-  TapeSearchingRotate,
-  FollowingForward,
-  SearchingForTape,
-  AligningWithBeacon,
-  DrivingToBeacon
+  ML_Running,         // sequencer is active, a behavior is executing
+  ML_BallCollecting,  // sub-sequencer is active for ball collection steps
+  ML_Done,            // all behaviors complete
+  ML_Stopped          // idle / error / manual override
 } MainLogicState_t;
 
 bool InitMainLogicFSM(uint8_t Priority);

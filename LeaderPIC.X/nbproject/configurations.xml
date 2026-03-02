@@ -52,7 +52,6 @@
       <itemPath>ProjectHeaders/Ports.h</itemPath>
       <itemPath>ProjectHeaders/BeaconDetectFSM.h</itemPath>
       <itemPath>ProjectHeaders/MainLogicFSM.h</itemPath>
-      <itemPath>ProjectHeaders/EncoderTestService.h</itemPath>
       <itemPath>ProjectHeaders/TapeFollowFSM.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
@@ -78,7 +77,6 @@
       <itemPath>ProjectSource/CommonDefinitions.c</itemPath>
       <itemPath>ProjectSource/BeaconDetectFSM.c</itemPath>
       <itemPath>ProjectSource/MainLogicFSM.c</itemPath>
-      <itemPath>ProjectSource/EncoderTestService.c</itemPath>
       <itemPath>ProjectSource/TapeFollowFSM.c</itemPath>
     </logicalFolder>
   </logicalFolder>

@@ -126,6 +126,7 @@ bool InitTestHarnessService0(uint8_t Priority)
   DB_printf("\r\n=== Field Test Event Injection Keys ===\r\n");
   DB_printf("c - Inject ES_CALIB_DONE -> MainLogicFSM\r\n");
   DB_printf("t - Inject ES_TAPE_FOUND -> MainLogicFSM\r\n");
+  DB_printf("n - Inject ES_BEHAVIOR_COMPLETE (advance behavior sequence)\r\n");
   DB_printf("0 - Inject T-intersection -> MainLogicFSM\r\n");
   DB_printf("1 - Inject left intersection -> MainLogicFSM\r\n");
   DB_printf("2 - Inject right intersection -> MainLogicFSM\r\n");
@@ -343,6 +344,7 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
           DB_printf("\r\n=== Field Test Event Injection Keys ===\r\n");
           DB_printf("c - Inject ES_CALIB_DONE -> MainLogicFSM\r\n");
           DB_printf("t - Inject ES_TAPE_FOUND -> MainLogicFSM\r\n");
+          DB_printf("n - Inject ES_BEHAVIOR_COMPLETE (advance behavior sequence)\r\n");
           DB_printf("0 - Inject T-intersection -> MainLogicFSM\r\n");
           DB_printf("1 - Inject left intersection -> MainLogicFSM\r\n");
           DB_printf("2 - Inject right intersection -> MainLogicFSM\r\n");
@@ -370,6 +372,16 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
           ev.EventParam = 0;
           PostMainLogicFSM(ev);
           DB_printf("Injected ES_TAPE_FOUND -> MainLogicFSM\r\n");
+        }
+        break;
+
+        case 'n':  // Advance to next behavior (manual step)
+        {
+          ES_Event_t ev;
+          ev.EventType  = ES_BEHAVIOR_COMPLETE;
+          ev.EventParam = 0;
+          PostMainLogicFSM(ev);
+          DB_printf("Injected ES_BEHAVIOR_COMPLETE -> MainLogicFSM\r\n");
         }
         break;
 
