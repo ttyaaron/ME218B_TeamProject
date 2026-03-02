@@ -50,7 +50,7 @@
 /*----------------------------- Module Defines ----------------------------*/
 // Set to 1 to run workstation sensor-only test (motors will not move, only print)
 // Set to 0 for field test with full sequence
-#define STAGE1_SENSOR_TEST_ONLY 0
+#define STAGE1_SENSOR_TEST_ONLY 1
 
 /*---------------------------- Module Functions ---------------------------*/
 static void RotateCW90(void);
@@ -220,7 +220,7 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
         DB_printf("MainLogic: STAGE 1 sensor test — motors zeroed\r\n");
         TapeFollow_StartCalibrationRotate();
         DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);  // override: no motion
-        CurrentState = CalibrationRotating;
+        CurrentState = Stopped;
 #else
         DB_printf("MainLogic: Step 1 - Calibration rotation\r\n");
         TapeFollow_StartCalibrationRotate();
