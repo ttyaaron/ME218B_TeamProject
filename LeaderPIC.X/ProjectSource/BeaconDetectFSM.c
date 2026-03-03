@@ -101,7 +101,7 @@ static const BeaconDef_t BeaconTable[] = {
     { BEACON_L_FREQ, 'l' },
 };
 #define NUM_BEACONS (sizeof(BeaconTable) / sizeof(BeaconTable[0]))
-#define BEACON_FREQ_TOLERANCE 100     // �50 Hz
+#define BEACON_FREQ_TOLERANCE 100     // 100Hz
 
 // Debouncing: require this many consecutive detections of the same beacon
 // before locking onto it (prevents false positives from noise/bouncing)

@@ -31,7 +31,7 @@
 
 /*----------------------------- Module Defines ----------------------------*/
 #define TAPE_FOLLOW_INTERVAL_MS   20u     // sensor poll rate: 50 Hz
-#define BASE_FOLLOW_SPEED_MM_S    200u    // straight-line speed target in mm/s
+#define BASE_FOLLOW_SPEED_MM_S    100u    // straight-line speed target in mm/s
 #define LINE_KP                   5.0f   // proportional gain, tune upward from here
 #define LINE_KD                   1.5f   // derivative gain, tune after KP settled
 #define LINE_LOST_THRESHOLD       50u      // consecutive no-tape cycles before ES_LINE_LOST
@@ -41,7 +41,7 @@
 // Fixed threshold: analog value > 600 = black tape detected
 #define TAPE_THRESHOLD            600u
 
-#define SEARCH_ROTATE_SPEED_MM_S  150u   // slow rotation during search
+#define SEARCH_ROTATE_SPEED_MM_S  100u   // slow rotation during search
 
 // Duration of startup calibration rotation in milliseconds.
 // Robot sweeps sensors over floor (and hopefully tape) to build min/max range.
@@ -102,6 +102,11 @@ static uint32_t RotateTargetArc_mm      = 0u;
 static uint32_t MoveTargetDist_mm      = 0u;
 static uint32_t MoveStartDistLeft_mm   = 0u;
 static uint32_t MoveStartDistRight_mm  = 0u;
+
+// Odometer-based backward movement tracking
+static uint32_t MoveBackTargetDist_mm     = 0u;
+static uint32_t MoveBackStartDistLeft_mm  = 0u;
+static uint32_t MoveBackStartDistRight_mm = 0u;
 
 /*------------------------------ Module Code ------------------------------*/
 /****************************************************************************
@@ -550,6 +555,48 @@ ES_Event_t RunNavigationFSM(ES_Event_t ThisEvent)
       else if (ThisEvent.EventType == ES_STOP_LINE_FOLLOW)
       {
         DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
+        CurrentState = NavIdle;
+      }
+    }
+    break;
+
+    case NavMovingBackward:
+    {
+      if (ThisEvent.EventType == ES_TIMEOUT &&
+          ThisEvent.EventParam == TAPE_FOLLOW_TIMER)
+      {
+        uint32_t curL = ICCountToDistance_mm(DCMotor_GetICEventCount(LEFT_MOTOR));
+        uint32_t curR = ICCountToDistance_mm(DCMotor_GetICEventCount(RIGHT_MOTOR));
+        uint32_t avg  = ((curL - MoveBackStartDistLeft_mm) +
+                         (curR - MoveBackStartDistRight_mm)) / 2u;
+
+        if (avg >= MoveBackTargetDist_mm)
+        {
+          DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
+          DB_printf("Nav: MoveBackward done, avg=%u mm\r\n", (unsigned)avg);
+          ES_Event_t ev = { ES_BEHAVIOR_COMPLETE, 0 };
+          PostMainLogicFSM(ev);
+          CurrentState = NavIdle;
+        }
+        else
+        {
+          ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, ROTATE_POLL_INTERVAL_MS);
+        }
+      }
+      else if (ThisEvent.EventType == ES_STOP_LINE_FOLLOW)
+      {
+        DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
+        CurrentState = NavIdle;
+      }
+    }
+    break;
+
+    case NavRotatingContinuous:
+    {
+      if (ThisEvent.EventType == ES_STOP_LINE_FOLLOW)
+      {
+        DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
+        DB_printf("Nav: Continuous rotate stopped\r\n");
         CurrentState = NavIdle;
       }
     }
@@ -1047,6 +1094,96 @@ void Nav_MoveForward_mm(uint32_t dist_mm)
   CurrentState = NavMovingForward;
 
   DB_printf("Nav: MoveForward %u mm\r\n", (unsigned)dist_mm);
+}
+
+/****************************************************************************
+ Function
+     Nav_MoveBackward_mm
+
+ Parameters
+     uint32_t dist_mm - distance to move backward in millimeters
+
+ Returns
+     None
+
+ Description
+     Drives backward in a straight line for the specified distance using
+     odometer feedback.
+
+ Author
+     Team, 03/02/26
+****************************************************************************/
+void Nav_MoveBackward_mm(uint32_t dist_mm)
+{
+  MoveBackStartDistLeft_mm  = ICCountToDistance_mm(DCMotor_GetICEventCount(LEFT_MOTOR));
+  MoveBackStartDistRight_mm = ICCountToDistance_mm(DCMotor_GetICEventCount(RIGHT_MOTOR));
+  MoveBackTargetDist_mm     = dist_mm;
+
+  DCMotor_SetSpeed_mm_s(BASE_FOLLOW_SPEED_MM_S, BASE_FOLLOW_SPEED_MM_S,
+                        REVERSE, REVERSE);
+  ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, ROTATE_POLL_INTERVAL_MS);
+  CurrentState = NavMovingBackward;
+
+  DB_printf("Nav: MoveBackward %u mm\r\n", (unsigned)dist_mm);
+}
+
+/****************************************************************************
+ Function
+     Nav_StartRotateContinuous
+
+ Parameters
+     bool clockwise - true for CW rotation, false for CCW
+
+ Returns
+     None
+
+ Description
+     Starts continuous rotation at ROTATE_SPEED_MM_S until Nav_Stop() or
+     ES_STOP_LINE_FOLLOW is received.
+
+ Author
+     Team, 03/02/26
+****************************************************************************/
+void Nav_StartRotateContinuous(bool clockwise)
+{
+  if (clockwise)
+  {
+    DCMotor_SetSpeed_mm_s(ROTATE_SPEED_MM_S, ROTATE_SPEED_MM_S,
+                          FORWARD, REVERSE);
+    DB_printf("Nav: Continuous rotate CW\r\n");
+  }
+  else
+  {
+    DCMotor_SetSpeed_mm_s(ROTATE_SPEED_MM_S, ROTATE_SPEED_MM_S,
+                          REVERSE, FORWARD);
+    DB_printf("Nav: Continuous rotate CCW\r\n");
+  }
+  CurrentState = NavRotatingContinuous;
+}
+
+/****************************************************************************
+ Function
+     Nav_Stop
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Stops all motors and timers, returns to NavIdle.
+
+ Author
+     Team, 03/02/26
+****************************************************************************/
+void Nav_Stop(void)
+{
+  DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
+  ES_Timer_StopTimer(TAPE_FOLLOW_TIMER);
+  ES_Timer_StopTimer(ROTATE_SAFETY_TIMER);
+  CurrentState = NavIdle;
+  DB_printf("Nav: Stop\r\n");
 }
 
 /*------------------------------- Footnotes -------------------------------*/

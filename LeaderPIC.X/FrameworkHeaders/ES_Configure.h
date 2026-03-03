@@ -332,7 +332,7 @@ typedef enum
 #define TIMER10_RESP_FUNC PostNavigationFSM
 #define TIMER11_RESP_FUNC PostMainLogicFSM
 #define TIMER12_RESP_FUNC PostMainLogicFSM
-#define TIMER13_RESP_FUNC TIMER_UNUSED
+#define TIMER13_RESP_FUNC PostMainLogicFSM
 #define TIMER14_RESP_FUNC TIMER_UNUSED
 #define TIMER15_RESP_FUNC PostTestHarnessService0
 
@@ -356,6 +356,7 @@ typedef enum
 #define CALIB_TIMER 10
 #define ROTATE_SAFETY_TIMER 11
 #define BEHAVIOR_TIMEOUT_TIMER 12
+#define BALL_COLLECTION_TIMER 13
 
 
 #endif /* ES_CONFIGURE_H */

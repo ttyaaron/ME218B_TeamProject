@@ -127,6 +127,7 @@ bool InitTestHarnessService0(uint8_t Priority)
   DB_printf("c - Inject ES_CALIB_DONE -> MainLogicFSM\r\n");
   DB_printf("t - Inject ES_TAPE_FOUND -> MainLogicFSM\r\n");
   DB_printf("n - Inject ES_BEHAVIOR_COMPLETE (advance behavior sequence)\r\n");
+  DB_printf("j - Jump to ball collection sub-sequence (for testing)\r\n");
   DB_printf("0 - Inject T-intersection -> MainLogicFSM\r\n");
   DB_printf("1 - Inject left intersection -> MainLogicFSM\r\n");
   DB_printf("2 - Inject right intersection -> MainLogicFSM\r\n");
@@ -345,6 +346,7 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
           DB_printf("c - Inject ES_CALIB_DONE -> MainLogicFSM\r\n");
           DB_printf("t - Inject ES_TAPE_FOUND -> MainLogicFSM\r\n");
           DB_printf("n - Inject ES_BEHAVIOR_COMPLETE (advance behavior sequence)\r\n");
+          DB_printf("j - Jump to ball collection sub-sequence (for testing)\r\n");
           DB_printf("0 - Inject T-intersection -> MainLogicFSM\r\n");
           DB_printf("1 - Inject left intersection -> MainLogicFSM\r\n");
           DB_printf("2 - Inject right intersection -> MainLogicFSM\r\n");
@@ -382,6 +384,22 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
           ev.EventParam = 0;
           PostMainLogicFSM(ev);
           DB_printf("Injected ES_BEHAVIOR_COMPLETE -> MainLogicFSM\r\n");
+        }
+        break;
+
+        case 'j':  // Jump to ball collection behavior (index 8 in BehaviorSequence)
+        {
+          DB_printf("Jumping to ball collection behavior...\r\n");
+          // Behavior_BallCollection is at index 8 in BehaviorSequence
+          // Post 8 ES_BEHAVIOR_COMPLETE events to advance from 0 to 8
+          ES_Event_t ev;
+          ev.EventType  = ES_BEHAVIOR_COMPLETE;
+          ev.EventParam = 0;
+          for (uint8_t i = 0; i < 8; i++)
+          {
+            PostMainLogicFSM(ev);
+          }
+          DB_printf("Advanced sequence to ball collection (sent 8 completions)\r\n");
         }
         break;
 

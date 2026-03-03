@@ -59,17 +59,22 @@
 // Top-level behaviors
 static void Behavior_Calibrate(void);
 static void Behavior_SearchTapeCCW(void);
-static void Behavior_SearchBeacon(void);
+static void Behavior_SearchBeaconBG(void);
 static void Behavior_IndicateSide(void);
 static void Behavior_TapeFollowToT(void);
 static void Behavior_MoveForward110mm(void);
 static void Behavior_RotateCW90(void);
-static void Behavior_MoveBackwardToNode(void);
+static void Behavior_MoveForwardToNode(void);
 static void Behavior_BallCollection(void);
 
 // Ball collection sub-behaviors
+static void BallCollection_InitSweepServo(void);
+static void BallCollection_InitScoopServo(void);
 static void BallCollection_Dock(void);
-static void BallCollection_PushAndScoop(void);
+static void BallCollection_Sweep1(void);
+static void BallCollection_Scoop1(void);
+static void BallCollection_Sweep2(void);
+static void BallCollection_Scoop2(void);
 static void BallCollection_Retract(void);
 
 // Private helpers
@@ -97,12 +102,12 @@ typedef void (*BehaviorFn_t)(void);
 static const BehaviorFn_t BehaviorSequence[] = {
   Behavior_Calibrate,
   Behavior_SearchTapeCCW,
-  Behavior_SearchBeacon,
+  Behavior_SearchBeaconBG,
   Behavior_IndicateSide,
   Behavior_TapeFollowToT,
   Behavior_MoveForward110mm,
   Behavior_RotateCW90,
-  Behavior_MoveBackwardToNode,
+  Behavior_MoveForwardToNode,
   Behavior_BallCollection,
 };
 #define NUM_BEHAVIORS (sizeof(BehaviorSequence) / sizeof(BehaviorSequence[0]))
@@ -113,9 +118,14 @@ static uint8_t BehaviorIdx = 0;
 // Add, remove, or reorder entries to change collection steps.
 // ---------------------------------------------------------------
 static const BehaviorFn_t CollectionSequence[] = {
-  BallCollection_Dock,
-  BallCollection_PushAndScoop,
-  BallCollection_Retract,
+  BallCollection_InitSweepServo,    // send CMD_SWEEP, short delay
+  BallCollection_InitScoopServo,    // send CMD_SCOOP, short delay
+  BallCollection_Dock,          // Nav_MoveBackward_mm(BALL_DOCK_DISTANCE_MM)
+  BallCollection_Sweep1,        // send CMD_SWEEP, wait BALL_SWEEP_DURATION_MS
+  BallCollection_Scoop1,        // send CMD_SCOOP, wait BALL_SCOOP_DURATION_MS
+  BallCollection_Sweep2,        // send CMD_SWEEP, wait BALL_SWEEP_DURATION_MS
+  BallCollection_Scoop2,        // send CMD_SCOOP, wait BALL_SCOOP_DURATION_MS
+  BallCollection_Retract,       // Nav_MoveForward_mm(BALL_RETRACT_DISTANCE_MM)
 };
 #define NUM_COLLECTION_BEHAVIORS \
   (sizeof(CollectionSequence) / sizeof(CollectionSequence[0]))
@@ -252,14 +262,20 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
       }
       else if (ThisEvent.EventType == ES_BEACON_DETECTED)
       {
-        // Only relevant during Behavior_SearchBeacon.
-        // Record the beacon and complete the behavior.
-        DB_printf("MainLogic: Beacon detected during search, id=%c\r\n",
-                  (char)ThisEvent.EventParam);
-        // Stop navigation rotation
-        DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
-        // Advance sequence
-        AdvanceMainSequence();
+        // Only relevant during Behavior_SearchBeaconBG.
+        // TODO: Add a check to ensure we only handle this event during the correct behavior.
+        if (BehaviorIdx == 2)  // index of Behavior_SearchBeaconBG in BehaviorSequence
+        {
+          DB_printf("MainLogic: Beacon detected during search, id=%c\r\n",
+                    (char)ThisEvent.EventParam);
+
+          // Only completes if the beacon is b or g — if it's neither, we still want to run the rotate search to find it
+          if (ThisEvent.EventParam == 'b' || ThisEvent.EventParam == 'g')
+          {
+            Nav_Stop();     
+            AdvanceMainSequence();
+          }
+        }
       }
     }
     break;
@@ -268,6 +284,12 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
     {
       if (ThisEvent.EventType == ES_BEHAVIOR_COMPLETE)
       {
+        AdvanceCollectionSequence();
+      }
+      else if (ThisEvent.EventType == ES_TIMEOUT &&
+               ThisEvent.EventParam == BALL_COLLECTION_TIMER)
+      {
+        DB_printf("MainLogic: BallCollection timer fired, advancing\r\n");
         AdvanceCollectionSequence();
       }
     }
@@ -424,7 +446,7 @@ static void Behavior_SearchTapeCCW(void)
 
 /****************************************************************************
  Function
-     Behavior_SearchBeacon
+     Behavior_SearchBeaconBG
 
  Parameters
      None
@@ -438,24 +460,26 @@ static void Behavior_SearchTapeCCW(void)
  Author
      Team, 03/02/26
 ****************************************************************************/
-static void Behavior_SearchBeacon(void)
+static void Behavior_SearchBeaconBG(void)
 {
   DB_printf("Behavior: SearchBeacon\r\n");
   // Check if beacon already locked from calibration rotation
   if (QueryBeaconDetectFSM() == BeaconLocked)
   {
+    uint8_t beaconId = QueryLockedBeaconId();
     DB_printf("Behavior: Beacon already locked, id=%c\r\n",
-              QueryLockedBeaconId());
-    // Complete immediately
-    PostMainLogicFSM((ES_Event_t){ES_BEHAVIOR_COMPLETE, 0});
-    return;
+              beaconId);
+    // Only completes if the beacon is b or g — if it's neither, we still want to run the rotate search to find it
+    if (beaconId == 'b' || beaconId == 'g')
+    {
+      PostMainLogicFSM((ES_Event_t){ES_BEHAVIOR_COMPLETE, 0});
+      return;
+    }
   }
   // Otherwise start CW rotation and wait for ES_BEACON_DETECTED
   // BeaconDetectFSM posts ES_BEACON_DETECTED
   // ML_Running handles ES_BEACON_DETECTED → AdvanceMainSequence
-  DCMotor_SetSpeed_mm_s(ROTATE_SPEED_MM_S, ROTATE_SPEED_MM_S,
-                        FORWARD, REVERSE);
-  DB_printf("Behavior: Rotating CW to find beacon\r\n");
+  Nav_StartRotateContinuous(true);
 }
 
 /****************************************************************************
@@ -479,8 +503,8 @@ static void Behavior_IndicateSide(void)
   char side = QueryLockedBeaconId();
   ES_Event_t ev;
   ev.EventType  = ES_NEW_COMMAND;
-  ev.EventParam = (side == 'g') ? CMD_SIDE_GREEN :
-                  (side == 'b') ? CMD_SIDE_BLUE  : CMD_SIDE_MIDDLE;
+  ev.EventParam = (side == 1) ? CMD_SIDE_GREEN :
+                  (side == 0) ? CMD_SIDE_BLUE  : CMD_SIDE_MIDDLE;
   PostSPILeaderFSM(ev);
   DB_printf("Behavior: IndicateSide side=%c\r\n", side ? side : '?');
   // Fire-and-forget SPI command — complete immediately
@@ -603,7 +627,7 @@ static void Behavior_RecoverTapeLost(void)
 
 /****************************************************************************
  Function
-     Behavior_MoveBackwardToNode
+     Behavior_MoveForwardToNode
 
  Parameters
      None
@@ -612,15 +636,17 @@ static void Behavior_RecoverTapeLost(void)
      None
 
  Description
-     Stub: moves backward to collection node.
+     Moves forward 300mm to collection node using odometer.
 
  Author
      Team, 03/02/26
 ****************************************************************************/
-static void Behavior_MoveBackwardToNode(void)
+static void Behavior_MoveForwardToNode(void)
 {
-  DB_printf("Behavior: MoveBackwardToNode (stub)\r\n");
-  PostMainLogicFSM((ES_Event_t){ES_BEHAVIOR_COMPLETE, 0});
+  DB_printf("Behavior: MoveForwardToNode\r\n");
+  LastNavIntent = NAV_INTENT_FORWARD;
+  Nav_MoveForward_mm(300u);
+  // NavigationFSM posts ES_BEHAVIOR_COMPLETE when odometer dist reached
 }
 
 /****************************************************************************
@@ -649,6 +675,62 @@ static void Behavior_BallCollection(void)
 
 /****************************************************************************
  Function
+     BallCollection_InitSweepServo
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Sends CMD_INIT_SERVOS to follower PIC and waits for servo initialization.
+
+ Author
+     Team, 03/02/26
+****************************************************************************/
+static void BallCollection_InitSweepServo(void)
+{
+  DB_printf("BallCollection: InitSweepServo\r\n");
+  ES_Event_t ev;
+  ev.EventType  = ES_NEW_COMMAND;
+  ev.EventParam = CMD_SWEEP; // Now it is simply a sweep command to initialize the servo to idle position
+  PostSPILeaderFSM(ev);
+  // Short delay before docking so servos reach idle position
+  ES_Timer_InitTimer(BALL_COLLECTION_TIMER, BALL_INIT_SERVO_DELAY_MS);
+  // Completion via BALL_COLLECTION_TIMER timeout in ML_BallCollecting
+}
+
+/****************************************************************************
+ Function
+  BallCollection_InitScoopServo
+
+ Parameters
+  None
+
+ Returns
+  None
+
+ Description
+  Sends CMD_SCOOP to follower PIC and waits for servo initialization.
+
+ Author
+  Team, 03/02/26
+****************************************************************************/
+static void BallCollection_InitScoopServo(void)
+{
+  DB_printf("BallCollection: InitScoopServo\r\n");
+  ES_Event_t ev;
+  ev.EventType  = ES_NEW_COMMAND;
+  ev.EventParam = CMD_SCOOP;
+  PostSPILeaderFSM(ev);
+  // Short delay before docking so servos reach idle position
+  ES_Timer_InitTimer(BALL_COLLECTION_TIMER, BALL_INIT_SERVO_DELAY_MS);
+  // Completion via BALL_COLLECTION_TIMER timeout in ML_BallCollecting
+}
+
+/****************************************************************************
+ Function
      BallCollection_Dock
 
  Parameters
@@ -658,20 +740,23 @@ static void Behavior_BallCollection(void)
      None
 
  Description
-     Stub: docks at collection station.
+     Moves backward to dock at collection station.
 
  Author
      Team, 03/02/26
 ****************************************************************************/
 static void BallCollection_Dock(void)
 {
-  DB_printf("BallCollection: Dock (stub)\r\n");
-  PostMainLogicFSM((ES_Event_t){ES_BEHAVIOR_COMPLETE, 0});
+  DB_printf("BallCollection: Dock %u mm\r\n",
+            (unsigned)BALL_DOCK_DISTANCE_MM);
+  LastNavIntent = NAV_INTENT_REVERSE;
+  Nav_MoveBackward_mm(BALL_DOCK_DISTANCE_MM);
+  // NavigationFSM posts ES_BEHAVIOR_COMPLETE when odometer dist reached
 }
 
 /****************************************************************************
  Function
-     BallCollection_PushAndScoop
+     BallCollection_Sweep1
 
  Parameters
      None
@@ -680,15 +765,97 @@ static void BallCollection_Dock(void)
      None
 
  Description
-     Stub: pushes and scoops balls.
+     First sweep command in collection sequence.
 
  Author
      Team, 03/02/26
 ****************************************************************************/
-static void BallCollection_PushAndScoop(void)
+static void BallCollection_Sweep1(void)
 {
-  DB_printf("BallCollection: PushAndScoop (stub)\r\n");
-  PostMainLogicFSM((ES_Event_t){ES_BEHAVIOR_COMPLETE, 0});
+  DB_printf("BallCollection: Sweep 1\r\n");
+  ES_Event_t ev;
+  ev.EventType  = ES_NEW_COMMAND;
+  ev.EventParam = CMD_SWEEP;
+  PostSPILeaderFSM(ev);
+  ES_Timer_InitTimer(BALL_COLLECTION_TIMER, BALL_SWEEP_DURATION_MS);
+}
+
+/****************************************************************************
+ Function
+     BallCollection_Scoop1
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     First scoop command in collection sequence.
+
+ Author
+     Team, 03/02/26
+****************************************************************************/
+static void BallCollection_Scoop1(void)
+{
+  DB_printf("BallCollection: Scoop 1\r\n");
+  ES_Event_t ev;
+  ev.EventType  = ES_NEW_COMMAND;
+  ev.EventParam = CMD_SCOOP;
+  PostSPILeaderFSM(ev);
+  ES_Timer_InitTimer(BALL_COLLECTION_TIMER, BALL_SCOOP_DURATION_MS);
+}
+
+/****************************************************************************
+ Function
+     BallCollection_Sweep2
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Second sweep command in collection sequence.
+
+ Author
+     Team, 03/02/26
+****************************************************************************/
+static void BallCollection_Sweep2(void)
+{
+  DB_printf("BallCollection: Sweep 2\r\n");
+  ES_Event_t ev;
+  ev.EventType  = ES_NEW_COMMAND;
+  ev.EventParam = CMD_SWEEP;
+  PostSPILeaderFSM(ev);
+  ES_Timer_InitTimer(BALL_COLLECTION_TIMER, BALL_SWEEP_DURATION_MS);
+}
+
+/****************************************************************************
+ Function
+     BallCollection_Scoop2
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Second scoop command in collection sequence.
+
+ Author
+     Team, 03/02/26
+****************************************************************************/
+static void BallCollection_Scoop2(void)
+{
+  DB_printf("BallCollection: Scoop 2\r\n");
+  ES_Event_t ev;
+  ev.EventType  = ES_NEW_COMMAND;
+  ev.EventParam = CMD_SCOOP;
+  PostSPILeaderFSM(ev);
+  ES_Timer_InitTimer(BALL_COLLECTION_TIMER, BALL_SCOOP_DURATION_MS);
 }
 
 /****************************************************************************
@@ -702,13 +869,16 @@ static void BallCollection_PushAndScoop(void)
      None
 
  Description
-     Stub: retracts from collection station.
+     Moves forward to retract from collection station.
 
  Author
      Team, 03/02/26
 ****************************************************************************/
 static void BallCollection_Retract(void)
 {
-  DB_printf("BallCollection: Retract (stub)\r\n");
-  PostMainLogicFSM((ES_Event_t){ES_BEHAVIOR_COMPLETE, 0});
+  DB_printf("BallCollection: Retract %u mm\r\n",
+            (unsigned)BALL_RETRACT_DISTANCE_MM);
+  LastNavIntent = NAV_INTENT_FORWARD;
+  Nav_MoveForward_mm(BALL_RETRACT_DISTANCE_MM);
+  // NavigationFSM posts ES_BEHAVIOR_COMPLETE when odometer dist reached
 }
