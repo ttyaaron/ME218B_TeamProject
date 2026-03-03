@@ -100,7 +100,7 @@ extern const uint8_t validCommandBytes[21];
 // Speed used for all open-loop rotation maneuvers
 // Lower = more accurate (less overshoot from motor inertia)
 // Must match what DCMotor_SetSpeed_mm_s can reliably track
-#define ROTATE_SPEED_MM_S       150u
+#define ROTATE_SPEED_MM_S       100u
 
 // Arc distance each wheel must travel for a point turn at given angle.
 // arc_mm = (angle_deg / 360) * TURN_CIRC_MM

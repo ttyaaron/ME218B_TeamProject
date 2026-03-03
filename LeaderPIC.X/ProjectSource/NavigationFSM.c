@@ -98,6 +98,13 @@ static uint32_t RotateStartDistLeft_mm  = 0u;
 static uint32_t RotateStartDistRight_mm = 0u;
 static uint32_t RotateTargetArc_mm      = 0u;
 
+// Odometer-based radius rotation tracking
+static uint32_t RotateRadiusStartDistLeft_mm  = 0u;
+static uint32_t RotateRadiusStartDistRight_mm = 0u;
+
+static uint32_t RotateRadiusTargetLeft_mm  = 0u;
+static uint32_t RotateRadiusTargetRight_mm = 0u;
+
 // Odometer-based forward movement tracking
 static uint32_t MoveTargetDist_mm      = 0u;
 static uint32_t MoveStartDistLeft_mm   = 0u;
@@ -525,6 +532,37 @@ ES_Event_t RunNavigationFSM(ES_Event_t ThisEvent)
 
         default:
           break;
+      }
+    }
+    break;
+
+    case NavRotatingRadius:
+    {
+      if (ThisEvent.EventType == ES_TIMEOUT &&
+          ThisEvent.EventParam == TAPE_FOLLOW_TIMER)
+      {
+        uint32_t curL = ICCountToDistance_mm(DCMotor_GetICEventCount(LEFT_MOTOR));
+        uint32_t curR = ICCountToDistance_mm(DCMotor_GetICEventCount(RIGHT_MOTOR));
+
+        uint32_t dL = curL - RotateRadiusStartDistLeft_mm;
+        uint32_t dR = curR - RotateRadiusStartDistRight_mm;
+        uint32_t avg2 = (dL + dR);
+
+        // Use average distance to target for completion check
+        if (avg2 >= (RotateRadiusTargetLeft_mm + RotateRadiusTargetRight_mm))
+        {
+          DCMotor_SetSpeed_mm_s(0,0,FORWARD,FORWARD);
+
+          ES_Event_t ev = { ES_BEHAVIOR_COMPLETE, 0 };
+          PostMainLogicFSM(ev);
+
+          CurrentState = NavIdle;
+        }
+        else
+        {
+          ES_Timer_InitTimer(TAPE_FOLLOW_TIMER,
+                            ROTATE_POLL_INTERVAL_MS);
+        }
       }
     }
     break;
@@ -1043,6 +1081,96 @@ void Nav_RotateCW(uint8_t degrees)
 
 /****************************************************************************
  Function
+     Nav_RotateCWRadius
+
+ Parameters
+     uint8_t degrees - angle to rotate clockwise
+     uint32_t radius_mm - radius of turn in millimeters
+
+ Returns
+     None
+
+ Description
+     Rotates clockwise by the specified degrees using odometer feedback, and maintains a turn radius by setting different speeds on each wheel.
+
+ Author
+     Team, 03/02/26
+****************************************************************************/
+void Nav_RotateCWRadius(uint8_t degrees, uint32_t radius_mm)
+{
+  uint32_t halfW = TRACK_WIDTH_MM / 2u;
+
+  // CW turn: right wheel is inner, left wheel is outer
+  // When radius_mm < halfW, inner wheel must go backward
+  // Compute wheel radii from turn center (unsigned magnitudes only)
+  uint32_t R_right;  // inner wheel radius magnitude
+  uint32_t R_left;   // outer wheel radius magnitude
+  uint8_t rightDir;  // direction for right (inner) wheel
+  
+  if (radius_mm < halfW)
+  {
+    // Tight turn: center between wheels, inner wheel goes backward
+    R_right = halfW - radius_mm;  // magnitude
+    rightDir = REVERSE;
+  }
+  else
+  {
+    // Wide turn: both wheels forward
+    R_right = radius_mm - halfW;
+    rightDir = FORWARD;
+  }
+  
+  R_left = radius_mm + halfW;  // outer wheel always farther from center
+
+  // Compute arc lengths: arc = degrees * π * R / 180, using π ≈ 314/100
+  uint32_t theta_num = (uint32_t)degrees * 314u;
+  uint32_t theta_den = 180u * 100u;
+
+  uint32_t arcRight_mm = (theta_num * R_right) / theta_den;
+  uint32_t arcLeft_mm  = (theta_num * R_left) / theta_den;
+
+  // Save starting odometer
+  RotateRadiusStartDistLeft_mm  = ICCountToDistance_mm(DCMotor_GetICEventCount(LEFT_MOTOR));
+  RotateRadiusStartDistRight_mm = ICCountToDistance_mm(DCMotor_GetICEventCount(RIGHT_MOTOR));
+
+  RotateRadiusTargetLeft_mm  = arcLeft_mm;
+  RotateRadiusTargetRight_mm = arcRight_mm;
+
+  // Speed ratio: outer/inner, avoid division by zero
+  uint16_t leftSpeed, rightSpeed;
+  
+  if (R_right == 0u)
+  {
+    // Pivot around right wheel
+    rightSpeed = 0u;
+    leftSpeed = ROTATE_SPEED_MM_S;
+  }
+  else
+  {
+    float ratio = (float)R_left / (float)R_right;
+    rightSpeed = ROTATE_SPEED_MM_S;
+    leftSpeed = (uint16_t)(ROTATE_SPEED_MM_S * ratio);
+    
+    if (leftSpeed > SPEED_FULL_MM_S)
+      leftSpeed = SPEED_FULL_MM_S;
+  }
+
+  // CW turn: left outer (forward), right inner (forward or reverse)
+  DCMotor_SetSpeed_mm_s(leftSpeed, rightSpeed,
+                        FORWARD, rightDir);
+
+  ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, ROTATE_POLL_INTERVAL_MS);
+  CurrentState = NavRotatingRadius;
+
+  DB_printf("Nav: CW radius turn %u deg R=%u L=%u R=%u\r\n",
+            (unsigned)degrees,
+            (unsigned)radius_mm,
+            (unsigned)arcLeft_mm,
+            (unsigned)arcRight_mm);
+}
+
+/****************************************************************************
+ Function
      Nav_RotateCCW
 
  Parameters
@@ -1063,6 +1191,96 @@ void Nav_RotateCCW(uint8_t degrees)
             (unsigned)degrees, (unsigned)ROTATE_ARC_MM(degrees));
   StartRotation(REVERSE, FORWARD, ROTATE_ARC_MM(degrees));
   CurrentState = NavRotating;
+}
+
+/****************************************************************************
+ Function
+     Nav_RotateCCWRadius
+
+ Parameters
+     uint8_t degrees - angle to rotate counter-clockwise
+     uint32_t radius_mm - radius of turn in millimeters
+
+ Returns
+     None
+
+ Description
+     Rotates counter-clockwise by the specified degrees using odometer feedback, and maintains a turn radius by setting different speeds on each wheel.
+
+ Author
+     Team, 03/02/26
+****************************************************************************/
+void Nav_RotateCCWRadius(uint8_t degrees, uint32_t radius_mm)
+{
+  uint32_t halfW = TRACK_WIDTH_MM / 2u;
+
+  // CCW turn: left wheel is inner, right wheel is outer
+  // When radius_mm < halfW, inner wheel must go backward
+  // Compute wheel radii from turn center (unsigned magnitudes only)
+  uint32_t R_left;   // inner wheel radius magnitude
+  uint32_t R_right;  // outer wheel radius magnitude
+  uint8_t leftDir;   // direction for left (inner) wheel
+  
+  if (radius_mm < halfW)
+  {
+    // Tight turn: center between wheels, inner wheel goes backward
+    R_left = halfW - radius_mm;  // magnitude
+    leftDir = REVERSE;
+  }
+  else
+  {
+    // Wide turn: both wheels forward
+    R_left = radius_mm - halfW;
+    leftDir = FORWARD;
+  }
+  
+  R_right = radius_mm + halfW;  // outer wheel always farther from center
+
+  // Compute arc lengths: arc = degrees * π * R / 180, using π ≈ 314/100
+  uint32_t theta_num = (uint32_t)degrees * 314u;
+  uint32_t theta_den = 180u * 100u;
+
+  uint32_t arcLeft_mm  = (theta_num * R_left) / theta_den;
+  uint32_t arcRight_mm = (theta_num * R_right) / theta_den;
+
+  // Save starting odometer
+  RotateRadiusStartDistLeft_mm  = ICCountToDistance_mm(DCMotor_GetICEventCount(LEFT_MOTOR));
+  RotateRadiusStartDistRight_mm = ICCountToDistance_mm(DCMotor_GetICEventCount(RIGHT_MOTOR));
+
+  RotateRadiusTargetLeft_mm  = arcLeft_mm;
+  RotateRadiusTargetRight_mm = arcRight_mm;
+
+  // Speed ratio: outer/inner, avoid division by zero
+  uint16_t leftSpeed, rightSpeed;
+  
+  if (R_left == 0u)
+  {
+    // Pivot around left wheel
+    leftSpeed = 0u;
+    rightSpeed = ROTATE_SPEED_MM_S;
+  }
+  else
+  {
+    float ratio = (float)R_right / (float)R_left;
+    leftSpeed = ROTATE_SPEED_MM_S;
+    rightSpeed = (uint16_t)(ROTATE_SPEED_MM_S * ratio);
+    
+    if (rightSpeed > SPEED_FULL_MM_S)
+      rightSpeed = SPEED_FULL_MM_S;
+  }
+
+  // CCW turn: left inner (forward or reverse), right outer (forward)
+  DCMotor_SetSpeed_mm_s(leftSpeed, rightSpeed,
+                        leftDir, FORWARD);
+
+  ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, ROTATE_POLL_INTERVAL_MS);
+  CurrentState = NavRotatingRadius;
+
+  DB_printf("Nav: CCW radius turn %u deg R=%u L=%u R=%u\r\n",
+            (unsigned)degrees,
+            (unsigned)radius_mm,
+            (unsigned)arcLeft_mm,
+            (unsigned)arcRight_mm);
 }
 
 /****************************************************************************
@@ -1094,6 +1312,11 @@ void Nav_MoveForward_mm(uint32_t dist_mm)
   CurrentState = NavMovingForward;
 
   DB_printf("Nav: MoveForward %u mm\r\n", (unsigned)dist_mm);
+}
+
+void Nav_MoveForward_mm_Follow(uint32_t dist_mm)
+{
+
 }
 
 /****************************************************************************

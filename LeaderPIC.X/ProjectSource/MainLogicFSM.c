@@ -64,6 +64,7 @@ static void Behavior_IndicateSide(void);
 static void Behavior_TapeFollowToT(void);
 static void Behavior_MoveForward110mm(void);
 static void Behavior_RotateCW90(void);
+static void Behavior_RotateCW90R110mm(void);
 static void Behavior_MoveForwardToNode(void);
 static void Behavior_BallCollection(void);
 
@@ -106,9 +107,10 @@ static const BehaviorFn_t BehaviorSequence[] = {
   Behavior_IndicateSide,
   Behavior_TapeFollowToT,
   Behavior_MoveForward110mm,
-  Behavior_RotateCW90,
+  Behavior_RotateCW90R110mm,
   Behavior_MoveForwardToNode,
   Behavior_BallCollection,
+  // Behavior_RotateCW90R110mm,
 };
 #define NUM_BEHAVIORS (sizeof(BehaviorSequence) / sizeof(BehaviorSequence[0]))
 static uint8_t BehaviorIdx = 0;
@@ -580,6 +582,31 @@ static void Behavior_RotateCW90(void)
   DB_printf("Behavior: RotateCW90\r\n");
   LastNavIntent = NAV_INTENT_ROTATE_CW;
   Nav_RotateCW(90u);
+  // NavigationFSM posts ES_BEHAVIOR_COMPLETE when odometer arc reached
+}
+
+/****************************************************************************
+ Function
+     Behavior_RotateCW90R110mm
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Rotates clockwise 90 degrees using odometer, with a turn radius that results in a 110mm forward displacement.
+
+ Author
+     Team, 03/02/26
+****************************************************************************/
+
+static void Behavior_RotateCW90R110mm(void)
+{
+  DB_printf("Behavior: RotateCW90R110mm\r\n");
+  LastNavIntent = NAV_INTENT_ROTATE_CW;
+  Nav_RotateCWRadius(180u, 70u);
   // NavigationFSM posts ES_BEHAVIOR_COMPLETE when odometer arc reached
 }
 

@@ -24,7 +24,8 @@ typedef enum
   NavRotating,          // point turn at target angle
   NavMovingForward,     // straight drive forward to target distance
   NavMovingBackward,    // straight drive backward to target distance
-  NavRotatingContinuous // continuous rotation until stopped
+  NavRotatingContinuous, // continuous rotation until stopped
+  NavRotatingRadius,     // rotation along an arc with specified radius
 } NavigationState_t;
 
 // Public Function Prototypes
@@ -41,6 +42,8 @@ void Nav_StartFollowReverse(void);
 void Nav_StartFollowForward(void);
 void Nav_RotateCW(uint8_t degrees);
 void Nav_RotateCCW(uint8_t degrees);
+void Nav_RotateCWRadius(uint8_t degrees, uint32_t radius_mm);
+void Nav_RotateCCWRadius(uint8_t degrees, uint32_t radius_mm);
 void Nav_MoveForward_mm(uint32_t dist_mm);
 void Nav_MoveBackward_mm(uint32_t dist_mm);
 void Nav_StartRotateContinuous(bool clockwise);
