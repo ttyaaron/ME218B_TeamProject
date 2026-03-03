@@ -106,7 +106,6 @@ static const BehaviorFn_t BehaviorSequence[] = {
   Behavior_SearchBeaconBG,
   Behavior_IndicateSide,
   Behavior_TapeFollowToT,
-  Behavior_MoveForward110mm,
   Behavior_RotateCW90R110mm,
   Behavior_MoveForwardToNode,
   Behavior_BallCollection,
@@ -122,7 +121,7 @@ static uint8_t BehaviorIdx = 0;
 static const BehaviorFn_t CollectionSequence[] = {
   BallCollection_InitSweepServo,    // send CMD_SWEEP, short delay
   BallCollection_InitScoopServo,    // send CMD_SCOOP, short delay
-  BallCollection_Dock,          // Nav_MoveBackward_mm(BALL_DOCK_DISTANCE_MM)
+  // BallCollection_Dock,          // Nav_MoveBackward_mm(BALL_DOCK_DISTANCE_MM)
   BallCollection_Sweep1,        // send CMD_SWEEP, wait BALL_SWEEP_DURATION_MS
   BallCollection_Scoop1,        // send CMD_SCOOP, wait BALL_SCOOP_DURATION_MS
   BallCollection_Sweep2,        // send CMD_SWEEP, wait BALL_SWEEP_DURATION_MS
@@ -606,7 +605,7 @@ static void Behavior_RotateCW90R110mm(void)
 {
   DB_printf("Behavior: RotateCW90R110mm\r\n");
   LastNavIntent = NAV_INTENT_ROTATE_CW;
-  Nav_RotateCWRadius(180u, 70u);
+  Nav_RotateCWRadius(90u, 110u);
   // NavigationFSM posts ES_BEHAVIOR_COMPLETE when odometer arc reached
 }
 
@@ -672,7 +671,7 @@ static void Behavior_MoveForwardToNode(void)
 {
   DB_printf("Behavior: MoveForwardToNode\r\n");
   LastNavIntent = NAV_INTENT_FORWARD;
-  Nav_MoveForward_mm(300u);
+  Nav_MoveForward_mm_Follow(200u);
   // NavigationFSM posts ES_BEHAVIOR_COMPLETE when odometer dist reached
 }
 

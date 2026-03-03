@@ -115,6 +115,16 @@ static uint32_t MoveBackTargetDist_mm     = 0u;
 static uint32_t MoveBackStartDistLeft_mm  = 0u;
 static uint32_t MoveBackStartDistRight_mm = 0u;
 
+// Odometer-based forward follow-with-distance tracking
+static uint32_t FollowForwardTargetDist_mm     = 0u;
+static uint32_t FollowForwardStartDistLeft_mm  = 0u;
+static uint32_t FollowForwardStartDistRight_mm = 0u;
+
+// Odometer-based backward follow-with-distance tracking
+static uint32_t FollowReverseTargetDist_mm     = 0u;
+static uint32_t FollowReverseStartDistLeft_mm  = 0u;
+static uint32_t FollowReverseStartDistRight_mm = 0u;
+
 /*------------------------------ Module Code ------------------------------*/
 /****************************************************************************
  Function
@@ -636,6 +646,146 @@ ES_Event_t RunNavigationFSM(ES_Event_t ThisEvent)
         DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
         DB_printf("Nav: Continuous rotate stopped\r\n");
         CurrentState = NavIdle;
+      }
+    }
+    break;
+
+    case NavFollowingForwardDistance:
+    {
+      switch (ThisEvent.EventType)
+      {
+        case ES_STOP_LINE_FOLLOW:
+        {
+          DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
+          CurrentState = NavIdle;
+        }
+        break;
+
+        case ES_TIMEOUT:
+        {
+          if (ThisEvent.EventParam == TAPE_FOLLOW_TIMER)
+          {
+            // 1. Read all sensors
+            ReadTapeSensors();
+
+            // 2. Compute signed error from analog sensors
+            int32_t error = (int32_t)rightVal - (int32_t)leftVal;
+
+            // 3. PD correction
+            float correction = LINE_KP * (float)error + LINE_KD * (float)(error - lastError);
+            lastError = error;
+
+            // 4. Differential speed targets
+            float leftSpeed_f  = (float)BASE_FOLLOW_SPEED_MM_S + correction;
+            float rightSpeed_f = (float)BASE_FOLLOW_SPEED_MM_S - correction;
+
+            // 5. Clamp to physical range [0, SPEED_FULL_MM_S]
+            if (leftSpeed_f  < 0.0f) leftSpeed_f  = 0.0f;
+            if (rightSpeed_f < 0.0f) rightSpeed_f = 0.0f;
+            if (leftSpeed_f  > (float)SPEED_FULL_MM_S) leftSpeed_f  = (float)SPEED_FULL_MM_S;
+            if (rightSpeed_f > (float)SPEED_FULL_MM_S) rightSpeed_f = (float)SPEED_FULL_MM_S;
+
+            // 6. Command motors
+            DCMotor_SetSpeed_mm_s((uint16_t)leftSpeed_f, (uint16_t)rightSpeed_f,
+                                  FORWARD, FORWARD);
+
+            // 7. Check odometer for completion
+            uint32_t curL = ICCountToDistance_mm(DCMotor_GetICEventCount(LEFT_MOTOR));
+            uint32_t curR = ICCountToDistance_mm(DCMotor_GetICEventCount(RIGHT_MOTOR));
+            uint32_t avg  = ((curL - FollowForwardStartDistLeft_mm) +
+                             (curR - FollowForwardStartDistRight_mm)) / 2u;
+
+            if (avg >= FollowForwardTargetDist_mm)
+            {
+              // Target distance reached — stop and complete
+              DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
+              DB_printf("Nav: FollowForwardDistance done, avg=%u mm\r\n", (unsigned)avg);
+              ES_Event_t ev = { ES_BEHAVIOR_COMPLETE, 0 };
+              PostMainLogicFSM(ev);
+              CurrentState = NavIdle;
+            }
+            else
+            {
+              // Continue following
+              ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, TAPE_FOLLOW_INTERVAL_MS);
+              CheckFollowConditions();
+            }
+          }
+        }
+        break;
+
+        default:
+          ;
+      }
+    }
+    break;
+
+    case NavFollowingReverseDistance:
+    {
+      switch (ThisEvent.EventType)
+      {
+        case ES_STOP_LINE_FOLLOW:
+        {
+          DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
+          CurrentState = NavIdle;
+        }
+        break;
+
+        case ES_TIMEOUT:
+        {
+          if (ThisEvent.EventParam == TAPE_FOLLOW_TIMER)
+          {
+            // 1. Read all sensors
+            ReadTapeSensors();
+
+            // 2. Compute signed error from analog sensors
+            int32_t error = (int32_t)rightVal - (int32_t)leftVal;
+
+            // 3. PD correction
+            float correction = LINE_KP * (float)error + LINE_KD * (float)(error - lastError);
+            lastError = error;
+
+            // 4. Differential speed targets (both in REVERSE)
+            float leftSpeed_f  = (float)BASE_FOLLOW_SPEED_MM_S + correction;
+            float rightSpeed_f = (float)BASE_FOLLOW_SPEED_MM_S - correction;
+
+            // 5. Clamp to physical range [0, SPEED_FULL_MM_S]
+            if (leftSpeed_f  < 0.0f) leftSpeed_f  = 0.0f;
+            if (rightSpeed_f < 0.0f) rightSpeed_f = 0.0f;
+            if (leftSpeed_f  > (float)SPEED_FULL_MM_S) leftSpeed_f  = (float)SPEED_FULL_MM_S;
+            if (rightSpeed_f > (float)SPEED_FULL_MM_S) rightSpeed_f = (float)SPEED_FULL_MM_S;
+
+            // 6. Command motors in REVERSE
+            DCMotor_SetSpeed_mm_s((uint16_t)leftSpeed_f, (uint16_t)rightSpeed_f,
+                                  REVERSE, REVERSE);
+
+            // 7. Check odometer for completion
+            uint32_t curL = ICCountToDistance_mm(DCMotor_GetICEventCount(LEFT_MOTOR));
+            uint32_t curR = ICCountToDistance_mm(DCMotor_GetICEventCount(RIGHT_MOTOR));
+            uint32_t avg  = ((curL - FollowReverseStartDistLeft_mm) +
+                             (curR - FollowReverseStartDistRight_mm)) / 2u;
+
+            if (avg >= FollowReverseTargetDist_mm)
+            {
+              // Target distance reached — stop and complete
+              DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
+              DB_printf("Nav: FollowReverseDistance done, avg=%u mm\r\n", (unsigned)avg);
+              ES_Event_t ev = { ES_BEHAVIOR_COMPLETE, 0 };
+              PostMainLogicFSM(ev);
+              CurrentState = NavIdle;
+            }
+            else
+            {
+              // Continue following
+              ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, TAPE_FOLLOW_INTERVAL_MS);
+              CheckFollowConditions();
+            }
+          }
+        }
+        break;
+
+        default:
+          ;
       }
     }
     break;
@@ -1314,9 +1464,74 @@ void Nav_MoveForward_mm(uint32_t dist_mm)
   DB_printf("Nav: MoveForward %u mm\r\n", (unsigned)dist_mm);
 }
 
+/****************************************************************************
+ Function
+     Nav_MoveForward_mm_Follow
+
+ Parameters
+     uint32_t dist_mm - distance to move forward while following tape
+
+ Returns
+     None
+
+ Description
+     Follows the tape forward using PD control and stops after traveling
+     the specified distance. Posts ES_BEHAVIOR_COMPLETE when done.
+
+ Author
+     Team, 03/02/26
+****************************************************************************/
 void Nav_MoveForward_mm_Follow(uint32_t dist_mm)
 {
+  FollowForwardStartDistLeft_mm  = ICCountToDistance_mm(DCMotor_GetICEventCount(LEFT_MOTOR));
+  FollowForwardStartDistRight_mm = ICCountToDistance_mm(DCMotor_GetICEventCount(RIGHT_MOTOR));
+  FollowForwardTargetDist_mm     = dist_mm;
 
+  lastError     = 0;
+  lineLostCount = 0;
+  tIntersectionPublished = false;
+  leftTurnPublished      = false;
+  rightTurnPublished     = false;
+
+  ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, TAPE_FOLLOW_INTERVAL_MS);
+  CurrentState = NavFollowingForwardDistance;
+
+  DB_printf("Nav: FollowForward %u mm\r\n", (unsigned)dist_mm);
+}
+
+/****************************************************************************
+ Function
+     Nav_MoveBackward_mm_Follow
+
+ Parameters
+     uint32_t dist_mm - distance to move backward while following tape
+
+ Returns
+     None
+
+ Description
+     Follows the tape backward using PD control and stops after traveling
+     the specified distance. Posts ES_BEHAVIOR_COMPLETE when done.
+
+ Author
+     Team, 03/02/26
+****************************************************************************/
+void Nav_MoveBackward_mm_Follow(uint32_t dist_mm)
+{
+  FollowReverseStartDistLeft_mm  = ICCountToDistance_mm(DCMotor_GetICEventCount(LEFT_MOTOR));
+  FollowReverseStartDistRight_mm = ICCountToDistance_mm(DCMotor_GetICEventCount(RIGHT_MOTOR));
+  FollowReverseTargetDist_mm     = dist_mm;
+
+  lastError     = 0;
+  lineLostCount = 0;
+  tIntersectionPublished = false;
+  leftTurnPublished      = false;
+  rightTurnPublished     = false;
+
+  ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, TAPE_FOLLOW_INTERVAL_MS);
+  CurrentState = NavFollowingReverseDistance;
+
+  DB_printf("Nav: FollowReverse %u mm\r\n", (unsigned)dist_mm);
 }
 
 /****************************************************************************

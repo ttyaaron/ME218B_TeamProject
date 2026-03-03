@@ -182,9 +182,9 @@ extern const uint8_t validCommandBytes[21];
 #define DRIVE_TO_BEACON_MS 3000
 
 // Ball collection timing
-#define BALL_INIT_SERVO_DELAY_MS  200u   // time after init command before dock
-#define BALL_SWEEP_DURATION_MS    500u   // time between sweep and scoop commands
-#define BALL_SCOOP_DURATION_MS    500u   // time between scoop and next sweep
+#define BALL_INIT_SERVO_DELAY_MS  1000u   // time after init command before dock
+#define BALL_SWEEP_DURATION_MS    1000u   // time between sweep and scoop commands
+#define BALL_SCOOP_DURATION_MS    1500u   // time between scoop and next sweep
 #define BALL_DOCK_DISTANCE_MM     10u    // backward distance for docking
 #define BALL_RETRACT_DISTANCE_MM  10u    // forward distance for retraction
 

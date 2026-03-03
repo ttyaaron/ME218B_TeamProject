@@ -26,6 +26,8 @@ typedef enum
   NavMovingBackward,    // straight drive backward to target distance
   NavRotatingContinuous, // continuous rotation until stopped
   NavRotatingRadius,     // rotation along an arc with specified radius
+  NavFollowingForwardDistance,  // follow tape forward for specified distance
+  NavFollowingReverseDistance,  // follow tape backward for specified distance
 } NavigationState_t;
 
 // Public Function Prototypes
@@ -48,6 +50,8 @@ void Nav_MoveForward_mm(uint32_t dist_mm);
 void Nav_MoveBackward_mm(uint32_t dist_mm);
 void Nav_StartRotateContinuous(bool clockwise);
 void Nav_Stop(void);
+void Nav_MoveForward_mm_Follow(uint32_t dist_mm);
+void Nav_MoveBackward_mm_Follow(uint32_t dist_mm);
 
 #endif /* NavigationFSM_H */
 
