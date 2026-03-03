@@ -64,11 +64,11 @@ static void Behavior_IndicateSide(void);
 static void Behavior_TapeFollowToT(void);
 static void Behavior_MoveForward110mm(void);
 static void Behavior_RotateCW90(void);
-static void Behavior_RotateCW90R110mm(void);
+static void Behavior_RotateCW90R100mm(void);
 static void Behavior_MoveBackwardToNode(void);
 static void Behavior_BallCollection(void);
 static void Behavior_TapeFollowBackward(void);
-static void Behavior_MoveForwardFollow100mm(void);
+static void Behavior_MoveForwardFollow50mm(void);
 
 // Ball collection sub-behaviors
 static void BallCollection_InitSweepServo(void);
@@ -78,6 +78,10 @@ static void BallCollection_Sweep1(void);
 static void BallCollection_Scoop1(void);
 static void BallCollection_Sweep2(void);
 static void BallCollection_Scoop2(void);
+static void BallCollection_Sweep3(void);
+static void BallCollection_Scoop3(void);
+static void BallCollection_Sweep4(void);
+static void BallCollection_Scoop4(void);
 static void BallCollection_Retract(void);
 
 // Private helpers
@@ -103,16 +107,16 @@ typedef void (*BehaviorFn_t)(void);
 // To change the game strategy: reorder, add, or comment out entries.
 // ---------------------------------------------------------------
 static const BehaviorFn_t BehaviorSequence[] = {
-  Behavior_Calibrate,
+  // Behavior_Calibrate,
   Behavior_SearchTapeCCW,
   Behavior_SearchBeaconBG,
   Behavior_IndicateSide,
   Behavior_TapeFollowToT,
-  Behavior_RotateCW90R110mm,
-  Behavior_MoveForwardFollow100mm,
-  Behavior_MoveBackwardToNode,
+  Behavior_RotateCW90R100mm,
+  Behavior_MoveForwardFollow50mm,
+  // Behavior_MoveBackwardToNode,
   Behavior_BallCollection,
-  // Behavior_RotateCW90R110mm,
+  // Behavior_RotateCW90R100mm,
   // Behavior_TapeFollowBackward,
 };
 #define NUM_BEHAVIORS (sizeof(BehaviorSequence) / sizeof(BehaviorSequence[0]))
@@ -124,13 +128,17 @@ static uint8_t BehaviorIdx = 0;
 // ---------------------------------------------------------------
 static const BehaviorFn_t CollectionSequence[] = {
   BallCollection_InitSweepServo,    // send CMD_SWEEP, short delay
+  BallCollection_Dock,          // Nav_MoveBackward_mm(BALL_DOCK_DISTANCE_MM)
   BallCollection_InitScoopServo,    // send CMD_SCOOP, short delay
-  // BallCollection_Dock,          // Nav_MoveBackward_mm(BALL_DOCK_DISTANCE_MM)
+  BallCollection_Retract,       // Nav_ ,M M,M MoveForward_mm(BALL_RETRACT_DISTANCE_MM)
   BallCollection_Sweep1,        // send CMD_SWEEP, wait BALL_SWEEP_DURATION_MS
   BallCollection_Scoop1,        // send CMD_SCOOP, wait BALL_SCOOP_DURATION_MS
   BallCollection_Sweep2,        // send CMD_SWEEP, wait BALL_SWEEP_DURATION_MS
   BallCollection_Scoop2,        // send CMD_SCOOP, wait BALL_SCOOP_DURATION_MS
-  BallCollection_Retract,       // Nav_ ,M M,M MoveForward_mm(BALL_RETRACT_DISTANCE_MM)
+  BallCollection_Sweep3,        // send CMD_SWEEP, wait BALL_SWEEP_DURATION_MS
+  BallCollection_Scoop3,        // send CMD_SCOOP, wait BALL_SCOOP_DURATION_MS
+  BallCollection_Sweep4,        // send CMD_SWEEP, wait BALL_SWEEP_DURATION_MS
+  BallCollection_Scoop4,        // send CMD_SCOOP, wait BALL_SCOOP_DURATION_MS
 };
 #define NUM_COLLECTION_BEHAVIORS \
   (sizeof(CollectionSequence) / sizeof(CollectionSequence[0]))
@@ -270,7 +278,7 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
       {
         // Only relevant during Behavior_SearchBeaconBG.
         // TODO: Add a check to ensure we only handle this event during the correct behavior.
-        if (BehaviorIdx == 2)  // index of Behavior_SearchBeaconBG in BehaviorSequence
+        if (BehaviorIdx == 1)  // index of Behavior_SearchBeaconBG in BehaviorSequence,  TODO: make this more robust
         {
           DB_printf("MainLogic: Beacon detected during search, id=%c\r\n",
                     (char)ThisEvent.EventParam);
@@ -303,6 +311,19 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
 
     case ML_Done:
       // Sequence complete — do nothing
+      // If jumping event is received, can optionally reset sequence
+      switch(ThisEvent.EventType)
+      {
+        case ES_BEHAVIOR_COMPLETE:
+          DB_printf("MainLogic: Restarting sequence from ML_Done\r\n");
+          CurrentState = ML_Running;
+          BehaviorIdx = ThisEvent.EventParam;
+          BehaviorSequence[BehaviorIdx]();
+          break;
+
+        default:
+          break;
+      }
       break;
 
     case ML_Stopped:
@@ -591,7 +612,7 @@ static void Behavior_RotateCW90(void)
 
 /****************************************************************************
  Function
-     Behavior_RotateCW90R110mm
+     Behavior_RotateCW90R100mm
 
  Parameters
      None
@@ -606,11 +627,11 @@ static void Behavior_RotateCW90(void)
      Team, 03/02/26
 ****************************************************************************/
 
-static void Behavior_RotateCW90R110mm(void)
+static void Behavior_RotateCW90R100mm(void)
 {
-  DB_printf("Behavior: RotateCW90R110mm\r\n");
+  DB_printf("Behavior: RotateCW90R100mm\r\n");
   LastNavIntent = NAV_INTENT_ROTATE_CW;
-  Nav_RotateCWRadius(90u, 110u);
+  Nav_RotateCWRadius(90u, 100u);
   // NavigationFSM posts ES_BEHAVIOR_COMPLETE when odometer arc reached
 }
 
@@ -620,11 +641,11 @@ static void Behavior_RotateCW90R110mm(void)
   Parameters
 
 */
-static void Behavior_MoveForwardFollow100mm(void)
+static void Behavior_MoveForwardFollow50mm(void)
 {
-  DB_printf("Behavior: MoveForwardFollow100mm\r\n");
+  DB_printf("Behavior: MoveForwardFollow50mm\r\n");
   LastNavIntent = NAV_INTENT_FORWARD;
-  Nav_MoveForward_mm_Follow(100u);
+  Nav_MoveForward_mm_Follow(50u);
   // NavigationFSM posts ES_BEHAVIOR_COMPLETE when T-intersection detected
 }
 
@@ -714,7 +735,7 @@ static void Behavior_MoveBackwardToNode(void)
 {
   DB_printf("Behavior: MoveBackwardToNode\r\n");
   LastNavIntent = NAV_INTENT_REVERSE;
-  Nav_MoveBackward_mm_Follow(350u);
+  Nav_MoveBackward_mm(210u);
   // NavigationFSM posts ES_BEHAVIOR_COMPLETE when odometer dist reached
 }
 
@@ -818,6 +839,7 @@ static void BallCollection_Dock(void)
 {
   DB_printf("BallCollection: Dock %u mm\r\n",
             (unsigned)BALL_DOCK_DISTANCE_MM);
+  DB_printf("Behavior: MoveBackwardToNode\r\n");
   LastNavIntent = NAV_INTENT_REVERSE;
   Nav_MoveBackward_mm(BALL_DOCK_DISTANCE_MM);
   // NavigationFSM posts ES_BEHAVIOR_COMPLETE when odometer dist reached
@@ -927,6 +949,46 @@ static void BallCollection_Scoop2(void)
   ES_Timer_InitTimer(BALL_COLLECTION_TIMER, BALL_SCOOP_DURATION_MS);
 }
 
+
+static void BallCollection_Sweep3(void)
+{
+  DB_printf("BallCollection: Sweep 3\r\n");
+  ES_Event_t ev;
+  ev.EventType  = ES_NEW_COMMAND;
+  ev.EventParam = CMD_SWEEP;
+  PostSPILeaderFSM(ev);
+  ES_Timer_InitTimer(BALL_COLLECTION_TIMER, BALL_SWEEP_DURATION_MS);
+}
+
+static void BallCollection_Scoop3(void)
+{
+  DB_printf("BallCollection: Scoop 3\r\n");
+  ES_Event_t ev;
+  ev.EventType  = ES_NEW_COMMAND;
+  ev.EventParam = CMD_SCOOP;
+  PostSPILeaderFSM(ev);
+  ES_Timer_InitTimer(BALL_COLLECTION_TIMER, BALL_SCOOP_DURATION_MS);
+}
+
+static void BallCollection_Sweep4(void)
+{
+  DB_printf("BallCollection: Sweep 4\r\n");
+  ES_Event_t ev;
+  ev.EventType  = ES_NEW_COMMAND;
+  ev.EventParam = CMD_SWEEP;
+  PostSPILeaderFSM(ev);
+  ES_Timer_InitTimer(BALL_COLLECTION_TIMER, BALL_SWEEP_DURATION_MS);
+}
+
+static void BallCollection_Scoop4(void)
+{
+  DB_printf("BallCollection: Scoop 4\r\n");
+  ES_Event_t ev;
+  ev.EventType  = ES_NEW_COMMAND;
+  ev.EventParam = CMD_SCOOP;
+  PostSPILeaderFSM(ev);
+  ES_Timer_InitTimer(BALL_COLLECTION_TIMER, BALL_SCOOP_DURATION_MS);
+}
 /****************************************************************************
  Function
      BallCollection_Retract

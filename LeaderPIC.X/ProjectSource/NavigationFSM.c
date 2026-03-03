@@ -31,7 +31,7 @@
 
 /*----------------------------- Module Defines ----------------------------*/
 #define TAPE_FOLLOW_INTERVAL_MS   20u     // sensor poll rate: 50 Hz
-#define BASE_FOLLOW_SPEED_MM_S    100u    // straight-line speed target in mm/s
+#define BASE_FOLLOW_SPEED_MM_S    150u    // straight-line speed target in mm/s
 #define BASE_FOLLOW_SPEED_REV_MM_S    70u    // straight-line speed target in mm/s
 #define LINE_KP                   5.0f   // proportional gain, tune upward from here
 #define LINE_KD                   1.5f   // derivative gain, tune after KP settled
@@ -44,13 +44,13 @@
 // Fixed threshold: analog value > 600 = black tape detected
 #define TAPE_THRESHOLD            600u
 
-#define SEARCH_ROTATE_SPEED_MM_S  120u   // slow rotation during search
+#define SEARCH_ROTATE_SPEED_MM_S  150u   // slow rotation during tape search, calibration
 
 // Speed used for all open-loop rotation maneuvers
 // Lower = more accurate (less overshoot from motor inertia)
 // Must match what DCMotor_SetSpeed_mm_s can reliably track
 #define ROTATE_SPEED_MM_S       100u
-#define RADIUS_ROTATE_SPEED_MM_S 70u
+#define RADIUS_ROTATE_SPEED_MM_S 10u
 
 // Duration of startup calibration rotation in milliseconds.
 // Robot sweeps sensors over floor (and hopefully tape) to build min/max range.
@@ -80,9 +80,9 @@ static bool leftTState = false;
 static bool rightTState = false;
 
 // Calibration values
-static uint32_t MinLeftC = 1023u, MaxLeftC = 0u;
-static uint32_t MinRightC = 1023u, MaxRightC = 0u;
-static uint32_t MinCenterC = 1023u, MaxCenterC = 0u;
+static uint32_t MinLeftC = 60u, MaxLeftC = 500u;
+static uint32_t MinRightC = 60u, MaxRightC = 500u;
+static uint32_t MinCenterC = 60u, MaxCenterC = 500u;
 
 // Boolean tape detection states
 static bool centerOnTape = false;
@@ -624,21 +624,31 @@ ES_Event_t RunNavigationFSM(ES_Event_t ThisEvent)
       {
         uint32_t curL = ICCountToDistance_mm(DCMotor_GetICEventCount(LEFT_MOTOR));
         uint32_t curR = ICCountToDistance_mm(DCMotor_GetICEventCount(RIGHT_MOTOR));
-        uint32_t avg  = ((curL - MoveBackStartDistLeft_mm) +
-                         (curR - MoveBackStartDistRight_mm)) / 2u;
 
-        if (avg >= MoveBackTargetDist_mm)
+        // Print current distances for debugging
+          DB_printf("MoveBack: L=%u mm, R=%u mm\r\n", curL - MoveBackStartDistLeft_mm, curR - MoveBackStartDistRight_mm);
+
+        // Stop the wheel reaching target
+        if (curL - MoveBackStartDistLeft_mm >= MoveBackTargetDist_mm &&
+                 curR - MoveBackStartDistRight_mm >= MoveBackTargetDist_mm)
         {
           DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
-          DB_printf("Nav: MoveBackward done, avg=%u mm\r\n", (unsigned)avg);
+          DB_printf("Nav: MoveBackward done, avg=%u mm\r\n", (unsigned)((curL + curR) / 2u));
           ES_Event_t ev = { ES_BEHAVIOR_COMPLETE, 0 };
           PostMainLogicFSM(ev);
           CurrentState = NavIdle;
         }
-        else
+        if (curL - MoveBackStartDistLeft_mm >= MoveBackTargetDist_mm)
         {
-          ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, ROTATE_POLL_INTERVAL_MS);
+          // Stop left wheel
+          DCMotor_SetSpeed_mm_s(0, BASE_FOLLOW_SPEED_MM_S, REVERSE, REVERSE);
         }
+        else if (curR - MoveBackStartDistRight_mm >= MoveBackTargetDist_mm)
+        {
+          // Stop right wheel
+          DCMotor_SetSpeed_mm_s(BASE_FOLLOW_SPEED_MM_S, 0, REVERSE, REVERSE);
+        }
+        ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, ROTATE_POLL_INTERVAL_MS);
       }
       else if (ThisEvent.EventType == ES_STOP_LINE_FOLLOW)
       {
@@ -1321,11 +1331,13 @@ void Nav_RotateCWRadius(uint8_t degrees, uint32_t radius_mm)
   ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, ROTATE_POLL_INTERVAL_MS);
   CurrentState = NavRotatingRadius;
 
-  DB_printf("Nav: CW radius turn %u deg R=%u L=%u R=%u\r\n",
+  DB_printf("Nav: CW radius turn %u deg R=%u L=%u R=%u, speed L=%u R=%u\r\n",
             (unsigned)degrees,
             (unsigned)radius_mm,
             (unsigned)arcLeft_mm,
-            (unsigned)arcRight_mm);
+            (unsigned)arcRight_mm,
+            (unsigned)leftSpeed,
+            (unsigned)rightSpeed);
 }
 
 /****************************************************************************
@@ -1435,11 +1447,13 @@ void Nav_RotateCCWRadius(uint8_t degrees, uint32_t radius_mm)
   ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, ROTATE_POLL_INTERVAL_MS);
   CurrentState = NavRotatingRadius;
 
-  DB_printf("Nav: CCW radius turn %u deg R=%u L=%u R=%u\r\n",
+  DB_printf("Nav: CCW radius turn %u deg R=%u L=%u R=%u, speed L=%u R=%u\r\n",
             (unsigned)degrees,
             (unsigned)radius_mm,
             (unsigned)arcLeft_mm,
-            (unsigned)arcRight_mm);
+            (unsigned)arcRight_mm,
+            (unsigned)leftSpeed,
+            (unsigned)rightSpeed);
 }
 
 /****************************************************************************
