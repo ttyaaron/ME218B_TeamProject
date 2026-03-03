@@ -65,8 +65,10 @@ static void Behavior_TapeFollowToT(void);
 static void Behavior_MoveForward110mm(void);
 static void Behavior_RotateCW90(void);
 static void Behavior_RotateCW90R110mm(void);
-static void Behavior_MoveForwardToNode(void);
+static void Behavior_MoveBackwardToNode(void);
 static void Behavior_BallCollection(void);
+static void Behavior_TapeFollowBackward(void);
+static void Behavior_MoveForwardFollow100mm(void);
 
 // Ball collection sub-behaviors
 static void BallCollection_InitSweepServo(void);
@@ -107,9 +109,11 @@ static const BehaviorFn_t BehaviorSequence[] = {
   Behavior_IndicateSide,
   Behavior_TapeFollowToT,
   Behavior_RotateCW90R110mm,
-  Behavior_MoveForwardToNode,
+  Behavior_MoveForwardFollow100mm,
+  Behavior_MoveBackwardToNode,
   Behavior_BallCollection,
   // Behavior_RotateCW90R110mm,
+  // Behavior_TapeFollowBackward,
 };
 #define NUM_BEHAVIORS (sizeof(BehaviorSequence) / sizeof(BehaviorSequence[0]))
 static uint8_t BehaviorIdx = 0;
@@ -126,7 +130,7 @@ static const BehaviorFn_t CollectionSequence[] = {
   BallCollection_Scoop1,        // send CMD_SCOOP, wait BALL_SCOOP_DURATION_MS
   BallCollection_Sweep2,        // send CMD_SWEEP, wait BALL_SWEEP_DURATION_MS
   BallCollection_Scoop2,        // send CMD_SCOOP, wait BALL_SCOOP_DURATION_MS
-  BallCollection_Retract,       // Nav_MoveForward_mm(BALL_RETRACT_DISTANCE_MM)
+  BallCollection_Retract,       // Nav_ ,M M,M MoveForward_mm(BALL_RETRACT_DISTANCE_MM)
 };
 #define NUM_COLLECTION_BEHAVIORS \
   (sizeof(CollectionSequence) / sizeof(CollectionSequence[0]))
@@ -250,6 +254,7 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
         }
         else
         {
+          // TODO: need to check if current behavior needs such condition
           DB_printf("MainLogic: Tape found\r\n");
           AdvanceMainSequence();
         }
@@ -609,6 +614,20 @@ static void Behavior_RotateCW90R110mm(void)
   // NavigationFSM posts ES_BEHAVIOR_COMPLETE when odometer arc reached
 }
 
+/****************************************
+  Function
+      Behavior_MoveForwardFollow
+  Parameters
+
+*/
+static void Behavior_MoveForwardFollow100mm(void)
+{
+  DB_printf("Behavior: MoveForwardFollow100mm\r\n");
+  LastNavIntent = NAV_INTENT_FORWARD;
+  Nav_MoveForward_mm_Follow(100u);
+  // NavigationFSM posts ES_BEHAVIOR_COMPLETE when T-intersection detected
+}
+
 /****************************************************************************
  Function
      Behavior_RecoverTapeLost
@@ -653,7 +672,7 @@ static void Behavior_RecoverTapeLost(void)
 
 /****************************************************************************
  Function
-     Behavior_MoveForwardToNode
+     Behavior_TapeFollowBackward
 
  Parameters
      None
@@ -662,16 +681,40 @@ static void Behavior_RecoverTapeLost(void)
      None
 
  Description
-     Moves forward 300mm to collection node using odometer.
+     Follows tape backward until line lost.
+
+ Author
+     Team, 03/02/26 
+****************************************************************************/
+static void Behavior_TapeFollowBackward(void)
+{
+  DB_printf("Behavior: TapeFollowBackward\r\n");
+  LastNavIntent = NAV_INTENT_REVERSE;
+  Nav_StartFollowReverse();
+  // NavigationFSM posts ES_LINE_LOST when tape lost
+}
+
+/****************************************************************************
+ Function
+     Behavior_MoveBackwardToNode
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Moves backward 50mm to collection node using odometer.
 
  Author
      Team, 03/02/26
 ****************************************************************************/
-static void Behavior_MoveForwardToNode(void)
+static void Behavior_MoveBackwardToNode(void)
 {
-  DB_printf("Behavior: MoveForwardToNode\r\n");
-  LastNavIntent = NAV_INTENT_FORWARD;
-  Nav_MoveForward_mm_Follow(200u);
+  DB_printf("Behavior: MoveBackwardToNode\r\n");
+  LastNavIntent = NAV_INTENT_REVERSE;
+  Nav_MoveBackward_mm_Follow(350u);
   // NavigationFSM posts ES_BEHAVIOR_COMPLETE when odometer dist reached
 }
 

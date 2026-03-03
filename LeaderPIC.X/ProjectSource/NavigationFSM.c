@@ -32,8 +32,11 @@
 /*----------------------------- Module Defines ----------------------------*/
 #define TAPE_FOLLOW_INTERVAL_MS   20u     // sensor poll rate: 50 Hz
 #define BASE_FOLLOW_SPEED_MM_S    100u    // straight-line speed target in mm/s
+#define BASE_FOLLOW_SPEED_REV_MM_S    70u    // straight-line speed target in mm/s
 #define LINE_KP                   5.0f   // proportional gain, tune upward from here
 #define LINE_KD                   1.5f   // derivative gain, tune after KP settled
+#define LINE_KP_REV               0.5f   // proportional gain, tune upward from here
+#define LINE_KD_REV               0.5f   // derivative gain, tune after KP settled
 #define LINE_LOST_THRESHOLD       50u      // consecutive no-tape cycles before ES_LINE_LOST
 #define TAPE_ANALOG_PINS          (BIT12HI | BIT11HI | BIT5HI)  // AN12,11,5
 #define THRESH_DIV                2       // Threshold divisor for tape detection
@@ -41,7 +44,13 @@
 // Fixed threshold: analog value > 600 = black tape detected
 #define TAPE_THRESHOLD            600u
 
-#define SEARCH_ROTATE_SPEED_MM_S  100u   // slow rotation during search
+#define SEARCH_ROTATE_SPEED_MM_S  120u   // slow rotation during search
+
+// Speed used for all open-loop rotation maneuvers
+// Lower = more accurate (less overshoot from motor inertia)
+// Must match what DCMotor_SetSpeed_mm_s can reliably track
+#define ROTATE_SPEED_MM_S       100u
+#define RADIUS_ROTATE_SPEED_MM_S 70u
 
 // Duration of startup calibration rotation in milliseconds.
 // Robot sweeps sensors over floor (and hopefully tape) to build min/max range.
@@ -458,13 +467,13 @@ ES_Event_t RunNavigationFSM(ES_Event_t ThisEvent)
             ReadTapeSensors();
             
             int32_t error = (int32_t)rightVal - (int32_t)leftVal;
-            float correction = LINE_KP * (float)error + LINE_KD * (float)(error - lastError);
+            float correction = LINE_KP_REV * (float)error + LINE_KD_REV * (float)(error - lastError);
             lastError = error;
             
-            // For reverse: left wheel = base + correction, right = base - correction
+            // For reverse: left wheel = base - correction, right = base + correction
             // Both commanded in REVERSE direction
-            float leftSpeed_f  = (float)BASE_FOLLOW_SPEED_MM_S + correction;
-            float rightSpeed_f = (float)BASE_FOLLOW_SPEED_MM_S - correction;
+            float leftSpeed_f  = (float)BASE_FOLLOW_SPEED_REV_MM_S - correction;
+            float rightSpeed_f = (float)BASE_FOLLOW_SPEED_REV_MM_S + correction;
             
             if (leftSpeed_f  < 0.0f) leftSpeed_f  = 0.0f;
             if (rightSpeed_f < 0.0f) rightSpeed_f = 0.0f;
@@ -742,12 +751,12 @@ ES_Event_t RunNavigationFSM(ES_Event_t ThisEvent)
             int32_t error = (int32_t)rightVal - (int32_t)leftVal;
 
             // 3. PD correction
-            float correction = LINE_KP * (float)error + LINE_KD * (float)(error - lastError);
+            float correction = LINE_KP_REV * (float)error + LINE_KD_REV * (float)(error - lastError);
             lastError = error;
 
             // 4. Differential speed targets (both in REVERSE)
-            float leftSpeed_f  = (float)BASE_FOLLOW_SPEED_MM_S + correction;
-            float rightSpeed_f = (float)BASE_FOLLOW_SPEED_MM_S - correction;
+            float leftSpeed_f  = (float)BASE_FOLLOW_SPEED_REV_MM_S - correction;
+            float rightSpeed_f = (float)BASE_FOLLOW_SPEED_REV_MM_S + correction;
 
             // 5. Clamp to physical range [0, SPEED_FULL_MM_S]
             if (leftSpeed_f  < 0.0f) leftSpeed_f  = 0.0f;
@@ -1293,13 +1302,13 @@ void Nav_RotateCWRadius(uint8_t degrees, uint32_t radius_mm)
   {
     // Pivot around right wheel
     rightSpeed = 0u;
-    leftSpeed = ROTATE_SPEED_MM_S;
+    leftSpeed = RADIUS_ROTATE_SPEED_MM_S;
   }
   else
   {
     float ratio = (float)R_left / (float)R_right;
-    rightSpeed = ROTATE_SPEED_MM_S;
-    leftSpeed = (uint16_t)(ROTATE_SPEED_MM_S * ratio);
+    rightSpeed = RADIUS_ROTATE_SPEED_MM_S;
+    leftSpeed = (uint16_t)(RADIUS_ROTATE_SPEED_MM_S * ratio);
     
     if (leftSpeed > SPEED_FULL_MM_S)
       leftSpeed = SPEED_FULL_MM_S;
@@ -1407,13 +1416,13 @@ void Nav_RotateCCWRadius(uint8_t degrees, uint32_t radius_mm)
   {
     // Pivot around left wheel
     leftSpeed = 0u;
-    rightSpeed = ROTATE_SPEED_MM_S;
+    rightSpeed = RADIUS_ROTATE_SPEED_MM_S;
   }
   else
   {
     float ratio = (float)R_right / (float)R_left;
-    leftSpeed = ROTATE_SPEED_MM_S;
-    rightSpeed = (uint16_t)(ROTATE_SPEED_MM_S * ratio);
+    leftSpeed = RADIUS_ROTATE_SPEED_MM_S;
+    rightSpeed = (uint16_t)(RADIUS_ROTATE_SPEED_MM_S * ratio);
     
     if (rightSpeed > SPEED_FULL_MM_S)
       rightSpeed = SPEED_FULL_MM_S;
