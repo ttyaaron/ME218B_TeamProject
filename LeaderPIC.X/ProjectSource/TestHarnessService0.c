@@ -47,7 +47,7 @@
 #include "MainLogicFSM.h"
 #include "DCMotorService.h"
 #include "SPILeaderFSM.h"
-#include "TapeFollowFSM.h"
+#include "NavigationFSM.h"
 #include "CommonDefinitions.h"
 
 /*----------------------------- Module Defines ----------------------------*/
@@ -131,8 +131,8 @@ bool InitTestHarnessService0(uint8_t Priority)
   DB_printf("1 - Inject left intersection -> MainLogicFSM\r\n");
   DB_printf("2 - Inject right intersection -> MainLogicFSM\r\n");
   DB_printf("x - Inject ES_LINE_LOST -> MainLogicFSM\r\n");
-  DB_printf("q - Emergency stop -> TapeFollowFSM\r\n");
-  DB_printf("F - Start forward line follow -> TapeFollowFSM\r\n");
+  DB_printf("q - Emergency stop -> NavigationFSM\r\n");
+  DB_printf("F - Start forward line follow -> NavigationFSM\r\n");
   DB_printf("p - Print current MainLogicFSM state number\r\n");
   DB_printf("========================================\r\n\n");
 
@@ -349,8 +349,8 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
           DB_printf("1 - Inject left intersection -> MainLogicFSM\r\n");
           DB_printf("2 - Inject right intersection -> MainLogicFSM\r\n");
           DB_printf("x - Inject ES_LINE_LOST -> MainLogicFSM\r\n");
-          DB_printf("q - Emergency stop -> TapeFollowFSM\r\n");
-          DB_printf("F - Start forward line follow -> TapeFollowFSM\r\n");
+          DB_printf("q - Emergency stop -> NavigationFSM\r\n");
+          DB_printf("F - Start forward line follow -> NavigationFSM\r\n");
           DB_printf("p - Print current MainLogicFSM state number\r\n");
           DB_printf("========================================\r\n\n");
           break;
@@ -425,13 +425,13 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
         }
         break;
 
-        case 'q':  // Emergency stop -> TapeFollowFSM
+        case 'q':  // Emergency stop -> NavigationFSM
         {
           ES_Event_t ev;
           ev.EventType  = ES_STOP_LINE_FOLLOW;
           ev.EventParam = 0;
-          PostTapeFollowFSM(ev);
-          DB_printf("Injected ES_STOP_LINE_FOLLOW -> TapeFollowFSM (emergency stop)\r\n");
+          PostNavigationFSM(ev);
+          DB_printf("Injected ES_STOP_LINE_FOLLOW -> NavigationFSM (emergency stop)\r\n");
         }
         break;
 
@@ -440,8 +440,8 @@ ES_Event_t RunTestHarnessService0(ES_Event_t ThisEvent)
           ES_Event_t ev;
           ev.EventType  = ES_START_LINE_FOLLOW;
           ev.EventParam = 0;
-          PostTapeFollowFSM(ev);
-          DB_printf("Injected ES_START_LINE_FOLLOW -> TapeFollowFSM\r\n");
+          PostNavigationFSM(ev);
+          DB_printf("Injected ES_START_LINE_FOLLOW -> NavigationFSM\r\n");
         }
         break;
 

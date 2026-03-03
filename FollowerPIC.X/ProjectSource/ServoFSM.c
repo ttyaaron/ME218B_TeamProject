@@ -67,8 +67,8 @@
 #define RELEASE_ACTION_PW      (2.0 * 2500)  // 2.0ms - release/dispense position
 #define RELEASE_RETRACT_PW     (1.0 * 2500)  // 1.0ms - retracted position
 
-#define SHOOT_IDLE_PW       (0.5 * 2500)  // 1.5ms - idle/ready position
-#define SHOOT_ACTION_PW     (2.5 * 2500)  // 2.0ms - shoot/release position
+#define SHOOT_IDLE_PW       (1.9 * 2500)  // 1.5ms - idle/ready position
+#define SHOOT_ACTION_PW     (2.1 * 2500)  // 2.0ms - shoot/release position
 
 #define SIDE_MIDDLE_PW      (1.5 * 2500)  // 1.5ms - middle/neutral position
 #define SIDE_BLUE_PW        (0.5 * 2500)  // 1.0ms - blue field indicator position
@@ -78,7 +78,7 @@
 #define SWEEP_ACTION_TIME   500   // Time to complete sweep action
 #define SCOOP_ACTION_TIME   600   // Time to complete scoop action
 #define RELEASE_ACTION_TIME    700   // Time to complete release action
-#define SHOOT_ACTION_TIME   1000   // Time to complete shoot action
+#define SHOOT_ACTION_TIME   2500   // Time to complete shoot action
 #define SIDE_ACTION_TIME    300    // Time to move side servo to position
 
 /*---------------------------- Module Variables ---------------------------*/

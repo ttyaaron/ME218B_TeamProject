@@ -85,7 +85,7 @@ bool InitSPILeaderFSM(uint8_t Priority)
   /********************************************
    SPI Leader Initialization
    *******************************************/
-  DB_printf("SPI Leader Init\\n");
+  DB_printf("SPI Leader Init\n");
   
   SPI_SamplePhase_t SamplePhase = SPI_SMP_MID;
   uint32_t DesiredClock_ns = 10000;
@@ -129,7 +129,7 @@ bool InitSPILeaderFSM(uint8_t Priority)
   
   __builtin_enable_interrupts();
   
-  DB_printf("SPI Leader configured\\n");
+  DB_printf("SPI Leader configured\n");
 
   // Post the initial transition event
   ThisEvent.EventType = ES_INIT;
@@ -229,14 +229,14 @@ ES_Event_t RunSPILeaderFSM(ES_Event_t ThisEvent)
         {
           // Follower has new status ready
           SawNewStatusFlag = true;
-          DB_printf("Follower has new status\\n");
+          DB_printf("Follower has new status\n");
         }
         else if (SawNewStatusFlag == true)
         {
           // This is the actual status byte
           if (statusByte != LastStatus)
           {
-            DB_printf("Follower status: 0x%x\\n", statusByte);
+            DB_printf("Follower status: 0x%x\n", statusByte);
             LastStatus = statusByte;
             
             // Could post event to other services if needed

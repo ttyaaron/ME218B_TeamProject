@@ -1,12 +1,12 @@
 /****************************************************************************
  Module
-   TapeFollowFSM.c
+   NavigationFSM.c
 
  Revision
    1.0.0
 
  Description
-   This module implements a tape-following state machine that manages
+   This module implements a navigation state machine that manages
    tape sensor reading, line following PID control, and intersection detection.
 
  Notes
@@ -14,13 +14,14 @@
  History
  When           Who     What/Why
  -------------- ---     --------
+ 03/02/26       Team    Renamed from TapeFollowFSM to NavigationFSM
  03/01/26 00:00 Team    Initial implementation
 ****************************************************************************/
 /*----------------------------- Include Files -----------------------------*/
 #include "ES_Configure.h"
 #include "ES_Framework.h"
 #include "ES_Timers.h"
-#include "TapeFollowFSM.h"
+#include "NavigationFSM.h"
 #include "MainLogicFSM.h"
 #include "DCMotorService.h"
 #include "CommonDefinitions.h"
@@ -52,10 +53,11 @@
 static void ReadTapeSensors(void);
 static void CheckFollowConditions(void);
 static bool IsOnTape(uint32_t val, uint32_t minC, uint32_t maxC);
+static void StartRotation(uint8_t leftDir, uint8_t rightDir, uint32_t targetArc_mm);
 
 /*---------------------------- Module Variables ---------------------------*/
 // State variable
-static TapeFollowState_t CurrentState;
+static NavigationState_t CurrentState;
 
 // Priority variable
 static uint8_t MyPriority;
@@ -91,10 +93,20 @@ static bool rightTurnPublished        = false;
 // Line lost counter
 static uint8_t lineLostCount = 0;
 
+// Odometer-based rotation tracking
+static uint32_t RotateStartDistLeft_mm  = 0u;
+static uint32_t RotateStartDistRight_mm = 0u;
+static uint32_t RotateTargetArc_mm      = 0u;
+
+// Odometer-based forward movement tracking
+static uint32_t MoveTargetDist_mm      = 0u;
+static uint32_t MoveStartDistLeft_mm   = 0u;
+static uint32_t MoveStartDistRight_mm  = 0u;
+
 /*------------------------------ Module Code ------------------------------*/
 /****************************************************************************
  Function
-     InitTapeFollowFSM
+     InitNavigationFSM
 
  Parameters
      uint8_t : the priority of this service
@@ -103,12 +115,12 @@ static uint8_t lineLostCount = 0;
      bool, false if error in initialization, true otherwise
 
  Description
-     Initializes the TapeFollowFSM state machine and configures tape sensors
+     Initializes the NavigationFSM state machine and configures tape sensors
 
  Author
      Team, 03/01/26
 ****************************************************************************/
-bool InitTapeFollowFSM(uint8_t Priority)
+bool InitNavigationFSM(uint8_t Priority)
 {
   ES_Event_t ThisEvent;
 
@@ -150,10 +162,10 @@ bool InitTapeFollowFSM(uint8_t Priority)
   MinRightC = 1023u;  MaxRightC = 0u;
   MinCenterC = 1023u; MaxCenterC = 0u;
   
-  DB_printf("TapeFollowFSM: Tape Sensors Initialized\r\n");
+  DB_printf("NavigationFSM: Tape Sensors Initialized\r\n");
   
   // put us into the Initial PseudoState
-  CurrentState = TapeIdle;
+  CurrentState = NavIdle;
   
   // post the initial transition event
   ThisEvent.EventType = ES_INIT;
@@ -169,7 +181,7 @@ bool InitTapeFollowFSM(uint8_t Priority)
 
 /****************************************************************************
  Function
-     PostTapeFollowFSM
+     PostNavigationFSM
 
  Parameters
      ES_Event_t ThisEvent , the event to post to the queue
@@ -183,14 +195,14 @@ bool InitTapeFollowFSM(uint8_t Priority)
  Author
      Team, 03/01/26
 ****************************************************************************/
-bool PostTapeFollowFSM(ES_Event_t ThisEvent)
+bool PostNavigationFSM(ES_Event_t ThisEvent)
 {
   return ES_PostToService(MyPriority, ThisEvent);
 }
 
 /****************************************************************************
  Function
-    RunTapeFollowFSM
+    RunNavigationFSM
 
  Parameters
    ES_Event_t : the event to process
@@ -199,19 +211,19 @@ bool PostTapeFollowFSM(ES_Event_t ThisEvent)
    ES_Event_t, ES_NO_EVENT if no error ES_ERROR otherwise
 
  Description
-   Implements the TapeFollowFSM state machine
+   Implements the NavigationFSM state machine
 
  Author
    Team, 03/01/26
 ****************************************************************************/
-ES_Event_t RunTapeFollowFSM(ES_Event_t ThisEvent)
+ES_Event_t RunNavigationFSM(ES_Event_t ThisEvent)
 {
   ES_Event_t ReturnEvent;
   ReturnEvent.EventType = ES_NO_EVENT; // assume no errors
 
   switch (CurrentState)
   {
-    case TapeIdle:
+    case NavIdle:
     {
       switch (ThisEvent.EventType)
       {
@@ -223,7 +235,7 @@ ES_Event_t RunTapeFollowFSM(ES_Event_t ThisEvent)
         
         case ES_START_LINE_FOLLOW:
         {
-          DB_printf("TapeFollowFSM: Starting line following\r\n");
+          DB_printf("NavigationFSM: Starting line following\r\n");
           
           // Reset control variables
           lastError = 0;
@@ -235,8 +247,8 @@ ES_Event_t RunTapeFollowFSM(ES_Event_t ThisEvent)
           // Start the tape follow timer
           ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, TAPE_FOLLOW_INTERVAL_MS);
           
-          // Transition to TapeFollowingF state
-          CurrentState = TapeFollowingF;
+          // Transition to NavFollowingForward state
+          CurrentState = NavFollowingForward;
         }
         break;
         
@@ -246,19 +258,19 @@ ES_Event_t RunTapeFollowFSM(ES_Event_t ThisEvent)
     }
     break;
 
-    case TapeFollowingF:
+    case NavFollowingForward:
     {
       switch (ThisEvent.EventType)
       {
         case ES_STOP_LINE_FOLLOW:
         {
-          DB_printf("TapeFollowFSM: Stopping line following\r\n");
+          DB_printf("NavigationFSM: Stopping line following\r\n");
           
           // Stop motors
           DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
           
           // Transition to Idle
-          CurrentState = TapeIdle;
+          CurrentState = NavIdle;
         }
         break;
         
@@ -326,7 +338,7 @@ ES_Event_t RunTapeFollowFSM(ES_Event_t ThisEvent)
     }
     break;
 
-    case TapeCalibrating:
+    case NavCalibrating:
     {
       switch (ThisEvent.EventType)
       {
@@ -350,7 +362,7 @@ ES_Event_t RunTapeFollowFSM(ES_Event_t ThisEvent)
             // Calibration rotation complete — stop motors and notify MainLogicFSM
             DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
 
-            DB_printf("TapeFollow: Calibration done. C[%u,%u] L[%u,%u] R[%u,%u]\r\n",
+            DB_printf("Nav: Calibration done. C[%u,%u] L[%u,%u] R[%u,%u]\r\n",
                       (unsigned)MinCenterC, (unsigned)MaxCenterC,
                       (unsigned)MinLeftC,   (unsigned)MaxLeftC,
                       (unsigned)MinRightC,  (unsigned)MaxRightC);
@@ -360,14 +372,14 @@ ES_Event_t RunTapeFollowFSM(ES_Event_t ThisEvent)
             ev.EventParam = 0;
             PostMainLogicFSM(ev);
 
-            CurrentState = TapeIdle;
+            CurrentState = NavIdle;
           }
           break;
 
         case ES_STOP_LINE_FOLLOW:
           DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
           ES_Timer_StopTimer(CALIB_TIMER);
-          CurrentState = TapeIdle;
+          CurrentState = NavIdle;
           break;
 
         default:
@@ -376,7 +388,7 @@ ES_Event_t RunTapeFollowFSM(ES_Event_t ThisEvent)
     }
     break;
 
-    case TapeSearching:
+    case NavSearching:
     {
       switch (ThisEvent.EventType)
       {
@@ -389,12 +401,12 @@ ES_Event_t RunTapeFollowFSM(ES_Event_t ThisEvent)
             {
               // Tape found — stop and notify MainLogicFSM
               DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
-              DB_printf("TapeFollow: Tape found during search\r\n");
+              DB_printf("Nav: Tape found during search\r\n");
               ES_Event_t ev;
               ev.EventType  = ES_TAPE_FOUND;
               ev.EventParam = 0;
               PostMainLogicFSM(ev);
-              CurrentState = TapeIdle;
+              CurrentState = NavIdle;
             }
             else
             {
@@ -405,7 +417,7 @@ ES_Event_t RunTapeFollowFSM(ES_Event_t ThisEvent)
           
         case ES_STOP_LINE_FOLLOW:
           DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
-          CurrentState = TapeIdle;
+          CurrentState = NavIdle;
           break;
           
         default:
@@ -414,7 +426,7 @@ ES_Event_t RunTapeFollowFSM(ES_Event_t ThisEvent)
     }
     break;
 
-    case TapeFollowingR:
+    case NavFollowingReverse:
     {
       switch (ThisEvent.EventType)
       {
@@ -454,11 +466,91 @@ ES_Event_t RunTapeFollowFSM(ES_Event_t ThisEvent)
           
         case ES_STOP_LINE_FOLLOW:
           DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
-          CurrentState = TapeIdle;
+          CurrentState = NavIdle;
           break;
           
         default:
           break;
+      }
+    }
+    break;
+
+    case NavRotating:
+    {
+      switch (ThisEvent.EventType)
+      {
+        case ES_TIMEOUT:
+          if (ThisEvent.EventParam == TAPE_FOLLOW_TIMER)
+          {
+            uint32_t curL = ICCountToDistance_mm(DCMotor_GetICEventCount(LEFT_MOTOR));
+            uint32_t curR = ICCountToDistance_mm(DCMotor_GetICEventCount(RIGHT_MOTOR));
+            uint32_t dL   = curL - RotateStartDistLeft_mm;
+            uint32_t dR   = curR - RotateStartDistRight_mm;
+            uint32_t avg  = (dL + dR) / 2u;
+
+            if (avg >= RotateTargetArc_mm)
+            {
+              DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
+              ES_Timer_StopTimer(ROTATE_SAFETY_TIMER);
+              DB_printf("Nav: Rotation done, avg=%u mm\r\n", (unsigned)avg);
+              ES_Event_t ev = { ES_BEHAVIOR_COMPLETE, 0 };
+              PostMainLogicFSM(ev);
+              CurrentState = NavIdle;
+            }
+            else
+            {
+              ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, ROTATE_POLL_INTERVAL_MS);
+            }
+          }
+          else if (ThisEvent.EventParam == ROTATE_SAFETY_TIMER)
+          {
+            DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
+            DB_printf("Nav: Rotation safety timeout\r\n");
+            ES_Event_t ev = { ES_BEHAVIOR_COMPLETE, 0 };
+            PostMainLogicFSM(ev);
+            CurrentState = NavIdle;
+          }
+          break;
+
+        case ES_STOP_LINE_FOLLOW:
+          DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
+          ES_Timer_StopTimer(ROTATE_SAFETY_TIMER);
+          CurrentState = NavIdle;
+          break;
+
+        default:
+          break;
+      }
+    }
+    break;
+
+    case NavMovingForward:
+    {
+      if (ThisEvent.EventType == ES_TIMEOUT &&
+          ThisEvent.EventParam == TAPE_FOLLOW_TIMER)
+      {
+        uint32_t curL = ICCountToDistance_mm(DCMotor_GetICEventCount(LEFT_MOTOR));
+        uint32_t curR = ICCountToDistance_mm(DCMotor_GetICEventCount(RIGHT_MOTOR));
+        uint32_t avg  = ((curL - MoveStartDistLeft_mm) +
+                         (curR - MoveStartDistRight_mm)) / 2u;
+
+        if (avg >= MoveTargetDist_mm)
+        {
+          DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
+          DB_printf("Nav: MoveForward done, avg=%u mm\r\n", (unsigned)avg);
+          ES_Event_t ev = { ES_BEHAVIOR_COMPLETE, 0 };
+          PostMainLogicFSM(ev);
+          CurrentState = NavIdle;
+        }
+        else
+        {
+          ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, ROTATE_POLL_INTERVAL_MS);
+        }
+      }
+      else if (ThisEvent.EventType == ES_STOP_LINE_FOLLOW)
+      {
+        DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
+        CurrentState = NavIdle;
       }
     }
     break;
@@ -472,21 +564,21 @@ ES_Event_t RunTapeFollowFSM(ES_Event_t ThisEvent)
 
 /****************************************************************************
  Function
-     QueryTapeFollowFSM
+     QueryNavigationFSM
 
  Parameters
      None
 
  Returns
-     TapeFollowState_t The current state of the TapeFollow state machine
+     NavigationState_t The current state of the Navigation state machine
 
  Description
-     returns the current state of the TapeFollow state machine
+     returns the current state of the Navigation state machine
 
  Author
      Team, 03/01/26
 ****************************************************************************/
-TapeFollowState_t QueryTapeFollowFSM(void)
+NavigationState_t QueryNavigationFSM(void)
 {
   return CurrentState;
 }
@@ -589,11 +681,15 @@ static void CheckFollowConditions(void)
     // T-intersection: both digital sensors on tape
     if (!tIntersectionPublished)
     {
-      DB_printf("TapeFollow: T-Intersection detected\r\n");
+      DB_printf("Nav: T-Intersection detected\r\n");
+      // Stop motors — navigation is done
+      DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
+      // Notify MainLogicFSM that this behavior is complete
       ES_Event_t ev;
-      ev.EventType  = ES_INTERSECTION_DETECTED;
+      ev.EventType  = ES_BEHAVIOR_COMPLETE;
       ev.EventParam = 0;
       PostMainLogicFSM(ev);
+      CurrentState = NavIdle;
       tIntersectionPublished = true;
     }
     // Reset lower-priority flags so they re-arm after T clears
@@ -605,7 +701,7 @@ static void CheckFollowConditions(void)
     // Left turn intersection
     if (!leftTurnPublished)
     {
-      DB_printf("TapeFollow: Left turn intersection detected\r\n");
+      DB_printf("Nav: Left turn intersection detected\r\n");
       ES_Event_t ev;
       ev.EventType  = ES_INTERSECTION_DETECTED;
       ev.EventParam = 1;
@@ -620,7 +716,7 @@ static void CheckFollowConditions(void)
     // Right turn intersection
     if (!rightTurnPublished)
     {
-      DB_printf("TapeFollow: Right turn intersection detected\r\n");
+      DB_printf("Nav: Right turn intersection detected\r\n");
       ES_Event_t ev;
       ev.EventType  = ES_INTERSECTION_DETECTED;
       ev.EventParam = 2;
@@ -644,11 +740,13 @@ static void CheckFollowConditions(void)
     lineLostCount++;
     if (lineLostCount >= LINE_LOST_THRESHOLD)
     {
-      DB_printf("TapeFollow: Line lost\r\n");
+      DB_printf("Nav: Line lost\r\n");
       ES_Event_t ev;
       ev.EventType  = ES_LINE_LOST;
       ev.EventParam = 0;
       PostMainLogicFSM(ev);
+      ES_Timer_StopTimer(TAPE_FOLLOW_TIMER);
+      CurrentState = NavIdle;
       lineLostCount = 0;
     }
   }
@@ -664,7 +762,7 @@ static void CheckFollowConditions(void)
 
 /****************************************************************************
  Function
-     TapeFollow_StartRotateSearch
+     Nav_StartRotateSearch
 
  Parameters
      bool clockwise - true for CW rotation, false for CCW
@@ -680,7 +778,7 @@ static void CheckFollowConditions(void)
  Author
      Team, 03/01/26
 ****************************************************************************/
-void TapeFollow_StartRotateSearch(bool clockwise)
+void Nav_StartRotateSearch(bool clockwise)
 {
   lastError     = 0;
   lineLostCount = 0;
@@ -692,14 +790,14 @@ void TapeFollow_StartRotateSearch(bool clockwise)
                         leftDir, rightDir);
   
   ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, TAPE_FOLLOW_INTERVAL_MS);
-  CurrentState = TapeSearching;
+  CurrentState = NavSearching;
   
-  DB_printf("TapeFollow: Rotate search started clockwise=%d\r\n", clockwise ? 1 : 0);
+  DB_printf("Nav: Rotate search started clockwise=%d\r\n", clockwise ? 1 : 0);
 }
 
 /****************************************************************************
  Function
-     TapeFollow_StartCalibrationRotate
+     Nav_StartCalibration
 
  Parameters
      None
@@ -715,7 +813,7 @@ void TapeFollow_StartRotateSearch(bool clockwise)
  Author
      Team, 03/01/26
 ****************************************************************************/
-void TapeFollow_StartCalibrationRotate(void)
+void Nav_StartCalibration(void)
 {
   lastError              = 0;
   lineLostCount          = 0;
@@ -733,15 +831,15 @@ void TapeFollow_StartCalibrationRotate(void)
   // Also start tape follow timer for sensor polling during rotation
   ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, TAPE_FOLLOW_INTERVAL_MS);
 
-  CurrentState = TapeCalibrating;
+  CurrentState = NavCalibrating;
 
-  DB_printf("TapeFollow: Calibration rotation started (%u ms)\r\n",
+  DB_printf("Nav: Calibration rotation started (%u ms)\r\n",
             (unsigned)CALIB_ROTATION_MS);
 }
 
 /****************************************************************************
  Function
-     TapeFollow_StartDriveSearch
+     Nav_StartDriveSearch
 
  Parameters
      bool forward - true for forward drive, false for backward
@@ -756,7 +854,7 @@ void TapeFollow_StartCalibrationRotate(void)
  Author
      Team, 03/01/26
 ****************************************************************************/
-void TapeFollow_StartDriveSearch(bool forward)
+void Nav_StartDriveSearch(bool forward)
 {
   lastError     = 0;
   lineLostCount = 0;
@@ -766,14 +864,14 @@ void TapeFollow_StartDriveSearch(bool forward)
                         dir, dir);
   
   ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, TAPE_FOLLOW_INTERVAL_MS);
-  CurrentState = TapeSearching;
+  CurrentState = NavSearching;
   
-  DB_printf("TapeFollow: Drive search started forward=%d\r\n", forward ? 1 : 0);
+  DB_printf("Nav: Drive search started forward=%d\r\n", forward ? 1 : 0);
 }
 
 /****************************************************************************
  Function
-     TapeFollow_StartReverse
+     Nav_StartFollowReverse
 
  Parameters
      None
@@ -788,7 +886,7 @@ void TapeFollow_StartDriveSearch(bool forward)
  Author
      Team, 03/01/26
 ****************************************************************************/
-void TapeFollow_StartReverse(void)
+void Nav_StartFollowReverse(void)
 {
   lastError     = 0;
   lineLostCount = 0;
@@ -797,9 +895,158 @@ void TapeFollow_StartReverse(void)
   rightTurnPublished     = false;
   
   ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, TAPE_FOLLOW_INTERVAL_MS);
-  CurrentState = TapeFollowingR;
+  CurrentState = NavFollowingReverse;
   
-  DB_printf("TapeFollow: Reverse line following started\r\n");
+  DB_printf("Nav: Reverse line following started\r\n");
+}
+
+/****************************************************************************
+ Function
+     Nav_StartFollowForward
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Starts forward line following with PD control.
+
+ Author
+     Team, 03/02/26
+****************************************************************************/
+void Nav_StartFollowForward(void)
+{
+  lastError              = 0;
+  lineLostCount          = 0;
+  tIntersectionPublished = false;
+  leftTurnPublished      = false;
+  rightTurnPublished     = false;
+
+  ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, TAPE_FOLLOW_INTERVAL_MS);
+  CurrentState = NavFollowingForward;
+
+  DB_printf("Nav: Forward tape follow started\r\n");
+}
+
+/****************************************************************************
+ Function
+     StartRotation
+
+ Parameters
+     uint8_t leftDir, uint8_t rightDir - FORWARD or REVERSE for each wheel
+     uint32_t targetArc_mm - arc distance each wheel must travel
+
+ Returns
+     None
+
+ Description
+     Starts a point turn at ROTATE_SPEED_MM_S and records odometer start values.
+
+ Author
+     Team, 03/01/26
+****************************************************************************/
+static void StartRotation(uint8_t leftDir, uint8_t rightDir, uint32_t targetArc_mm)
+{
+  // Record odometer baseline before motion begins
+  RotateStartDistLeft_mm  = ICCountToDistance_mm(DCMotor_GetICEventCount(LEFT_MOTOR));
+  RotateStartDistRight_mm = ICCountToDistance_mm(DCMotor_GetICEventCount(RIGHT_MOTOR));
+  RotateTargetArc_mm      = targetArc_mm;
+
+  // Start motors
+  DCMotor_SetSpeed_mm_s(ROTATE_SPEED_MM_S, ROTATE_SPEED_MM_S, leftDir, rightDir);
+
+  // Start short polling timer to check odometer
+  ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, ROTATE_POLL_INTERVAL_MS);
+
+  // Start safety timeout in case encoders fail
+  ES_Timer_InitTimer(ROTATE_SAFETY_TIMER, ROTATE_SAFETY_TIMEOUT_MS);
+
+  uint32_t arc_h = targetArc_mm;  // already integer mm, no float needed
+  DB_printf("Nav: StartRotation target=%u mm L=%u R=%u\r\n",
+            (unsigned)arc_h,
+            (unsigned)RotateStartDistLeft_mm,
+            (unsigned)RotateStartDistRight_mm);
+}
+
+/****************************************************************************
+ Function
+     Nav_RotateCW
+
+ Parameters
+     uint8_t degrees - angle to rotate clockwise
+
+ Returns
+     None
+
+ Description
+     Rotates clockwise by the specified degrees using odometer feedback.
+
+ Author
+     Team, 03/02/26
+****************************************************************************/
+void Nav_RotateCW(uint8_t degrees)
+{
+  DB_printf("Nav: RotateCW %u deg, arc=%u mm\r\n",
+            (unsigned)degrees, (unsigned)ROTATE_ARC_MM(degrees));
+  StartRotation(FORWARD, REVERSE, ROTATE_ARC_MM(degrees));
+  CurrentState = NavRotating;
+}
+
+/****************************************************************************
+ Function
+     Nav_RotateCCW
+
+ Parameters
+     uint8_t degrees - angle to rotate counter-clockwise
+
+ Returns
+     None
+
+ Description
+     Rotates counter-clockwise by the specified degrees using odometer feedback.
+
+ Author
+     Team, 03/02/26
+****************************************************************************/
+void Nav_RotateCCW(uint8_t degrees)
+{
+  DB_printf("Nav: RotateCCW %u deg, arc=%u mm\r\n",
+            (unsigned)degrees, (unsigned)ROTATE_ARC_MM(degrees));
+  StartRotation(REVERSE, FORWARD, ROTATE_ARC_MM(degrees));
+  CurrentState = NavRotating;
+}
+
+/****************************************************************************
+ Function
+     Nav_MoveForward_mm
+
+ Parameters
+     uint32_t dist_mm - distance to move forward in millimeters
+
+ Returns
+     None
+
+ Description
+     Drives forward in a straight line for the specified distance using
+     odometer feedback.
+
+ Author
+     Team, 03/02/26
+****************************************************************************/
+void Nav_MoveForward_mm(uint32_t dist_mm)
+{
+  MoveStartDistLeft_mm  = ICCountToDistance_mm(DCMotor_GetICEventCount(LEFT_MOTOR));
+  MoveStartDistRight_mm = ICCountToDistance_mm(DCMotor_GetICEventCount(RIGHT_MOTOR));
+  MoveTargetDist_mm     = dist_mm;
+
+  DCMotor_SetSpeed_mm_s(BASE_FOLLOW_SPEED_MM_S, BASE_FOLLOW_SPEED_MM_S,
+                        FORWARD, FORWARD);
+  ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, ROTATE_POLL_INTERVAL_MS);
+  CurrentState = NavMovingForward;
+
+  DB_printf("Nav: MoveForward %u mm\r\n", (unsigned)dist_mm);
 }
 
 /*------------------------------- Footnotes -------------------------------*/

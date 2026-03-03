@@ -52,7 +52,7 @@
       <itemPath>ProjectHeaders/Ports.h</itemPath>
       <itemPath>ProjectHeaders/BeaconDetectFSM.h</itemPath>
       <itemPath>ProjectHeaders/MainLogicFSM.h</itemPath>
-      <itemPath>ProjectHeaders/TapeFollowFSM.h</itemPath>
+      <itemPath>ProjectHeaders/NavigationFSM.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -77,7 +77,7 @@
       <itemPath>ProjectSource/CommonDefinitions.c</itemPath>
       <itemPath>ProjectSource/BeaconDetectFSM.c</itemPath>
       <itemPath>ProjectSource/MainLogicFSM.c</itemPath>
-      <itemPath>ProjectSource/TapeFollowFSM.c</itemPath>
+      <itemPath>ProjectSource/NavigationFSM.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>

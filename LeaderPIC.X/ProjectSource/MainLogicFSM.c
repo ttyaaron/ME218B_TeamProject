@@ -41,13 +41,19 @@
 #include "MainLogicFSM.h"
 #include "BeaconDetectFSM.h"
 #include "DCMotorService.h"
-#include "TapeFollowFSM.h"
+#include "SPILeaderFSM.h"
+#include "NavigationFSM.h"
 #include "CommonDefinitions.h"
 #include "dbprintf.h"
 #include "Ports.h"
 #include "dbprintf.h"
 
 /*----------------------------- Module Defines ----------------------------*/
+// Navigation intent types for tape lost recovery
+#define NAV_INTENT_FORWARD    0
+#define NAV_INTENT_REVERSE    1
+#define NAV_INTENT_ROTATE_CW  2
+#define NAV_INTENT_ROTATE_CCW 3
 
 /*---------------------------- Module Functions ---------------------------*/
 // Top-level behaviors
@@ -69,18 +75,15 @@ static void BallCollection_Retract(void);
 // Private helpers
 static void AdvanceMainSequence(void);
 static void AdvanceCollectionSequence(void);
-static void StartRotation(uint8_t leftDir, uint8_t rightDir, uint32_t targetArc_mm);
-static void AlignWithBeacon(void);
-static void SearchForTape(void);
+static void Behavior_RecoverTapeLost(void);
 
 /*---------------------------- Module Variables ---------------------------*/
 static MainLogicState_t CurrentState;
 static uint8_t MyPriority;
 
-// Odometer-based rotation tracking
-static uint32_t RotateStartDistLeft_mm  = 0u;
-static uint32_t RotateStartDistRight_mm = 0u;
-static uint32_t RotateTargetArc_mm      = 0u;
+// Tape lost recovery state
+static bool IsRecovering = false;
+static uint8_t LastNavIntent = NAV_INTENT_FORWARD;
 
 // Behavior function pointer type.
 // Each behavior starts one async action and returns immediately.
@@ -227,8 +230,25 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
       }
       else if (ThisEvent.EventType == ES_TAPE_FOUND)
       {
-        DB_printf("MainLogic: Tape found\r\n");
-        AdvanceMainSequence();
+        if (IsRecovering)
+        {
+          IsRecovering = false;
+          DB_printf("MainLogic: Recovery done, resuming behavior %u\r\n",
+                    (unsigned)BehaviorIdx);
+          BehaviorSequence[BehaviorIdx]();  // restart interrupted behavior
+        }
+        else
+        {
+          DB_printf("MainLogic: Tape found\r\n");
+          AdvanceMainSequence();
+        }
+      }
+      else if (ThisEvent.EventType == ES_LINE_LOST)
+      {
+        DB_printf("MainLogic: Line lost, starting recovery\r\n");
+        IsRecovering = true;
+        Behavior_RecoverTapeLost();
+        // Do NOT call AdvanceMainSequence \u2014 BehaviorIdx stays the same
       }
       else if (ThisEvent.EventType == ES_BEACON_DETECTED)
       {
@@ -374,7 +394,7 @@ static void AdvanceCollectionSequence(void)
 static void Behavior_Calibrate(void)
 {
   DB_printf("Behavior: Calibrate\r\n");
-  TapeFollow_StartCalibrationRotate();
+  Nav_StartCalibration();
   // ES_CALIB_DONE will be received by MainLogicFSM.
   // It is mapped to AdvanceMainSequence() in ML_Running case.
 }
@@ -398,8 +418,8 @@ static void Behavior_Calibrate(void)
 static void Behavior_SearchTapeCCW(void)
 {
   DB_printf("Behavior: SearchTapeCCW\r\n");
-  TapeFollow_StartRotateSearch(false);  // false = CCW
-  // TapeFollowFSM posts ES_TAPE_FOUND → MainLogicFSM
+  Nav_StartRotateSearch(false);  // false = CCW
+  // NavigationFSM posts ES_TAPE_FOUND → MainLogicFSM
 }
 
 /****************************************************************************
@@ -449,15 +469,22 @@ static void Behavior_SearchBeacon(void)
      None
 
  Description
-     Stub: indicates field side (blue/green).
+     Sends SPI command to indicate which field side we detected.
 
  Author
      Team, 03/02/26
 ****************************************************************************/
 static void Behavior_IndicateSide(void)
 {
-  DB_printf("Behavior: IndicateSide (stub)\r\n");
-  PostMainLogicFSM((ES_Event_t){ES_BEHAVIOR_COMPLETE, 0});
+  char side = QueryLockedBeaconId();
+  ES_Event_t ev;
+  ev.EventType  = ES_NEW_COMMAND;
+  ev.EventParam = (side == 'g') ? CMD_SIDE_GREEN :
+                  (side == 'b') ? CMD_SIDE_BLUE  : CMD_SIDE_MIDDLE;
+  PostSPILeaderFSM(ev);
+  DB_printf("Behavior: IndicateSide side=%c\r\n", side ? side : '?');
+  // Fire-and-forget SPI command — complete immediately
+  PostMainLogicFSM((ES_Event_t){ ES_BEHAVIOR_COMPLETE, 0 });
 }
 
 /****************************************************************************
@@ -471,15 +498,17 @@ static void Behavior_IndicateSide(void)
      None
 
  Description
-     Stub: follows tape until T-intersection.
+     Follows tape until T-intersection detected.
 
  Author
      Team, 03/02/26
 ****************************************************************************/
 static void Behavior_TapeFollowToT(void)
 {
-  DB_printf("Behavior: TapeFollowToT (stub)\r\n");
-  PostMainLogicFSM((ES_Event_t){ES_BEHAVIOR_COMPLETE, 0});
+  DB_printf("Behavior: TapeFollowToT\r\n");
+  LastNavIntent = NAV_INTENT_FORWARD;
+  Nav_StartFollowForward();
+  // NavigationFSM posts ES_BEHAVIOR_COMPLETE when T-intersection detected
 }
 
 /****************************************************************************
@@ -493,15 +522,17 @@ static void Behavior_TapeFollowToT(void)
      None
 
  Description
-     Stub: moves forward 110mm past T-intersection.
+     Moves forward 110mm past T-intersection using odometer.
 
  Author
      Team, 03/02/26
 ****************************************************************************/
 static void Behavior_MoveForward110mm(void)
 {
-  DB_printf("Behavior: MoveForward110mm (stub)\r\n");
-  PostMainLogicFSM((ES_Event_t){ES_BEHAVIOR_COMPLETE, 0});
+  DB_printf("Behavior: MoveForward110mm\r\n");
+  LastNavIntent = NAV_INTENT_FORWARD;
+  Nav_MoveForward_mm(110u);
+  // NavigationFSM posts ES_BEHAVIOR_COMPLETE when odometer dist reached
 }
 
 /****************************************************************************
@@ -515,15 +546,59 @@ static void Behavior_MoveForward110mm(void)
      None
 
  Description
-     Stub: rotates clockwise 90 degrees.
+     Rotates clockwise 90 degrees using odometer.
 
  Author
      Team, 03/02/26
 ****************************************************************************/
 static void Behavior_RotateCW90(void)
 {
-  DB_printf("Behavior: RotateCW90 (stub)\r\n");
-  PostMainLogicFSM((ES_Event_t){ES_BEHAVIOR_COMPLETE, 0});
+  DB_printf("Behavior: RotateCW90\r\n");
+  LastNavIntent = NAV_INTENT_ROTATE_CW;
+  Nav_RotateCW(90u);
+  // NavigationFSM posts ES_BEHAVIOR_COMPLETE when odometer arc reached
+}
+
+/****************************************************************************
+ Function
+     Behavior_RecoverTapeLost
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Recovers from line lost condition by reverting to the last navigation intent.
+     For example, if we lost the line during forward following, we start a reverse search. 
+     If we lost the line during a rotate search, we start a rotate search in the opposite direction.
+     Completion comes via ES_TAPE_FOUND, not ES_BEHAVIOR_COMPLETE.
+
+ Author
+     Team, 03/02/26
+**********************************************************************/
+static void Behavior_RecoverTapeLost(void)
+{
+  DB_printf("Behavior: RecoverTapeLost, LastIntent=%u\r\n", (unsigned)LastNavIntent);
+  
+  if (LastNavIntent == NAV_INTENT_FORWARD)
+  {
+    Nav_StartDriveSearch(false);  // search reverse
+  }
+  else if (LastNavIntent == NAV_INTENT_REVERSE)
+  {
+    Nav_StartDriveSearch(true); // search forward
+  }
+  else if (LastNavIntent == NAV_INTENT_ROTATE_CW)
+  {
+    Nav_StartRotateSearch(false); // CCW search
+  }
+  else  // NAV_INTENT_ROTATE_CCW
+  {
+    Nav_StartRotateSearch(true); // CW search
+  }
+  // NavigationFSM will post ES_TAPE_FOUND when recovery succeeds
 }
 
 /****************************************************************************
@@ -636,90 +711,4 @@ static void BallCollection_Retract(void)
 {
   DB_printf("BallCollection: Retract (stub)\r\n");
   PostMainLogicFSM((ES_Event_t){ES_BEHAVIOR_COMPLETE, 0});
-}
-
-/****************************************************************************
- Function
-     StartRotation
-
- Parameters
-     uint8_t leftDir, uint8_t rightDir - FORWARD or REVERSE for each wheel
-     uint32_t targetArc_mm - arc distance each wheel must travel
-
- Returns
-     None
-
- Description
-     Starts a point turn at ROTATE_SPEED_MM_S and records odometer start values.
-     (Preserved helper - may be used by future behavior implementations)
-
- Author
-     Team, 03/01/26
-****************************************************************************/
-static void StartRotation(uint8_t leftDir, uint8_t rightDir, uint32_t targetArc_mm)
-{
-  // Record odometer baseline before motion begins
-  RotateStartDistLeft_mm  = ICCountToDistance_mm(DCMotor_GetICEventCount(LEFT_MOTOR));
-  RotateStartDistRight_mm = ICCountToDistance_mm(DCMotor_GetICEventCount(RIGHT_MOTOR));
-  RotateTargetArc_mm      = targetArc_mm;
-
-  // Start motors
-  DCMotor_SetSpeed_mm_s(ROTATE_SPEED_MM_S, ROTATE_SPEED_MM_S, leftDir, rightDir);
-
-  // Start short polling timer to check odometer
-  ES_Timer_InitTimer(SIMPLE_MOVE_TIMER, ROTATE_POLL_INTERVAL_MS);
-
-  // Start safety timeout in case encoders fail
-  ES_Timer_InitTimer(ROTATE_SAFETY_TIMER, ROTATE_SAFETY_TIMEOUT_MS);
-
-  uint32_t arc_h = targetArc_mm;  // already integer mm, no float needed
-  DB_printf("StartRotation: target=%u mm L=%u R=%u\r\n",
-            (unsigned)arc_h,
-            (unsigned)RotateStartDistLeft_mm,
-            (unsigned)RotateStartDistRight_mm);
-}
-
-/****************************************************************************
- Function
-     SearchForTape
-
- Parameters
-     None
-
- Returns
-     None
-
- Description
-     Drive forward until tape detected or timeout.
-     (Preserved helper - may be used by future behavior implementations)
-
- Author
-     Tianyu, 02/03/26
-****************************************************************************/
-static void SearchForTape(void)
-{
-  MotorCommandWrapper(FULL_SPEED, FULL_SPEED, FORWARD, FORWARD);
-}
-
-/****************************************************************************
- Function
-     AlignWithBeacon
-
- Parameters
-     None
-
- Returns
-     None
-
- Description
-     Spin until beacon detected or timeout.
-     (Preserved helper - may be used by future behavior implementations)
-
- Author
-     Tianyu, 02/03/26
-****************************************************************************/
-static void AlignWithBeacon(void)
-{
-  MotorCommandWrapper(HALF_SPEED, HALF_SPEED, FORWARD, REVERSE);
-  ES_Timer_InitTimer(BEACON_ALIGN_TIMER, BEACON_ALIGN_MS);
 }

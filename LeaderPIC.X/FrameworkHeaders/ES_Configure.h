@@ -109,11 +109,11 @@
 // These are the definitions for Service 5
 #if NUM_SERVICES > 5
 // the header file with the public function prototypes
-#define SERV_5_HEADER "TapeFollowFSM.h"
+#define SERV_5_HEADER "NavigationFSM.h"
 // the name of the Init function
-#define SERV_5_INIT InitTapeFollowFSM
+#define SERV_5_INIT InitNavigationFSM
 // the name of the run function
-#define SERV_5_RUN RunTapeFollowFSM
+#define SERV_5_RUN RunNavigationFSM
 // How big should this services Queue be?
 #define SERV_5_QUEUE_SIZE 3
 #endif
@@ -328,8 +328,8 @@ typedef enum
 #define TIMER6_RESP_FUNC PostBeaconDetectFSM
 #define TIMER7_RESP_FUNC PostMainLogicFSM
 #define TIMER8_RESP_FUNC TIMER_UNUSED
-#define TIMER9_RESP_FUNC PostTapeFollowFSM
-#define TIMER10_RESP_FUNC PostTapeFollowFSM
+#define TIMER9_RESP_FUNC PostNavigationFSM
+#define TIMER10_RESP_FUNC PostNavigationFSM
 #define TIMER11_RESP_FUNC PostMainLogicFSM
 #define TIMER12_RESP_FUNC PostMainLogicFSM
 #define TIMER13_RESP_FUNC TIMER_UNUSED
