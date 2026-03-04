@@ -93,8 +93,6 @@ static bool rightOnTape  = false;
 static int32_t lastError = 0;
 
 // Intersection detection flags
-static bool lastLeftTState = false;
-static bool lastRightTState = false;
 static bool tIntersectionPublished    = false;
 static bool leftTurnPublished         = false;
 static bool rightTurnPublished        = false;
@@ -380,10 +378,12 @@ ES_Event_t RunNavigationFSM(ES_Event_t ThisEvent)
             ReadTapeSensors();
 
             // Debug: show current min/max ranges building up
-            DB_printf("CALIB C=%u[%u,%u] L=%u[%u,%u] R=%u[%u,%u]\r\n",
+            DB_printf("CALIB C=%u[%u,%u] L=%u[%u,%u] R=%u[%u,%u], LT = %u, RT = %u\r\n",
                       (unsigned)centerVal, (unsigned)MinCenterC, (unsigned)MaxCenterC,
                       (unsigned)leftVal,   (unsigned)MinLeftC,   (unsigned)MaxLeftC,
-                      (unsigned)rightVal,  (unsigned)MinRightC,  (unsigned)MaxRightC);
+                      (unsigned)rightVal,  (unsigned)MinRightC,  (unsigned)MaxRightC,
+                      leftTState ? 1 : 0,
+                      rightTState ? 1 : 0);
 
             // Restart sensor poll timer
             ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, TAPE_FOLLOW_INTERVAL_MS);
@@ -393,10 +393,12 @@ ES_Event_t RunNavigationFSM(ES_Event_t ThisEvent)
             // Calibration rotation complete — stop motors and notify MainLogicFSM
             DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
 
-            DB_printf("Nav: Calibration done. C[%u,%u] L[%u,%u] R[%u,%u]\r\n",
+            DB_printf("Nav: Calibration done. C[%u,%u] L[%u,%u] R[%u,%u], LT = %u, RT = %u\r\n",
                       (unsigned)MinCenterC, (unsigned)MaxCenterC,
                       (unsigned)MinLeftC,   (unsigned)MaxLeftC,
-                      (unsigned)MinRightC,  (unsigned)MaxRightC);
+                      (unsigned)MinRightC,  (unsigned)MaxRightC,
+                      leftTState ? 1 : 0,
+                      rightTState ? 1 : 0);
 
             ES_Event_t ev;
             ev.EventType  = ES_CALIB_DONE;
@@ -470,10 +472,10 @@ ES_Event_t RunNavigationFSM(ES_Event_t ThisEvent)
             float correction = LINE_KP_REV * (float)error + LINE_KD_REV * (float)(error - lastError);
             lastError = error;
             
-            // For reverse: left wheel = base - correction, right = base + correction
+            // For reverse: left wheel = base + correction, right = base - correction
             // Both commanded in REVERSE direction
-            float leftSpeed_f  = (float)BASE_FOLLOW_SPEED_REV_MM_S - correction;
-            float rightSpeed_f = (float)BASE_FOLLOW_SPEED_REV_MM_S + correction;
+            float leftSpeed_f  = (float)BASE_FOLLOW_SPEED_REV_MM_S + correction;
+            float rightSpeed_f = (float)BASE_FOLLOW_SPEED_REV_MM_S - correction;
             
             if (leftSpeed_f  < 0.0f) leftSpeed_f  = 0.0f;
             if (rightSpeed_f < 0.0f) rightSpeed_f = 0.0f;
@@ -582,6 +584,14 @@ ES_Event_t RunNavigationFSM(ES_Event_t ThisEvent)
           ES_Timer_InitTimer(TAPE_FOLLOW_TIMER,
                             ROTATE_POLL_INTERVAL_MS);
         }
+      }
+      else if (ThisEvent.EventParam == ROTATE_SAFETY_TIMER)
+      {
+        DCMotor_SetSpeed_mm_s(0, 0, FORWARD, FORWARD);
+        DB_printf("Nav: Radius rotate safety timeout\r\n");
+        ES_Event_t ev = { ES_BEHAVIOR_COMPLETE, 0 };
+        PostMainLogicFSM(ev);
+        CurrentState = NavIdle;
       }
     }
     break;
@@ -727,6 +737,8 @@ ES_Event_t RunNavigationFSM(ES_Event_t ThisEvent)
             {
               // Continue following
               ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, TAPE_FOLLOW_INTERVAL_MS);
+              // T-intersection detected inside CheckFollowConditions takes priority
+              // over the distance target and will post ES_BEHAVIOR_COMPLETE directly.
               CheckFollowConditions();
             }
           }
@@ -765,8 +777,8 @@ ES_Event_t RunNavigationFSM(ES_Event_t ThisEvent)
             lastError = error;
 
             // 4. Differential speed targets (both in REVERSE)
-            float leftSpeed_f  = (float)BASE_FOLLOW_SPEED_REV_MM_S - correction;
-            float rightSpeed_f = (float)BASE_FOLLOW_SPEED_REV_MM_S + correction;
+            float leftSpeed_f  = (float)BASE_FOLLOW_SPEED_REV_MM_S + correction;
+            float rightSpeed_f = (float)BASE_FOLLOW_SPEED_REV_MM_S - correction;
 
             // 5. Clamp to physical range [0, SPEED_FULL_MM_S]
             if (leftSpeed_f  < 0.0f) leftSpeed_f  = 0.0f;
@@ -797,6 +809,8 @@ ES_Event_t RunNavigationFSM(ES_Event_t ThisEvent)
             {
               // Continue following
               ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, TAPE_FOLLOW_INTERVAL_MS);
+              // T-intersection detected inside CheckFollowConditions takes priority
+              // over the distance target and will post ES_BEHAVIOR_COMPLETE directly.
               CheckFollowConditions();
             }
           }
@@ -1329,6 +1343,7 @@ void Nav_RotateCWRadius(uint8_t degrees, uint32_t radius_mm)
                         FORWARD, rightDir);
 
   ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, ROTATE_POLL_INTERVAL_MS);
+  ES_Timer_InitTimer(ROTATE_SAFETY_TIMER, ROTATE_SAFETY_TIMEOUT_MS);
   CurrentState = NavRotatingRadius;
 
   DB_printf("Nav: CW radius turn %u deg R=%u L=%u R=%u, speed L=%u R=%u\r\n",
@@ -1445,6 +1460,7 @@ void Nav_RotateCCWRadius(uint8_t degrees, uint32_t radius_mm)
                         leftDir, FORWARD);
 
   ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, ROTATE_POLL_INTERVAL_MS);
+  ES_Timer_InitTimer(ROTATE_SAFETY_TIMER, ROTATE_SAFETY_TIMEOUT_MS);
   CurrentState = NavRotatingRadius;
 
   DB_printf("Nav: CCW radius turn %u deg R=%u L=%u R=%u, speed L=%u R=%u\r\n",
@@ -1580,7 +1596,7 @@ void Nav_MoveBackward_mm(uint32_t dist_mm)
   MoveBackStartDistRight_mm = ICCountToDistance_mm(DCMotor_GetICEventCount(RIGHT_MOTOR));
   MoveBackTargetDist_mm     = dist_mm;
 
-  DCMotor_SetSpeed_mm_s(BASE_FOLLOW_SPEED_MM_S, BASE_FOLLOW_SPEED_MM_S,
+  DCMotor_SetSpeed_mm_s(BASE_FOLLOW_SPEED_REV_MM_S, BASE_FOLLOW_SPEED_REV_MM_S,
                         REVERSE, REVERSE);
   ES_Timer_InitTimer(TAPE_FOLLOW_TIMER, ROTATE_POLL_INTERVAL_MS);
   CurrentState = NavMovingBackward;

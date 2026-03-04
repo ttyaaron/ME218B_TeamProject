@@ -55,6 +55,10 @@
 #define NAV_INTENT_ROTATE_CW  2
 #define NAV_INTENT_ROTATE_CCW 3
 
+// Sentinel: when ExpectedCompletionParam == COMPLETION_ANY_PARAM,
+// no parameter filtering is applied — any event of the expected type advances.
+#define COMPLETION_ANY_PARAM  0xFFFFu
+
 /*---------------------------- Module Functions ---------------------------*/
 // Top-level behaviors
 static void Behavior_Calibrate(void);
@@ -96,6 +100,19 @@ static uint8_t MyPriority;
 // Tape lost recovery state
 static bool IsRecovering = false;
 static uint8_t LastNavIntent = NAV_INTENT_FORWARD;
+
+// Set by each behavior function to declare which event completes it.
+// RunMainLogicFSM only advances the sequence when the received event
+// matches this value. Default is ES_BEHAVIOR_COMPLETE.
+static ES_EventType_t ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+
+// If not COMPLETION_ANY_PARAM, the event's EventParam must also match
+// this value before the sequence advances.
+static uint16_t ExpectedCompletionParam = COMPLETION_ANY_PARAM;
+
+// When true, ES_BEACON_DETECTED only advances if param is 'b' or 'g'.
+// Set by Behavior_SearchBeaconBG, cleared on advance.
+static bool BeaconBGFilter = false;
 
 // Behavior function pointer type.
 // Each behavior starts one async action and returns immediately.
@@ -239,58 +256,74 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
       if (ThisEvent.EventType == ES_INIT)
       {
         BehaviorIdx = 0;
+        ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+        ExpectedCompletionParam = COMPLETION_ANY_PARAM;
         DB_printf("MainLogic: Starting sequence, behavior 0\r\n");
         BehaviorSequence[0]();
       }
-      else if (ThisEvent.EventType == ES_BEHAVIOR_COMPLETE)
-      {
-        AdvanceMainSequence();
-      }
-      else if (ThisEvent.EventType == ES_CALIB_DONE)
-      {
-        DB_printf("MainLogic: Calibration done\r\n");
-        AdvanceMainSequence();
-      }
-      else if (ThisEvent.EventType == ES_TAPE_FOUND)
-      {
-        if (IsRecovering)
-        {
-          IsRecovering = false;
-          DB_printf("MainLogic: Recovery done, resuming behavior %u\r\n",
-                    (unsigned)BehaviorIdx);
-          BehaviorSequence[BehaviorIdx]();  // restart interrupted behavior
-        }
-        else
-        {
-          // TODO: need to check if current behavior needs such condition
-          DB_printf("MainLogic: Tape found\r\n");
-          AdvanceMainSequence();
-        }
-      }
       else if (ThisEvent.EventType == ES_LINE_LOST)
       {
-        DB_printf("MainLogic: Line lost, starting recovery\r\n");
-        IsRecovering = true;
-        Behavior_RecoverTapeLost();
-        // Do NOT call AdvanceMainSequence \u2014 BehaviorIdx stays the same
-      }
-      else if (ThisEvent.EventType == ES_BEACON_DETECTED)
-      {
-        // Only relevant during Behavior_SearchBeaconBG.
-        // TODO: Add a check to ensure we only handle this event during the correct behavior.
-        if (BehaviorIdx == 1)  // index of Behavior_SearchBeaconBG in BehaviorSequence,  TODO: make this more robust
+        // If the current behavior EXPECTS line lost as its completion,
+        // let the normal completion path handle it (falls through to the
+        // ExpectedCompletionEvent check below — do NOT handle it here).
+        if (ExpectedCompletionEvent != ES_LINE_LOST)
         {
-          DB_printf("MainLogic: Beacon detected during search, id=%c\r\n",
-                    (char)ThisEvent.EventParam);
-
-          // Only completes if the beacon is b or g — if it's neither, we still want to run the rotate search to find it
-          if (ThisEvent.EventParam == 'b' || ThisEvent.EventParam == 'g')
+          DB_printf("MainLogic: Line lost, starting recovery\r\n");
+          IsRecovering = true;
+          Behavior_RecoverTapeLost();
+        }
+        // else: falls through to the ExpectedCompletionEvent == ES_LINE_LOST
+        // check, which will call AdvanceMainSequence() normally.
+      }
+      else if (ThisEvent.EventType == ExpectedCompletionEvent)
+      {
+        // Apply B/G beacon filter if active
+        if (BeaconBGFilter &&
+            ThisEvent.EventType == ES_BEACON_DETECTED)
+        {
+          if (ThisEvent.EventParam != 'b' && ThisEvent.EventParam != 'g')
           {
-            Nav_Stop();     
+            DB_printf("MainLogic: Ignoring non-BG beacon id=%c\r\n",
+                      (char)ThisEvent.EventParam);
+            // Don't advance — keep rotating
+            break; // exits the ML_Running case without advancing
+          }
+          // B or G confirmed — clear filter and let normal advance proceed
+          BeaconBGFilter = false;
+          Nav_Stop();
+        }
+
+        // Check optional parameter filter
+        bool paramOk = (ExpectedCompletionParam == COMPLETION_ANY_PARAM) ||
+                       (ThisEvent.EventParam == ExpectedCompletionParam);
+
+        if (paramOk)
+        {
+          if (IsRecovering)
+          {
+            IsRecovering = false;
+            DB_printf("MainLogic: Recovery done, resuming behavior %u\r\n",
+                      (unsigned)BehaviorIdx);
+            BehaviorSequence[BehaviorIdx]();  // restart interrupted behavior
+          }
+          else
+          {
+            DB_printf("MainLogic: Behavior %u complete (event %d param %u)\r\n",
+                      (unsigned)BehaviorIdx,
+                      (int)ThisEvent.EventType,
+                      (unsigned)ThisEvent.EventParam);
             AdvanceMainSequence();
           }
         }
+        else
+        {
+          DB_printf("MainLogic: Ignoring event %d param %u (expected param %u)\r\n",
+                    (int)ThisEvent.EventType,
+                    (unsigned)ThisEvent.EventParam,
+                    (unsigned)ExpectedCompletionParam);
+        }
       }
+      // All other events are silently ignored while a behavior is running.
     }
     break;
 
@@ -377,6 +410,11 @@ MainLogicState_t QueryMainLogicFSM(void)
 ****************************************************************************/
 static void AdvanceMainSequence(void)
 {
+  // Reset to safe defaults — next behavior will override these
+  ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
+  BeaconBGFilter          = false;
+
   BehaviorIdx++;
   if (BehaviorIdx < NUM_BEHAVIORS)
   {
@@ -442,6 +480,8 @@ static void AdvanceCollectionSequence(void)
 ****************************************************************************/
 static void Behavior_Calibrate(void)
 {
+  ExpectedCompletionEvent = ES_CALIB_DONE;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
   DB_printf("Behavior: Calibrate\r\n");
   Nav_StartCalibration();
   // ES_CALIB_DONE will be received by MainLogicFSM.
@@ -466,6 +506,8 @@ static void Behavior_Calibrate(void)
 ****************************************************************************/
 static void Behavior_SearchTapeCCW(void)
 {
+  ExpectedCompletionEvent = ES_TAPE_FOUND;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
   DB_printf("Behavior: SearchTapeCCW\r\n");
   Nav_StartRotateSearch(false);  // false = CCW
   // NavigationFSM posts ES_TAPE_FOUND → MainLogicFSM
@@ -490,22 +532,27 @@ static void Behavior_SearchTapeCCW(void)
 static void Behavior_SearchBeaconBG(void)
 {
   DB_printf("Behavior: SearchBeacon\r\n");
-  // Check if beacon already locked from calibration rotation
   if (QueryBeaconDetectFSM() == BeaconLocked)
   {
     uint8_t beaconId = QueryLockedBeaconId();
-    DB_printf("Behavior: Beacon already locked, id=%c\r\n",
-              beaconId);
-    // Only completes if the beacon is b or g — if it's neither, we still want to run the rotate search to find it
+    DB_printf("Behavior: Beacon already locked, id=%c\r\n", beaconId);
     if (beaconId == 'b' || beaconId == 'g')
     {
-      PostMainLogicFSM((ES_Event_t){ES_BEHAVIOR_COMPLETE, 0});
+      // Complete immediately via ES_BEHAVIOR_COMPLETE
+      ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+      ExpectedCompletionParam = COMPLETION_ANY_PARAM;
+      PostMainLogicFSM((ES_Event_t){ ES_BEHAVIOR_COMPLETE, 0 });
       return;
     }
   }
-  // Otherwise start CW rotation and wait for ES_BEACON_DETECTED
-  // BeaconDetectFSM posts ES_BEACON_DETECTED
-  // ML_Running handles ES_BEACON_DETECTED → AdvanceMainSequence
+  // Rotate and wait for a B or G beacon
+  ExpectedCompletionEvent = ES_BEACON_DETECTED;
+  // 'b' and 'g' are both valid — we cannot filter to a single param.
+  // Set to ANY_PARAM and rely on the param check inside the event handler.
+  // To handle this, add a dedicated BG_PARAM sentinel:
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
+  // Store that only b/g are acceptable — handled via BeaconBGOnly flag below.
+  BeaconBGFilter = true;
   Nav_StartRotateContinuous(true);
 }
 
@@ -527,6 +574,8 @@ static void Behavior_SearchBeaconBG(void)
 ****************************************************************************/
 static void Behavior_IndicateSide(void)
 {
+  ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
   char side = QueryLockedBeaconId();
   ES_Event_t ev;
   ev.EventType  = ES_NEW_COMMAND;
@@ -556,6 +605,8 @@ static void Behavior_IndicateSide(void)
 ****************************************************************************/
 static void Behavior_TapeFollowToT(void)
 {
+  ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+  ExpectedCompletionParam = 1; //TODO: This is only for debugging
   DB_printf("Behavior: TapeFollowToT\r\n");
   LastNavIntent = NAV_INTENT_FORWARD;
   Nav_StartFollowForward();
@@ -580,6 +631,8 @@ static void Behavior_TapeFollowToT(void)
 ****************************************************************************/
 static void Behavior_MoveForward110mm(void)
 {
+  ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
   DB_printf("Behavior: MoveForward110mm\r\n");
   LastNavIntent = NAV_INTENT_FORWARD;
   Nav_MoveForward_mm(110u);
@@ -604,6 +657,8 @@ static void Behavior_MoveForward110mm(void)
 ****************************************************************************/
 static void Behavior_RotateCW90(void)
 {
+  ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
   DB_printf("Behavior: RotateCW90\r\n");
   LastNavIntent = NAV_INTENT_ROTATE_CW;
   Nav_RotateCW(90u);
@@ -629,6 +684,8 @@ static void Behavior_RotateCW90(void)
 
 static void Behavior_RotateCW90R100mm(void)
 {
+  ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
   DB_printf("Behavior: RotateCW90R100mm\r\n");
   LastNavIntent = NAV_INTENT_ROTATE_CW;
   Nav_RotateCWRadius(90u, 100u);
@@ -643,6 +700,8 @@ static void Behavior_RotateCW90R100mm(void)
 */
 static void Behavior_MoveForwardFollow50mm(void)
 {
+  ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
   DB_printf("Behavior: MoveForwardFollow50mm\r\n");
   LastNavIntent = NAV_INTENT_FORWARD;
   Nav_MoveForward_mm_Follow(50u);
@@ -709,6 +768,9 @@ static void Behavior_RecoverTapeLost(void)
 ****************************************************************************/
 static void Behavior_TapeFollowBackward(void)
 {
+  // This behavior ends when line is lost, not on ES_BEHAVIOR_COMPLETE
+  ExpectedCompletionEvent = ES_LINE_LOST;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
   DB_printf("Behavior: TapeFollowBackward\r\n");
   LastNavIntent = NAV_INTENT_REVERSE;
   Nav_StartFollowReverse();
@@ -733,6 +795,8 @@ static void Behavior_TapeFollowBackward(void)
 ****************************************************************************/
 static void Behavior_MoveBackwardToNode(void)
 {
+  ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
   DB_printf("Behavior: MoveBackwardToNode\r\n");
   LastNavIntent = NAV_INTENT_REVERSE;
   Nav_MoveBackward_mm(210u);

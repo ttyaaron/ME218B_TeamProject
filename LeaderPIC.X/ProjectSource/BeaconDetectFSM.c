@@ -401,7 +401,6 @@ ES_Event_t RunBeaconDetectFSM(ES_Event_t ThisEvent)
         case ES_NEW_SIGNAL_EDGE:
         {
           uint32_t CurrentCapturedTime = CapturedTime;
-
           uint32_t frequency = UpdateSmoothingFilter(CurrentCapturedTime);
 
           if (frequency > 0)
@@ -409,22 +408,48 @@ ES_Event_t RunBeaconDetectFSM(ES_Event_t ThisEvent)
             int8_t beaconIdx = FindMatchingBeacon(frequency);
             if (beaconIdx >= 0)
             {
-              // Valid beacon signal — keep the watchdog alive
+              // Valid signal — keep the watchdog alive
               ES_Timer_InitTimer(SIGNAL_WATCHDOG_TIMER, SIGNAL_WATCHDOG_INTERVAL);
               char detectedId = BeaconTable[beaconIdx].id;
-              if (detectedId != LockedBeaconId)
+
+              if (detectedId == LockedBeaconId)
               {
-                // Different beacon — re-lock and notify once
-                LockedBeaconId = detectedId;
-                ES_Event_t BeaconEvent;
-                BeaconEvent.EventType  = ES_BEACON_DETECTED;
-                BeaconEvent.EventParam = LockedBeaconId;
-                PostMainLogicFSM(BeaconEvent);
-                DB_printf("BeaconLocked: re-locked to '%c'\r\n", LockedBeaconId);
+                // Same beacon — clear any pending re-lock candidate
+                CandidateBeaconId = 0;
+                BeaconMatchCount  = 0;
               }
-              // else: same beacon — watchdog already kicked, nothing else to do
+              else
+              {
+                // Different beacon — apply debounce before re-locking
+                if (detectedId == CandidateBeaconId)
+                {
+                  BeaconMatchCount++;
+                  DB_printf("BeaconLocked: re-lock candidate '%c' %d/%d\r\n",
+                      detectedId, BeaconMatchCount, BEACON_DEBOUNCE_THRESHOLD);
+
+                  if (BeaconMatchCount >= BEACON_DEBOUNCE_THRESHOLD)
+                  {
+                    // Confirmed new beacon — re-lock and notify
+                    LockedBeaconId    = detectedId;
+                    CandidateBeaconId = 0;
+                    BeaconMatchCount  = 0;
+                    ES_Event_t BeaconEvent;
+                    BeaconEvent.EventType  = ES_BEACON_DETECTED;
+                    BeaconEvent.EventParam = LockedBeaconId;
+                    PostMainLogicFSM(BeaconEvent);
+                    DB_printf("BeaconLocked -> re-locked to '%c'\r\n", LockedBeaconId);
+                  }
+                }
+                else
+                {
+                  // New candidate — reset debounce
+                  CandidateBeaconId = detectedId;
+                  BeaconMatchCount  = 1;
+                  DB_printf("BeaconLocked: new re-lock candidate '%c'\r\n", detectedId);
+                }
+              }
             }
-            // else: no beacon matched — watchdog will expire → NoSignal
+            // else: no match — watchdog will expire → NoSignal if signal truly lost
           }
         }
         break;
