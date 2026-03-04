@@ -416,6 +416,10 @@ void DCMotor_SetSpeed_mm_s(uint16_t speedLeft_mm_s,
   FilteredSpeed[LEFT_MOTOR] = 0.0f;
   FilteredSpeed[RIGHT_MOTOR] = 0.0f;
 
+  // Debug print: target speeds and directions
+  DB_printf("SetSpeed_mm_s called with Left: %u mm/s, Right: %u mm/s, DirLeft: %u, DirRight: %u\r\n",
+            speedLeft_mm_s, speedRight_mm_s, dirLeft, dirRight);
+
   // In closed-loop mode, PI controller handles duty cycle — nothing else to do here.
   // In open-loop mode (USE_OPEN_LOOP_CONTROL true), fall through to MotorCommandWrapper.
 #if USE_OPEN_LOOP_CONTROL

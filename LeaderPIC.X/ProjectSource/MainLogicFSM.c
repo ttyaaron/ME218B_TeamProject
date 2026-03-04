@@ -606,7 +606,7 @@ static void Behavior_IndicateSide(void)
 static void Behavior_TapeFollowToT(void)
 {
   ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
-  ExpectedCompletionParam = 1; //TODO: This is only for debugging
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
   DB_printf("Behavior: TapeFollowToT\r\n");
   LastNavIntent = NAV_INTENT_FORWARD;
   Nav_StartFollowForward();
