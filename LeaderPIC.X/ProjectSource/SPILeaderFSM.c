@@ -40,7 +40,7 @@
 #include <sys/attribs.h>
 
 /*----------------------------- Module Defines ----------------------------*/
-#define SPI_POLL_INTERVAL_MS 37
+#define SPI_POLL_INTERVAL_MS 13
 SPI_Module_t Module = SPI_SPI1;
 
 /*---------------------------- Module Functions ---------------------------*/

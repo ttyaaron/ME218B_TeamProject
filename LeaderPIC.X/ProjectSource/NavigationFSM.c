@@ -50,7 +50,7 @@
 // Lower = more accurate (less overshoot from motor inertia)
 // Must match what DCMotor_SetSpeed_mm_s can reliably track
 #define ROTATE_SPEED_MM_S       100u
-#define RADIUS_ROTATE_SPEED_MM_S 10u
+#define RADIUS_ROTATE_SPEED_MM_S 30u
 
 // Duration of startup calibration rotation in milliseconds.
 // Robot sweeps sensors over floor (and hopefully tape) to build min/max range.

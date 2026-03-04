@@ -68,7 +68,8 @@ static void Behavior_IndicateSide(void);
 static void Behavior_TapeFollowToT(void);
 static void Behavior_MoveForward110mm(void);
 static void Behavior_RotateCW90(void);
-static void Behavior_RotateCW90R100mm(void);
+static void Behavior_RotateCW90R75mm(void);
+static void Behavior_RotateCW90R45mm(void);
 static void Behavior_MoveBackwardToNode(void);
 static void Behavior_BallCollection(void);
 static void Behavior_TapeFollowBackward(void);
@@ -129,11 +130,12 @@ static const BehaviorFn_t BehaviorSequence[] = {
   Behavior_SearchBeaconBG,
   Behavior_IndicateSide,
   Behavior_TapeFollowToT,
-  Behavior_RotateCW90R100mm,
+  // Behavior_RotateCW90R75mm, //75mm for 10u speed, 45mm for 30u speed
+  Behavior_RotateCW90R45mm,
   Behavior_MoveForwardFollow50mm,
   // Behavior_MoveBackwardToNode,
   Behavior_BallCollection,
-  // Behavior_RotateCW90R100mm,
+  // Behavior_RotateCW90R75mm,
   // Behavior_TapeFollowBackward,
 };
 #define NUM_BEHAVIORS (sizeof(BehaviorSequence) / sizeof(BehaviorSequence[0]))
@@ -147,7 +149,7 @@ static const BehaviorFn_t CollectionSequence[] = {
   BallCollection_InitSweepServo,    // send CMD_SWEEP, short delay
   BallCollection_Dock,          // Nav_MoveBackward_mm(BALL_DOCK_DISTANCE_MM)
   BallCollection_InitScoopServo,    // send CMD_SCOOP, short delay
-  BallCollection_Retract,       // Nav_ ,M M,M MoveForward_mm(BALL_RETRACT_DISTANCE_MM)
+  // BallCollection_Retract,       // Nav_ ,M M,M MoveForward_mm(BALL_RETRACT_DISTANCE_MM)
   BallCollection_Sweep1,        // send CMD_SWEEP, wait BALL_SWEEP_DURATION_MS
   BallCollection_Scoop1,        // send CMD_SCOOP, wait BALL_SCOOP_DURATION_MS
   BallCollection_Sweep2,        // send CMD_SWEEP, wait BALL_SWEEP_DURATION_MS
@@ -579,8 +581,8 @@ static void Behavior_IndicateSide(void)
   char side = QueryLockedBeaconId();
   ES_Event_t ev;
   ev.EventType  = ES_NEW_COMMAND;
-  ev.EventParam = (side == 1) ? CMD_SIDE_GREEN :
-                  (side == 0) ? CMD_SIDE_BLUE  : CMD_SIDE_MIDDLE;
+  ev.EventParam = (side == 'g') ? CMD_SIDE_GREEN :
+                  (side == 'b') ? CMD_SIDE_BLUE  : CMD_SIDE_MIDDLE;
   PostSPILeaderFSM(ev);
   DB_printf("Behavior: IndicateSide side=%c\r\n", side ? side : '?');
   // Fire-and-forget SPI command — complete immediately
@@ -667,7 +669,7 @@ static void Behavior_RotateCW90(void)
 
 /****************************************************************************
  Function
-     Behavior_RotateCW90R100mm
+     Behavior_RotateCW90R75mm
 
  Parameters
      None
@@ -682,13 +684,23 @@ static void Behavior_RotateCW90(void)
      Team, 03/02/26
 ****************************************************************************/
 
-static void Behavior_RotateCW90R100mm(void)
+static void Behavior_RotateCW90R75mm(void)
 {
   ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
   ExpectedCompletionParam = COMPLETION_ANY_PARAM;
-  DB_printf("Behavior: RotateCW90R100mm\r\n");
+  DB_printf("Behavior: RotateCW90R75mm\r\n");
   LastNavIntent = NAV_INTENT_ROTATE_CW;
-  Nav_RotateCWRadius(90u, 100u);
+  Nav_RotateCWRadius(90u, 75u);
+  // NavigationFSM posts ES_BEHAVIOR_COMPLETE when odometer arc reached
+}
+
+static void Behavior_RotateCW90R45mm(void)
+{
+  ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
+  DB_printf("Behavior: RotateCW90R45mm\r\n");
+  LastNavIntent = NAV_INTENT_ROTATE_CW;
+  Nav_RotateCWRadius(90u, 45u);
   // NavigationFSM posts ES_BEHAVIOR_COMPLETE when odometer arc reached
 }
 

@@ -180,7 +180,7 @@ extern const uint8_t validCommandBytes[21];
 #define BALL_INIT_SERVO_DELAY_MS  1000u   // time after init command before dock
 #define BALL_SWEEP_DURATION_MS    1000u   // time between sweep and scoop commands
 #define BALL_SCOOP_DURATION_MS    1500u   // time between scoop and next sweep
-#define BALL_DOCK_DISTANCE_MM     250u    // backward distance for docking
+#define BALL_DOCK_DISTANCE_MM     67u    // backward distance for docking
 #define BALL_RETRACT_DISTANCE_MM  10u    // forward distance for retraction
 
 // Debug Pin
