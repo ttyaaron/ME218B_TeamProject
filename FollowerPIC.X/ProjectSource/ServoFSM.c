@@ -55,9 +55,9 @@
 // Servo pulse widths in timer ticks (TICS_PER_MS = 2500 from PWM library)
 // These are example values - adjust based on your specific servos
 // Bigger number -> bigger CCW angle with output axis pointing at you
-#define SWEEP_IDLE_PW       (2.2 * 2500)  // 1.5ms - neutral/idle position
-#define SWEEP_ACTION_PW     (1.6 * 2500)  // 2.0ms - sweep position
-#define SWEEP_RETRACT_PW    (1.3 * 2500)  // 1.0ms - retracted position
+#define SWEEP_IDLE_PW       (2.4* 2500)  // 1.5ms - neutral/idle position
+#define SWEEP_ACTION_PW     (1.8 * 2500)  // 2.0ms - sweep position
+#define SWEEP_RETRACT_PW    (1.35 * 2500)  // 1.0ms - retracted position
 
 #define SCOOP_IDLE_PW       (1.15 * 2500)  // 1.5ms - idle/open position
 #define SCOOP_ACTION_PW     (2.11 * 2500)  // 2.0ms - scoop/closed position

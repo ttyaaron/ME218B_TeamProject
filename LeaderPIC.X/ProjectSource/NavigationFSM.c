@@ -10,7 +10,7 @@
    tape sensor reading, line following PID control, and intersection detection.
 
  Notes
-
+?
  History
  When           Who     What/Why
  -------------- ---     --------
@@ -573,6 +573,8 @@ ES_Event_t RunNavigationFSM(ES_Event_t ThisEvent)
         if (avg2 >= (RotateRadiusTargetLeft_mm + RotateRadiusTargetRight_mm))
         {
           DCMotor_SetSpeed_mm_s(0,0,FORWARD,FORWARD);
+          // Debug print: show final distances for each wheel
+          DB_printf("Nav: Radius rotation done. dL=%u mm, dR=%u mm\r\n", (unsigned)dL, (unsigned)dR);
 
           ES_Event_t ev = { ES_BEHAVIOR_COMPLETE, 0 };
           PostMainLogicFSM(ev);
@@ -648,7 +650,7 @@ ES_Event_t RunNavigationFSM(ES_Event_t ThisEvent)
           PostMainLogicFSM(ev);
           CurrentState = NavIdle;
         }
-        if (curL - MoveBackStartDistLeft_mm >= MoveBackTargetDist_mm)
+        else if (curL - MoveBackStartDistLeft_mm >= MoveBackTargetDist_mm)
         {
           // Stop left wheel
           DCMotor_SetSpeed_mm_s(0, BASE_FOLLOW_SPEED_MM_S, REVERSE, REVERSE);

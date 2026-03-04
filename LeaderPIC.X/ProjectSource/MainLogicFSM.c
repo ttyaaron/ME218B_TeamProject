@@ -729,6 +729,8 @@ static void Behavior_MoveForwardFollow50mm(void)
 **********************************************************************/
 static void Behavior_RecoverTapeLost(void)
 {
+  ExpectedCompletionEvent = ES_TAPE_FOUND;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
   DB_printf("Behavior: RecoverTapeLost, LastIntent=%u\r\n", (unsigned)LastNavIntent);
   
   if (LastNavIntent == NAV_INTENT_FORWARD)
