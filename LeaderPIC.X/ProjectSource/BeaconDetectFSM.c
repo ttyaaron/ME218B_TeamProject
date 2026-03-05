@@ -371,7 +371,7 @@ ES_Event_t RunBeaconDetectFSM(ES_Event_t ThisEvent)
             else
             {
               // No beacon matched, reset debounce state
-              DB_printf("Resetting debounce state");
+              // DB_printf("Resetting debounce state");
               CandidateBeaconId = 0;
               BeaconMatchCount  = 0;
             }

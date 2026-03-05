@@ -62,7 +62,10 @@
 /*---------------------------- Module Functions ---------------------------*/
 // Top-level behaviors
 static void Behavior_Calibrate(void);
+static void Behavior_RetractScoop(void);
+static void Behavior_RetractSweep(void);
 static void Behavior_SearchTapeCCW(void);
+static void Behavior_SearchBeaconRL(void);
 static void Behavior_SearchBeaconBG(void);
 static void Behavior_IndicateSide(void);
 static void Behavior_TapeFollowToT(void);
@@ -73,7 +76,19 @@ static void Behavior_RotateCW90R45mm(void);
 static void Behavior_MoveBackwardToNode(void);
 static void Behavior_BallCollection(void);
 static void Behavior_TapeFollowBackward(void);
-static void Behavior_MoveForwardFollow50mm(void);
+static void Behavior_MoveForward50mm(void);
+static void Behavior_FollowForward50mm(void);
+static void Behavior_FollowForwardToT(void);
+static void Behavior_AdjustShootDistance(void);
+static void Behavior_ShootSequence(void);
+static void Behavior_SearchBeaconBGAgain(void);
+static void Behavior_FollowForwardToLeftIntersection(void);
+static void Behavior_RotateCW180(void);
+static void Behavior_SearchBeaconLR(void);
+static void Behavior_AdjustShootDistance2(void);
+static void Behavior_ShootSequence2(void);
+static void Behavior_FollowForwardToLeftIntersection2(void);
+static void Behavior_RotateCW180_2(void);
 
 // Ball collection sub-behaviors
 static void BallCollection_InitSweepServo(void);
@@ -88,6 +103,8 @@ static void BallCollection_Scoop3(void);
 static void BallCollection_Sweep4(void);
 static void BallCollection_Scoop4(void);
 static void BallCollection_Retract(void);
+static void BallCollection_RetractSweep(void);
+static void BallCollection_RetractScoop(void);
 
 // Private helpers
 static void AdvanceMainSequence(void);
@@ -115,6 +132,15 @@ static uint16_t ExpectedCompletionParam = COMPLETION_ANY_PARAM;
 // Set by Behavior_SearchBeaconBG, cleared on advance.
 static bool BeaconBGFilter = false;
 
+// When true, ES_BEACON_DETECTED only advances if param is 'r' or 'l'.
+// Set by Behavior_SearchBeaconRL, cleared on advance.
+static bool BeaconRLFilter = false;
+
+// Stores the field side detected during SearchBeaconBG.
+// Set once and never changed for the remainder of the game.
+// 'b' = blue field, 'g' = green field, 0 = not yet detected.
+static char FieldSide = 0;
+
 // Behavior function pointer type.
 // Each behavior starts one async action and returns immediately.
 // The action must eventually post ES_BEHAVIOR_COMPLETE to MainLogicFSM.
@@ -125,18 +151,45 @@ typedef void (*BehaviorFn_t)(void);
 // To change the game strategy: reorder, add, or comment out entries.
 // ---------------------------------------------------------------
 static const BehaviorFn_t BehaviorSequence[] = {
-  // Behavior_Calibrate,
+  // === APPROACH ===
+  Behavior_RetractScoop,
+  Behavior_RetractSweep,
   Behavior_SearchTapeCCW,
+  Behavior_SearchBeaconRL,
   Behavior_SearchBeaconBG,
   Behavior_IndicateSide,
   Behavior_TapeFollowToT,
-  // Behavior_RotateCW90R75mm, //75mm for 10u speed, 45mm for 30u speed
-  Behavior_RotateCW90R45mm,
-  Behavior_MoveForwardFollow50mm,
-  // Behavior_MoveBackwardToNode,
+  Behavior_RotateCW90R75mm,
+  Behavior_MoveForward50mm,         // renamed from MoveForwardFollow50mm
+
+  // === COLLECTION 1 ===
+  Behavior_BallCollection,          // runs CollectionSequence sub-sequence
+
+  // === SHOOT 1 ===
+  Behavior_FollowForwardToT,
+  Behavior_AdjustShootDistance,
+  Behavior_ShootSequence,
+
+  // === REPOSITION TO COLLECTION 2 ===
+  Behavior_SearchBeaconBGAgain,
+  Behavior_FollowForward50mm,
+  Behavior_RotateCW180,
+
+  // === COLLECTION 2 ===
   Behavior_BallCollection,
-  // Behavior_RotateCW90R75mm,
-  // Behavior_TapeFollowBackward,
+
+  // === SHOOT 2 ===
+  Behavior_FollowForwardToT,
+  Behavior_SearchBeaconLR,
+  Behavior_AdjustShootDistance2,
+  Behavior_ShootSequence2,
+
+  // === REPOSITION TO COLLECTION 3 ===
+  Behavior_FollowForwardToLeftIntersection2,
+  Behavior_RotateCW180_2,
+
+  // === COLLECTION 3 ===
+  Behavior_BallCollection,
 };
 #define NUM_BEHAVIORS (sizeof(BehaviorSequence) / sizeof(BehaviorSequence[0]))
 static uint8_t BehaviorIdx = 0;
@@ -147,17 +200,19 @@ static uint8_t BehaviorIdx = 0;
 // ---------------------------------------------------------------
 static const BehaviorFn_t CollectionSequence[] = {
   BallCollection_InitSweepServo,    // send CMD_SWEEP, short delay
-  BallCollection_Dock,          // Nav_MoveBackward_mm(BALL_DOCK_DISTANCE_MM)
   BallCollection_InitScoopServo,    // send CMD_SCOOP, short delay
+  BallCollection_Dock,          // Nav_MoveBackward_mm(BALL_DOCK_DISTANCE_MM)
   // BallCollection_Retract,       // Nav_ ,M M,M MoveForward_mm(BALL_RETRACT_DISTANCE_MM)
   BallCollection_Sweep1,        // send CMD_SWEEP, wait BALL_SWEEP_DURATION_MS
   BallCollection_Scoop1,        // send CMD_SCOOP, wait BALL_SCOOP_DURATION_MS
-  BallCollection_Sweep2,        // send CMD_SWEEP, wait BALL_SWEEP_DURATION_MS
-  BallCollection_Scoop2,        // send CMD_SCOOP, wait BALL_SCOOP_DURATION_MS
-  BallCollection_Sweep3,        // send CMD_SWEEP, wait BALL_SWEEP_DURATION_MS
-  BallCollection_Scoop3,        // send CMD_SCOOP, wait BALL_SCOOP_DURATION_MS
-  BallCollection_Sweep4,        // send CMD_SWEEP, wait BALL_SWEEP_DURATION_MS
-  BallCollection_Scoop4,        // send CMD_SCOOP, wait BALL_SCOOP_DURATION_MS
+  // BallCollection_Sweep2,        // send CMD_SWEEP, wait BALL_SWEEP_DURATION_MS
+  // BallCollection_Scoop2,        // send CMD_SCOOP, wait BALL_SCOOP_DURATION_MS
+  // BallCollection_Sweep3,        // send CMD_SWEEP, wait BALL_SWEEP_DURATION_MS
+  // BallCollection_Scoop3,        // send CMD_SCOOP, wait BALL_SCOOP_DURATION_MS
+  // BallCollection_Sweep4,        // send CMD_SWEEP, wait BALL_SWEEP_DURATION_MS
+  // BallCollection_Scoop4,        // send CMD_SCOOP, wait BALL_SCOOP_DURATION_MS
+  BallCollection_RetractScoop,
+  BallCollection_RetractSweep,
 };
 #define NUM_COLLECTION_BEHAVIORS \
   (sizeof(CollectionSequence) / sizeof(CollectionSequence[0]))
@@ -290,8 +345,25 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
             // Don't advance — keep rotating
             break; // exits the ML_Running case without advancing
           }
-          // B or G confirmed — clear filter and let normal advance proceed
+          // B or G confirmed — record field side, clear filter, stop nav
+          FieldSide = (char)ThisEvent.EventParam;
           BeaconBGFilter = false;
+          Nav_Stop();
+        }
+
+        // Apply R/L beacon filter if active
+        if (BeaconRLFilter &&
+            ThisEvent.EventType == ES_BEACON_DETECTED)
+        {
+          if (ThisEvent.EventParam != 'r' && ThisEvent.EventParam != 'l')
+          {
+            DB_printf("MainLogic: Ignoring non-RL beacon id=%c\r\n",
+                      (char)ThisEvent.EventParam);
+            // Don't advance — keep rotating
+            break; // exits the ML_Running case without advancing
+          }
+          // R or L confirmed — clear filter and stop nav
+          BeaconRLFilter = false;
           Nav_Stop();
         }
 
@@ -416,6 +488,7 @@ static void AdvanceMainSequence(void)
   ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
   ExpectedCompletionParam = COMPLETION_ANY_PARAM;
   BeaconBGFilter          = false;
+  BeaconRLFilter          = false;
 
   BehaviorIdx++;
   if (BehaviorIdx < NUM_BEHAVIORS)
@@ -517,6 +590,45 @@ static void Behavior_SearchTapeCCW(void)
 
 /****************************************************************************
  Function
+     Behavior_SearchBeaconRL
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Rotates to find 'r' or 'l' beacon. ES_BEACON_DETECTED will advance.
+
+ Author
+     Team, 03/04/26
+****************************************************************************/
+static void Behavior_SearchBeaconRL(void)
+{
+  DB_printf("Behavior: SearchBeaconRL\r\n");
+  if (QueryBeaconDetectFSM() == BeaconLocked)
+  {
+    uint8_t beaconId = QueryLockedBeaconId();
+    DB_printf("Behavior: Beacon already locked, id=%c\r\n", beaconId);
+    if (beaconId == 'r' || beaconId == 'l')
+    {
+      // Complete immediately via ES_BEHAVIOR_COMPLETE
+      ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+      ExpectedCompletionParam = COMPLETION_ANY_PARAM;
+      PostMainLogicFSM((ES_Event_t){ ES_BEHAVIOR_COMPLETE, 0 });
+      return;
+    }
+  }
+  // Rotate and wait for an R or L beacon
+  ExpectedCompletionEvent = ES_BEACON_DETECTED;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
+  BeaconRLFilter = true;
+  Nav_StartRotateContinuous(false);
+}
+
+/****************************************************************************
+ Function
      Behavior_SearchBeaconBG
 
  Parameters
@@ -526,7 +638,7 @@ static void Behavior_SearchTapeCCW(void)
      None
 
  Description
-     Rotates CW to find beacon. ES_BEACON_DETECTED will advance.
+     Rotates CCW to find beacon. ES_BEACON_DETECTED will advance.
 
  Author
      Team, 03/02/26
@@ -540,6 +652,7 @@ static void Behavior_SearchBeaconBG(void)
     DB_printf("Behavior: Beacon already locked, id=%c\r\n", beaconId);
     if (beaconId == 'b' || beaconId == 'g')
     {
+      FieldSide = beaconId;
       // Complete immediately via ES_BEHAVIOR_COMPLETE
       ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
       ExpectedCompletionParam = COMPLETION_ANY_PARAM;
@@ -555,7 +668,7 @@ static void Behavior_SearchBeaconBG(void)
   ExpectedCompletionParam = COMPLETION_ANY_PARAM;
   // Store that only b/g are acceptable — handled via BeaconBGOnly flag below.
   BeaconBGFilter = true;
-  Nav_StartRotateContinuous(true);
+  Nav_StartRotateContinuous(false);
 }
 
 /****************************************************************************
@@ -706,18 +819,44 @@ static void Behavior_RotateCW90R45mm(void)
 
 /****************************************
   Function
-      Behavior_MoveForwardFollow
+      Behavior_MoveForward50mm
   Parameters
 
 */
-static void Behavior_MoveForwardFollow50mm(void)
+static void Behavior_MoveForward50mm(void)
 {
   ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
   ExpectedCompletionParam = COMPLETION_ANY_PARAM;
-  DB_printf("Behavior: MoveForwardFollow50mm\r\n");
+  DB_printf("Behavior: MoveForward50mm\r\n");
+  LastNavIntent = NAV_INTENT_FORWARD;
+  Nav_MoveForward_mm(50u);
+  // NavigationFSM posts ES_BEHAVIOR_COMPLETE when odometer dist reached
+}
+
+/****************************************************************************
+ Function
+     Behavior_FollowForward50mm
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Follows tape forward for 50mm using odometer.
+
+ Author
+     Team, 03/04/26
+****************************************************************************/
+static void Behavior_FollowForward50mm(void)
+{
+  ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
+  DB_printf("Behavior: FollowForward50mm\r\n");
   LastNavIntent = NAV_INTENT_FORWARD;
   Nav_MoveForward_mm_Follow(50u);
-  // NavigationFSM posts ES_BEHAVIOR_COMPLETE when T-intersection detected
+  // NavigationFSM posts ES_BEHAVIOR_COMPLETE when odometer dist reached
 }
 
 /****************************************************************************
@@ -1067,6 +1206,72 @@ static void BallCollection_Scoop4(void)
   PostSPILeaderFSM(ev);
   ES_Timer_InitTimer(BALL_COLLECTION_TIMER, BALL_SCOOP_DURATION_MS);
 }
+
+/****************************************************************************
+ Function
+     Behavior_RetractSweep
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Top-level behavior: sends retract sweep command and waits for timeout.
+
+ Author
+     Team, 03/04/26
+****************************************************************************/
+static void Behavior_RetractSweep(void)
+{
+  ExpectedCompletionEvent = ES_TIMEOUT;
+  ExpectedCompletionParam = (uint16_t)BALL_COLLECTION_TIMER;
+  DB_printf("Behavior: RetractSweep\r\n");
+  ES_Event_t ev;
+  ev.EventType  = ES_NEW_COMMAND;
+  ev.EventParam = CMD_RETRACT_SWEEP;
+  PostSPILeaderFSM(ev);
+  ES_Timer_InitTimer(BALL_COLLECTION_TIMER, BALL_SWEEP_DURATION_MS);
+}
+
+/****************************************************************************
+ Function
+     Behavior_RetractScoop
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Top-level behavior: sends retract scoop command and waits for timeout.
+
+ Author
+     Team, 03/04/26
+****************************************************************************/
+static void Behavior_RetractScoop(void)
+{
+  ExpectedCompletionEvent = ES_TIMEOUT;
+  ExpectedCompletionParam = (uint16_t)BALL_COLLECTION_TIMER;
+  DB_printf("Behavior: RetractScoop\r\n");
+  ES_Event_t ev;
+  ev.EventType  = ES_NEW_COMMAND;
+  ev.EventParam = CMD_RETRACT_SCOOP;
+  PostSPILeaderFSM(ev);
+  ES_Timer_InitTimer(BALL_COLLECTION_TIMER, BALL_SCOOP_DURATION_MS);
+}
+
+static void BallCollection_RetractScoop(void)
+{
+  DB_printf("BallCollection: RetractScoop\r\n");
+  ES_Event_t ev;
+  ev.EventType  = ES_NEW_COMMAND;
+  ev.EventParam = CMD_RETRACT_SCOOP;
+  PostSPILeaderFSM(ev);
+  ES_Timer_InitTimer(BALL_COLLECTION_TIMER, BALL_SCOOP_DURATION_MS);
+}
 /****************************************************************************
  Function
      BallCollection_Retract
@@ -1090,4 +1295,339 @@ static void BallCollection_Retract(void)
   LastNavIntent = NAV_INTENT_FORWARD;
   Nav_MoveForward_mm(BALL_RETRACT_DISTANCE_MM);
   // NavigationFSM posts ES_BEHAVIOR_COMPLETE when odometer dist reached
+}
+
+static void BallCollection_RetractSweep(void)
+{
+  DB_printf("BallCollection: RetractSweep\r\n");
+  ES_Event_t ev;
+  ev.EventType  = ES_NEW_COMMAND;
+  ev.EventParam = CMD_RETRACT_SWEEP;
+  PostSPILeaderFSM(ev);
+  ES_Timer_InitTimer(BALL_COLLECTION_TIMER, BALL_SWEEP_DURATION_MS);
+}
+
+static void BallCollection_RetractScoop(void)
+{
+  DB_printf("BallCollection: RetractScoop\r\n");
+  ES_Event_t ev;
+  ev.EventType  = ES_NEW_COMMAND;
+  ev.EventParam = CMD_RETRACT_SCOOP;
+  PostSPILeaderFSM(ev);
+  ES_Timer_InitTimer(BALL_COLLECTION_TIMER, BALL_SCOOP_DURATION_MS);
+}
+
+/****************************************************************************
+ Function
+     Behavior_FollowForwardToT
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Follow forward until T-intersection (reuses same nav as TapeFollowToT)
+
+ Author
+     Team, 03/04/26
+****************************************************************************/
+static void Behavior_FollowForwardToT(void)
+{
+  ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
+  DB_printf("Behavior: FollowForwardToT\r\n");
+  LastNavIntent = NAV_INTENT_FORWARD;
+  Nav_StartFollowForward();
+}
+
+/****************************************************************************
+ Function
+     Behavior_AdjustShootDistance
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Placeholder: move forward a fixed distance to reach shooting position.
+     Tune SHOOT_ADJUST_DISTANCE_MM in CommonDefinitions.h after field test.
+
+ Author
+     Team, 03/04/26
+****************************************************************************/
+static void Behavior_AdjustShootDistance(void)
+{
+  ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
+  DB_printf("Behavior: AdjustShootDistance\r\n");
+  LastNavIntent = NAV_INTENT_FORWARD;
+  Nav_MoveForward_mm(SHOOT_ADJUST_DISTANCE_MM);
+}
+
+/****************************************************************************
+ Function
+     Behavior_ShootSequence
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Send shoot command and wait for BALL_COLLECTION_TIMER (10 seconds).
+
+ Author
+     Team, 03/04/26
+****************************************************************************/
+static void Behavior_ShootSequence(void)
+{
+  ExpectedCompletionEvent = ES_TIMEOUT;
+  ExpectedCompletionParam = (uint16_t)BALL_COLLECTION_TIMER;
+  DB_printf("Behavior: ShootSequence\r\n");
+  ES_Event_t ev;
+  ev.EventType  = ES_NEW_COMMAND;
+  ev.EventParam = CMD_SHOOT;
+  PostSPILeaderFSM(ev);
+  ES_Timer_InitTimer(BALL_COLLECTION_TIMER, SHOOT_WAIT_MS);
+}
+
+/****************************************************************************
+ Function
+     Behavior_SearchBeaconBGAgain
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Same BG beacon search as before — reuse the same logic.
+
+ Author
+     Team, 03/04/26
+****************************************************************************/
+static void Behavior_SearchBeaconBGAgain(void)
+{
+  DB_printf("Behavior: SearchBeaconBGAgain\r\n");
+  if (QueryBeaconDetectFSM() == BeaconLocked)
+  {
+    uint8_t beaconId = QueryLockedBeaconId();
+    if (beaconId == 'b' || beaconId == 'g')
+    {
+      ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+      ExpectedCompletionParam = COMPLETION_ANY_PARAM;
+      PostMainLogicFSM((ES_Event_t){ ES_BEHAVIOR_COMPLETE, 0 });
+      return;
+    }
+  }
+  ExpectedCompletionEvent = ES_BEACON_DETECTED;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
+  BeaconBGFilter = true;
+  Nav_StartRotateContinuous(true);
+}
+
+/****************************************************************************
+ Function
+     Behavior_FollowForwardToLeftIntersection
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Follow forward until left intersection (param=1).
+     NavigationFSM already posts ES_INTERSECTION_DETECTED with param=1
+     for left intersections. ExpectedCompletionParam filters to param=1.
+
+ Author
+     Team, 03/04/26
+****************************************************************************/
+static void Behavior_FollowForwardToLeftIntersection(void)
+{
+  ExpectedCompletionEvent = ES_INTERSECTION_DETECTED;
+  ExpectedCompletionParam = 1u;  // left intersection
+  DB_printf("Behavior: FollowForwardToLeftIntersection\r\n");
+  LastNavIntent = NAV_INTENT_FORWARD;
+  Nav_StartFollowForward();
+}
+
+/****************************************************************************
+ Function
+     Behavior_RotateCW180
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Rotates clockwise 180 degrees.
+
+ Author
+     Team, 03/04/26
+****************************************************************************/
+static void Behavior_RotateCW180(void)
+{
+  ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
+  DB_printf("Behavior: RotateCW180\r\n");
+  LastNavIntent = NAV_INTENT_ROTATE_CW;
+  Nav_RotateCW(180u);
+}
+
+/****************************************************************************
+ Function
+     Behavior_SearchBeaconLR
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Searches for beacon 'l' if FieldSide == 'b', or beacon 'r' if FieldSide == 'g'.
+     Determines target beacon based on field side set during SearchBeaconBG.
+
+ Author
+     Team, 03/04/26
+****************************************************************************/
+static void Behavior_SearchBeaconLR(void)
+{
+  // Determine target beacon based on field side set during SearchBeaconBG.
+  // Blue field -> look for 'l' (left) beacon.
+  // Green field -> look for 'r' (right) beacon.
+  char targetBeacon = (FieldSide == 'b') ? 'l' : 'r';
+
+  DB_printf("Behavior: SearchBeaconLR target=%c (field=%c)\r\n",
+            targetBeacon, FieldSide ? FieldSide : '?');
+
+  // Check if already locked on the correct beacon
+  if (QueryBeaconDetectFSM() == BeaconLocked &&
+      QueryLockedBeaconId() == targetBeacon)
+  {
+    ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+    ExpectedCompletionParam = COMPLETION_ANY_PARAM;
+    PostMainLogicFSM((ES_Event_t){ ES_BEHAVIOR_COMPLETE, 0 });
+    return;
+  }
+
+  // Rotate and wait for the specific target beacon
+  ExpectedCompletionEvent = ES_BEACON_DETECTED;
+  ExpectedCompletionParam = (uint16_t)targetBeacon;
+  // No BeaconBGFilter needed — ExpectedCompletionParam already filters
+  // to exactly the right beacon character.
+  Nav_StartRotateContinuous(true);
+}
+
+/****************************************************************************
+ Function
+     Behavior_AdjustShootDistance2
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Adjust shoot distance for bucket 2 — separate constant for independent tuning.
+
+ Author
+     Team, 03/04/26
+****************************************************************************/
+static void Behavior_AdjustShootDistance2(void)
+{
+  ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
+  DB_printf("Behavior: AdjustShootDistance2\r\n");
+  LastNavIntent = NAV_INTENT_FORWARD;
+  Nav_MoveForward_mm(SHOOT_ADJUST_DISTANCE_MM_2);
+}
+
+/****************************************************************************
+ Function
+     Behavior_ShootSequence2
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Identical shoot sequence for bucket 2.
+
+ Author
+     Team, 03/04/26
+****************************************************************************/
+static void Behavior_ShootSequence2(void)
+{
+  ExpectedCompletionEvent = ES_TIMEOUT;
+  ExpectedCompletionParam = (uint16_t)BALL_COLLECTION_TIMER;
+  DB_printf("Behavior: ShootSequence2\r\n");
+  ES_Event_t ev;
+  ev.EventType  = ES_NEW_COMMAND;
+  ev.EventParam = CMD_SHOOT;
+  PostSPILeaderFSM(ev);
+  ES_Timer_InitTimer(BALL_COLLECTION_TIMER, SHOOT_WAIT_MS);
+}
+
+/****************************************************************************
+ Function
+     Behavior_FollowForwardToLeftIntersection2
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Follow forward to left intersection (second occurrence).
+
+ Author
+     Team, 03/04/26
+****************************************************************************/
+static void Behavior_FollowForwardToLeftIntersection2(void)
+{
+  ExpectedCompletionEvent = ES_INTERSECTION_DETECTED;
+  ExpectedCompletionParam = 1u;
+  DB_printf("Behavior: FollowForwardToLeftIntersection2\r\n");
+  LastNavIntent = NAV_INTENT_FORWARD;
+  Nav_StartFollowForward();
+}
+
+/****************************************************************************
+ Function
+     Behavior_RotateCW180_2
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Rotates clockwise 180 degrees (second occurrence).
+
+ Author
+     Team, 03/04/26
+****************************************************************************/
+static void Behavior_RotateCW180_2(void)
+{
+  ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
+  DB_printf("Behavior: RotateCW180_2\r\n");
+  LastNavIntent = NAV_INTENT_ROTATE_CW;
+  Nav_RotateCW(180u);
 }

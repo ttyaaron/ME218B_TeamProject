@@ -183,6 +183,11 @@ extern const uint8_t validCommandBytes[21];
 #define BALL_DOCK_DISTANCE_MM     67u    // backward distance for docking
 #define BALL_RETRACT_DISTANCE_MM  10u    // forward distance for retraction
 
+// Shooting position adjustment distances — tune during field test
+#define SHOOT_ADJUST_DISTANCE_MM    50u   // placeholder — tune for bucket 1
+#define SHOOT_ADJUST_DISTANCE_MM_2  50u   // placeholder — tune for bucket 2
+#define SHOOT_WAIT_MS               10000u // 10 seconds for ball shooting
+
 // Debug Pin
 #define DEBUG_OUTPUT_PIN_LAT LATBbits.LATB15
 #define DEBUG_OUTPUT_PIN_TRIS TRISBbits.TRISB15
