@@ -62,6 +62,7 @@
 /*---------------------------- Module Functions ---------------------------*/
 // Top-level behaviors
 static void Behavior_Calibrate(void);
+static void Behavior_Wait(void);
 static void Behavior_RetractScoop(void);
 static void Behavior_RetractSweep(void);
 static void Behavior_SearchTapeCCW(void);
@@ -77,6 +78,7 @@ static void Behavior_MoveBackwardToNode(void);
 static void Behavior_BallCollection(void);
 static void Behavior_TapeFollowBackward(void);
 static void Behavior_MoveForward50mm(void);
+static void Behavior_MoveBackward40mm(void);
 static void Behavior_FollowForward50mm(void);
 static void Behavior_FollowForwardToT(void);
 static void Behavior_AdjustShootDistance(void);
@@ -89,6 +91,8 @@ static void Behavior_AdjustShootDistance2(void);
 static void Behavior_ShootSequence2(void);
 static void Behavior_FollowForwardToLeftIntersection2(void);
 static void Behavior_RotateCW180_2(void);
+static void Behavior_RecordOdometer(void);
+static void Behavior_MoveBackward_Odometer(void);
 
 // Ball collection sub-behaviors
 static void BallCollection_InitSweepServo(void);
@@ -141,6 +145,10 @@ static bool BeaconRLFilter = false;
 // 'b' = blue field, 'g' = green field, 0 = not yet detected.
 static char FieldSide = 0;
 
+// Stores the odometer IC event count recorded during Behavior_RecordOdometer.
+// Used by Behavior_MoveBackward_Odometer to calculate reverse distance.
+static uint32_t RecordedOdometerCount = 0;
+
 // Behavior function pointer type.
 // Each behavior starts one async action and returns immediately.
 // The action must eventually post ES_BEHAVIOR_COMPLETE to MainLogicFSM.
@@ -152,11 +160,12 @@ typedef void (*BehaviorFn_t)(void);
 // ---------------------------------------------------------------
 static const BehaviorFn_t BehaviorSequence[] = {
   // === APPROACH ===
+  Behavior_Wait,
   Behavior_RetractScoop,
   Behavior_RetractSweep,
-  Behavior_SearchTapeCCW,
   Behavior_SearchBeaconRL,
   Behavior_SearchBeaconBG,
+  Behavior_SearchTapeCCW,
   Behavior_IndicateSide,
   Behavior_TapeFollowToT,
   Behavior_RotateCW90R75mm,
@@ -164,21 +173,25 @@ static const BehaviorFn_t BehaviorSequence[] = {
 
   // === COLLECTION 1 ===
   Behavior_BallCollection,          // runs CollectionSequence sub-sequence
+  Behavior_RecordOdometer,         // records the current odometer in variable
 
   // === SHOOT 1 ===
   Behavior_FollowForwardToT,
-  Behavior_AdjustShootDistance,
+  // Behavior_AdjustShootDistance,
+  Behavior_MoveBackward40mm, // back up a bit to give room for the shoot sequence
   Behavior_ShootSequence,
 
   // === REPOSITION TO COLLECTION 2 ===
-  Behavior_SearchBeaconBGAgain,
-  Behavior_FollowForward50mm,
-  Behavior_RotateCW180,
+  // Behavior_SearchBeaconBGAgain,
+  // Behavior_FollowForward50mm,
+  // Behavior_RotateCW180,
+  Behavior_MoveBackward_Odometer, // move backward to counterract the odometer moved
 
   // === COLLECTION 2 ===
   Behavior_BallCollection,
 
   // === SHOOT 2 ===
+  
   Behavior_FollowForwardToT,
   Behavior_SearchBeaconLR,
   Behavior_AdjustShootDistance2,
@@ -217,6 +230,9 @@ static const BehaviorFn_t CollectionSequence[] = {
 #define NUM_COLLECTION_BEHAVIORS \
   (sizeof(CollectionSequence) / sizeof(CollectionSequence[0]))
 static uint8_t CollectionIdx = 0;
+static uint32_t RecordedOdometerCountR;
+static uint32_t RecordedOdometerCountL;
+static uint32_t RecordedOdometerAvgCount;
 /*------------------------------ Module Code ------------------------------*/
 /****************************************************************************
  Function
@@ -310,6 +326,8 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
   {
     case ML_Running:
     {
+      
+      
       if (ThisEvent.EventType == ES_INIT)
       {
         BehaviorIdx = 0;
@@ -317,6 +335,15 @@ ES_Event_t RunMainLogicFSM(ES_Event_t ThisEvent)
         ExpectedCompletionParam = COMPLETION_ANY_PARAM;
         DB_printf("MainLogic: Starting sequence, behavior 0\r\n");
         BehaviorSequence[0]();
+      }
+      // If behavior timeout, post ES_BEHAVIOR_COMPLETE to self to advance the sequence.
+      else if (ThisEvent.EventType == ES_TIMEOUT &&
+          ThisEvent.EventParam == BEHAVIOR_TIMEOUT_TIMER)
+      {
+        DB_printf("MainLogic: Behavior timeout, advancing sequence\r\n");
+        ThisEvent.EventType = ES_BEHAVIOR_COMPLETE;
+        ThisEvent.EventParam = COMPLETION_ANY_PARAM;
+        PostMainLogicFSM(ThisEvent);
       }
       else if (ThisEvent.EventType == ES_LINE_LOST)
       {
@@ -833,6 +860,16 @@ static void Behavior_MoveForward50mm(void)
   // NavigationFSM posts ES_BEHAVIOR_COMPLETE when odometer dist reached
 }
 
+static void Behavior_MoveBackward40mm(void)
+{
+  ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
+  DB_printf("Behavior: MoveBackward40mm\r\n");
+  LastNavIntent = NAV_INTENT_REVERSE;
+  Nav_MoveBackward_mm(40u);
+  // NavigationFSM posts ES_BEHAVIOR_COMPLETE when odometer dist reached
+}
+
 /****************************************************************************
  Function
      Behavior_FollowForward50mm
@@ -1225,14 +1262,22 @@ static void BallCollection_Scoop4(void)
 ****************************************************************************/
 static void Behavior_RetractSweep(void)
 {
-  ExpectedCompletionEvent = ES_TIMEOUT;
-  ExpectedCompletionParam = (uint16_t)BALL_COLLECTION_TIMER;
+  ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
   DB_printf("Behavior: RetractSweep\r\n");
   ES_Event_t ev;
   ev.EventType  = ES_NEW_COMMAND;
   ev.EventParam = CMD_RETRACT_SWEEP;
   PostSPILeaderFSM(ev);
-  ES_Timer_InitTimer(BALL_COLLECTION_TIMER, BALL_SWEEP_DURATION_MS);
+  ES_Timer_InitTimer(BEHAVIOR_TIMEOUT_TIMER, BALL_SWEEP_DURATION_MS);
+}
+
+static void Behavior_Wait(void)
+{
+  ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
+  DB_printf("Behavior: Wait\r\n");
+  ES_Timer_InitTimer(BEHAVIOR_TIMEOUT_TIMER, 1000u); // wait 1 second
 }
 
 /****************************************************************************
@@ -1253,25 +1298,16 @@ static void Behavior_RetractSweep(void)
 ****************************************************************************/
 static void Behavior_RetractScoop(void)
 {
-  ExpectedCompletionEvent = ES_TIMEOUT;
-  ExpectedCompletionParam = (uint16_t)BALL_COLLECTION_TIMER;
+  ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
   DB_printf("Behavior: RetractScoop\r\n");
   ES_Event_t ev;
   ev.EventType  = ES_NEW_COMMAND;
   ev.EventParam = CMD_RETRACT_SCOOP;
   PostSPILeaderFSM(ev);
-  ES_Timer_InitTimer(BALL_COLLECTION_TIMER, BALL_SCOOP_DURATION_MS);
+  ES_Timer_InitTimer(BEHAVIOR_TIMEOUT_TIMER, BALL_SCOOP_DURATION_MS);
 }
 
-static void BallCollection_RetractScoop(void)
-{
-  DB_printf("BallCollection: RetractScoop\r\n");
-  ES_Event_t ev;
-  ev.EventType  = ES_NEW_COMMAND;
-  ev.EventParam = CMD_RETRACT_SCOOP;
-  PostSPILeaderFSM(ev);
-  ES_Timer_InitTimer(BALL_COLLECTION_TIMER, BALL_SCOOP_DURATION_MS);
-}
 /****************************************************************************
  Function
      BallCollection_Retract
@@ -1338,6 +1374,13 @@ static void Behavior_FollowForwardToT(void)
   ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
   ExpectedCompletionParam = COMPLETION_ANY_PARAM;
   DB_printf("Behavior: FollowForwardToT\r\n");
+  // Read and output current odometer reading
+  // Use average distance for record
+  RecordedOdometerCountL = DCMotor_GetICEventCount(LEFT_MOTOR);
+  RecordedOdometerCountR = DCMotor_GetICEventCount(RIGHT_MOTOR);
+  RecordedOdometerAvgCount = ((int32_t)DCMotor_GetICEventCount(LEFT_MOTOR) + (int32_t)DCMotor_GetICEventCount(RIGHT_MOTOR)) / 2;
+  DB_printf("Behavior: RecordOdometer = %u\r\n", (unsigned)RecordedOdometerAvgCount);
+  DB_printf("Current Odometer: %u mm\r\n", (unsigned)RecordedOdometerAvgCount);
   LastNavIntent = NAV_INTENT_FORWARD;
   Nav_StartFollowForward();
 }
@@ -1364,6 +1407,13 @@ static void Behavior_AdjustShootDistance(void)
   ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
   ExpectedCompletionParam = COMPLETION_ANY_PARAM;
   DB_printf("Behavior: AdjustShootDistance\r\n");
+  // Read and output current odometer reading
+  // Use average distance for record
+  RecordedOdometerCountL = DCMotor_GetICEventCount(LEFT_MOTOR);
+  RecordedOdometerCountR = DCMotor_GetICEventCount(RIGHT_MOTOR);
+  RecordedOdometerAvgCount = ((int32_t)DCMotor_GetICEventCount(LEFT_MOTOR) + (int32_t)DCMotor_GetICEventCount(RIGHT_MOTOR)) / 2;
+  DB_printf("Behavior: RecordOdometer = %u\r\n", (unsigned)RecordedOdometerAvgCount);
+  DB_printf("Current Odometer: %u mm\r\n", (unsigned)RecordedOdometerAvgCount);
   LastNavIntent = NAV_INTENT_FORWARD;
   Nav_MoveForward_mm(SHOOT_ADJUST_DISTANCE_MM);
 }
@@ -1630,4 +1680,72 @@ static void Behavior_RotateCW180_2(void)
   DB_printf("Behavior: RotateCW180_2\r\n");
   LastNavIntent = NAV_INTENT_ROTATE_CW;
   Nav_RotateCW(180u);
+}
+
+/****************************************************************************
+ Function
+     Behavior_RecordOdometer
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Records the current odometer IC event count for later use by
+     Behavior_MoveBackward_Odometer. Completes immediately.
+
+ Author
+     Team, 03/04/26
+****************************************************************************/
+static void Behavior_RecordOdometer(void)
+{
+  // Use average distance for record
+  RecordedOdometerCountL = DCMotor_GetICEventCount(LEFT_MOTOR);
+  RecordedOdometerCountR = DCMotor_GetICEventCount(RIGHT_MOTOR);
+  RecordedOdometerAvgCount = ((int32_t)RecordedOdometerCountL + (int32_t)RecordedOdometerCountR) / 2;
+  DB_printf("Behavior: RecordOdometer = %u\r\n", (unsigned)RecordedOdometerAvgCount);
+  
+  ES_Event_t ev;
+  ev.EventType = ES_BEHAVIOR_COMPLETE;
+  PostMainLogicFSM(ev);
+}
+
+/****************************************************************************
+ Function
+     Behavior_MoveBackward_Odometer
+
+ Parameters
+     None
+
+ Returns
+     None
+
+ Description
+     Moves backward by the distance traveled since Behavior_RecordOdometer
+     was called. Calculates the delta IC count, converts to mm, and commands
+     NavigationFSM to move backward by that distance.
+
+ Author
+     Team, 03/04/26
+****************************************************************************/
+static void Behavior_MoveBackward_Odometer(void)
+{
+  ExpectedCompletionEvent = ES_BEHAVIOR_COMPLETE;
+  ExpectedCompletionParam = COMPLETION_ANY_PARAM;
+  
+  // Use average distance for record
+  RecordedOdometerCountL = DCMotor_GetICEventCount(LEFT_MOTOR);
+  RecordedOdometerCountR = DCMotor_GetICEventCount(RIGHT_MOTOR);
+  uint32_t CurrentOdometerCount = ((int32_t)RecordedOdometerCountL + (int32_t)RecordedOdometerCountR) / 2;
+  uint32_t DeltaCount = CurrentOdometerCount - RecordedOdometerAvgCount;
+  uint32_t Distance_mm = ICCountToDistance_mm(DeltaCount);
+  
+  DB_printf("Behavior: MoveBackward_Odometer, delta=%u, dist=%u mm\r\n", 
+            (unsigned)DeltaCount, (unsigned)Distance_mm);
+  
+  LastNavIntent = NAV_INTENT_REVERSE;
+  Nav_MoveBackward_mm(Distance_mm);
+  // NavigationFSM posts ES_BEHAVIOR_COMPLETE when odometer dist reached
 }
