@@ -178,7 +178,7 @@ static const BehaviorFn_t BehaviorSequence[] = {
   // === SHOOT 1 ===
   Behavior_FollowForwardToT,
   // Behavior_AdjustShootDistance,
-  Behavior_MoveBackward40mm, // back up a bit to give room for the shoot sequence
+  // Behavior_MoveBackward40mm, // back up a bit to give room for the shoot sequence
   Behavior_ShootSequence,
 
   // === REPOSITION TO COLLECTION 2 ===
@@ -611,7 +611,7 @@ static void Behavior_SearchTapeCCW(void)
   ExpectedCompletionEvent = ES_TAPE_FOUND;
   ExpectedCompletionParam = COMPLETION_ANY_PARAM;
   DB_printf("Behavior: SearchTapeCCW\r\n");
-  Nav_StartRotateSearch(false);  // false = CCW
+  Nav_StartRotateSearch(true);  // false = CCW
   // NavigationFSM posts ES_TAPE_FOUND → MainLogicFSM
 }
 
