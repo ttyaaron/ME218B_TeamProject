@@ -76,7 +76,7 @@
 
 // Action durations in milliseconds
 #define SWEEP_ACTION_TIME   500   // Time to complete sweep action
-#define SCOOP_ACTION_TIME   1000s   // Time to complete scoop action
+#define SCOOP_ACTION_TIME   1000   // Time to complete scoop action
 #define RELEASE_ACTION_TIME    700   // Time to complete release action
 #define SHOOT_ACTION_TIME   10000   // Time to complete shoot action
 #define SIDE_ACTION_TIME    300    // Time to move side servo to position
